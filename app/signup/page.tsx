@@ -4,6 +4,7 @@ import { useState } from 'react'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { supabase } from '@/utils/supabaseClient'
+import ReCAPTCHA from 'react-google-recaptcha'
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ export default function SignUpPage() {
     email: '',
     password: '',
     gender: '',
-    countryCode: '',
+    countryCode: '+44',
     phone: '',
     birthdate: '',
     agreeMarketing: false,
@@ -22,6 +23,9 @@ export default function SignUpPage() {
 
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [captchaVerified, setCaptchaVerified] = useState(false)
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement
@@ -35,6 +39,12 @@ export default function SignUpPage() {
     e.preventDefault()
     setLoading(true)
     setMessage('')
+
+    if (!captchaVerified) {
+      setMessage('Please complete the reCAPTCHA verification')
+      setLoading(false)
+      return
+    }
 
     try {
       // Kullanıcı kayıt verilerini Supabase'e kaydet
@@ -69,13 +79,14 @@ export default function SignUpPage() {
           email: '',
           password: '',
           gender: '',
-          countryCode: '+90',
+          countryCode: '+44',
           phone: '',
           birthdate: '',
           agreeMarketing: false,
           agreeMembership: false,
           agreePrivacy: false,
         })
+        setCaptchaVerified(false)
       }
     } catch (error) {
       console.error('Error:', error)
@@ -138,14 +149,15 @@ export default function SignUpPage() {
         </div>
 
         <PhoneInput
-          country={'tr'}
-          enableSearch={true}
+          country={'gb'}
+          onlyCountries={['gb']}
+          disableDropdown={true}
           value={formData.phone}
           onChange={(phone, countryData: any) => {
             setFormData({
               ...formData,
               phone,
-              countryCode: '+' + (countryData?.dialCode || '90'),
+              countryCode: '+44',
             });
           }}
           inputStyle={{
@@ -192,7 +204,7 @@ export default function SignUpPage() {
         />
 
         <div className="space-y-2 text-sm text-gray-700">
-          <label>
+          <label className='block'>
             <input 
               type="checkbox" 
               name="agreeMarketing"
@@ -200,7 +212,7 @@ export default function SignUpPage() {
               onChange={handleChange}
             /> I want to receive e-commerce messages.
           </label>
-          <label>
+          <label className='block'>
             <input 
               type="checkbox" 
               name="agreeMembership"
@@ -209,7 +221,7 @@ export default function SignUpPage() {
               required
             /> I accept the membership agreement.
           </label>
-          <label>
+          <label className='block'>
             <input 
               type="checkbox" 
               name="agreePrivacy"
@@ -220,16 +232,24 @@ export default function SignUpPage() {
           </label>
         </div>
 
-        <div className="border p-4 rounded bg-gray-100">
-          <p>I'm not a robot (reCAPTCHA field)</p>
+        <div className="flex justify-center">
+          <ReCAPTCHA
+            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key for development
+            onChange={(value) => {
+              setCaptchaVerified(!!value)
+            }}
+            onExpired={() => {
+              setCaptchaVerified(false)
+            }}
+          />
         </div>
 
         <div className="flex justify-end gap-2">
-          <button type="button" className="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+          <button type="button" className="btn-secondary px-4">Cancel</button>
           <button 
             type="submit" 
             disabled={loading}
-            className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+            className="btn-primary px-4 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Save'}
           </button>

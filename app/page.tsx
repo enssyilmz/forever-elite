@@ -6,16 +6,17 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative h-screen w-full overflow-hidden -mt-16">
       {/* Video background */}
       <video
         autoPlay
         muted
         loop
         playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        className="absolute top-0 left-0 w-full h-full object-cover z-[-1]"
       >
-        <source src="/ozcan-video.mp4" type="video/mp4" />
+        <source src="/video/backgroundvideo.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
       </video>
 
       {/* Content */}

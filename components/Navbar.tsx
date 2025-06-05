@@ -3,22 +3,44 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { Search, User, CreditCard } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const cartDrawerRef = useRef<HTMLDivElement>(null)
+  const supabase = createClientComponentClient()
+
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      }
+    })
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      // Login drawer
       if (
         drawerRef.current &&
         !drawerRef.current.contains(event.target as Node)
       ) {
         setIsLoginOpen(false)
       }
+      
+      // Cart drawer
+      if (
+        cartDrawerRef.current &&
+        !cartDrawerRef.current.contains(event.target as Node)
+      ) {
+        setIsCartOpen(false)
+      }
     }
 
-    if (isLoginOpen) {
+    if (isLoginOpen || isCartOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     } else {
       document.removeEventListener('mousedown', handleClickOutside)
@@ -27,7 +49,7 @@ export default function Navbar() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isLoginOpen])
+  }, [isLoginOpen, isCartOpen])
 
   return (
     <>
@@ -48,7 +70,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <Search className="w-5 h-5 text-gray-600 cursor-pointer" />
           <User className="w-5 h-5 text-gray-600 cursor-pointer" onClick={() => setIsLoginOpen(true)} />
-          <CreditCard className="w-5 h-5 text-gray-600 cursor-pointer" />
+          <CreditCard className="w-5 h-5 text-gray-600 cursor-pointer" onClick={() => setIsCartOpen(true)} />
         </div>
       </nav>
 
@@ -56,9 +78,13 @@ export default function Navbar() {
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40"></div>
       )}
 
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40"></div>
+      )}
+
       <div
         ref={drawerRef}
-        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
+        className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
           isLoginOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -84,9 +110,13 @@ export default function Navbar() {
                   <input type="checkbox" className="accent-black" />
                   Remember me
                 </label>
-                <button type="button" className="text-gray-600 underline">
+                <Link 
+                  href="/forgot-password" 
+                  className="text-gray-600 underline"
+                  onClick={() => setIsLoginOpen(false)}
+                >
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <button
@@ -114,9 +144,41 @@ export default function Navbar() {
             <button className="w-full bg-[#3b5998] text-white py-2 rounded">
               Continue with Facebook
             </button>
-            <button className="w-full bg-[#4285F4] text-white py-2 rounded">
+            <button 
+              onClick={handleGoogleLogin}
+              className="w-full bg-[#4285F4] text-white py-2 rounded hover:bg-[#3367D6] transition"
+            >
               Continue with Google
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Shopping Cart Drawer */}
+      <div
+        ref={cartDrawerRef}
+        className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
+          isCartOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="px-4 py-4 border-b">
+          <h2 className="text-lg font-bold text-gray-700">Shopping Cart</h2>
+          
+          {/* Empty Cart Content */}
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="text-center">
+              <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">Your cart is empty</h3>
+              <p className="text-gray-500 mb-6">Add some amazing fitness programs to get started!</p>
+              
+              <Link 
+                href="/programs"
+                onClick={() => setIsCartOpen(false)}
+                className="btn-primary px-6 py-3 inline-block text-center"
+              >
+                Start Shopping
+              </Link>
+            </div>
           </div>
         </div>
       </div>
