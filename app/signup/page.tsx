@@ -12,7 +12,7 @@ export default function SignUpPage() {
     email: '',
     password: '',
     gender: '',
-    countryCode: '+90',
+    countryCode: '',
     phone: '',
     birthdate: '',
     agreeMarketing: false,
@@ -45,7 +45,7 @@ export default function SignUpPage() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             email: formData.email,
-            password: formData.password, // Gerçek uygulamada şifreyi hash'lemek gerekir
+            password: formData.password, // In a real application, the password should be hashed
             gender: formData.gender,
             country_code: formData.countryCode,
             phone: formData.phone,
@@ -59,10 +59,10 @@ export default function SignUpPage() {
 
       if (error) {
         console.error('Supabase error:', error)
-        setMessage('Kayıt sırasında bir hata oluştu: ' + error.message)
+        setMessage('An error occurred during registration: ' + error.message)
       } else {
-        setMessage('Kayıt başarıyla tamamlandı!')
-        // Form verilerini temizle
+        setMessage('Registration completed successfully!')
+        // Clear form data
         setFormData({
           firstName: '',
           lastName: '',
@@ -79,7 +79,7 @@ export default function SignUpPage() {
       }
     } catch (error) {
       console.error('Error:', error)
-      setMessage('Beklenmeyen bir hata oluştu')
+      setMessage('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
@@ -90,7 +90,7 @@ export default function SignUpPage() {
       <h1 className="text-2xl font-bold mb-4 text-center">Sign Up</h1>
       
       {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('başarıyla') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        <div className={`mb-4 p-3 rounded ${message.includes('successfully') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
           {message}
         </div>
       )}
