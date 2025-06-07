@@ -5,6 +5,7 @@ import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import { supabase } from '@/utils/supabaseClient'
 import ReCAPTCHA from 'react-google-recaptcha'
+import SuccessModal from '../../components/SuccessModal'
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -24,6 +25,15 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [captchaVerified, setCaptchaVerified] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
+
+  const showPopup = (title: string, message: string) => {
+    setModalTitle(title)
+    setModalMessage(message)
+    setShowModal(true)
+  }
 
 
 
@@ -41,7 +51,7 @@ export default function SignUpPage() {
     setMessage('')
 
     if (!captchaVerified) {
-      setMessage('Please complete the reCAPTCHA verification')
+      showPopup('Verification Required', 'Please complete the reCAPTCHA verification')
       setLoading(false)
       return
     }
@@ -69,9 +79,9 @@ export default function SignUpPage() {
 
       if (error) {
         console.error('Supabase error:', error)
-        setMessage('An error occurred during registration: ' + error.message)
+        showPopup('Registration Error', 'An error occurred during registration: ' + error.message)
       } else {
-        setMessage('Registration completed successfully!')
+        showPopup('Success!', 'Registration completed successfully!')
         // Clear form data
         setFormData({
           firstName: '',
@@ -90,21 +100,16 @@ export default function SignUpPage() {
       }
     } catch (error) {
       console.error('Error:', error)
-      setMessage('An unexpected error occurred')
+      showPopup('Unexpected Error', 'An unexpected error occurred')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
-      <h1 className="text-2xl font-bold mb-4 text-center">Sign Up</h1>
-      
-      {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('successfully') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {message}
-        </div>
-      )}
+    <>
+      <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
+        <h1 className="text-2xl font-bold mb-4 text-center">Sign Up</h1>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input 
@@ -256,5 +261,13 @@ export default function SignUpPage() {
         </div>
       </form>
     </div>
+
+    <SuccessModal 
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      title={modalTitle}
+      message={modalMessage}
+    />
+  </>
   )
 }
