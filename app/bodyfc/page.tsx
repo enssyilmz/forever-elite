@@ -160,6 +160,15 @@ export default function BodyFatCalculator() {
         <div className="mt-6 text-center bg-gray-50 dark:bg-neutral-800 p-4 rounded shadow-inner">
           <h3 className="text-lg font-semibold text-sky-500">Body Fat: {result}%</h3>
           <p className="text-sm text-gray-700 dark:text-gray-300">Category: {category}</p>
+          <button 
+            className="btn-primary mt-3 px-4 py-2 text-sm"
+            onClick={() => {
+              localStorage.setItem('bodyFatResult', result.toString())
+              alert('Body fat result saved! Go to your dashboard to update your profile.')
+            }}
+          >
+            Save to Profile
+          </button>
         </div>
       )}
     </div>
