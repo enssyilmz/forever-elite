@@ -4,12 +4,22 @@ import { useState } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { supabase } from '@/utils/supabaseClient'
 import Link from 'next/link'
+import SuccessModal from '../../components/SuccessModal'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [captchaVerified, setCaptchaVerified] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
+
+  const showPopup = (title: string, message: string) => {
+    setModalTitle(title)
+    setModalMessage(message)
+    setShowModal(true)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,13 +27,13 @@ export default function ForgotPasswordPage() {
     setMessage('')
 
     if (!captchaVerified) {
-      setMessage('Please complete the reCAPTCHA verification')
+      showPopup('Verification Required', 'Please complete the reCAPTCHA verification')
       setLoading(false)
       return
     }
 
     if (!email) {
-      setMessage('Please enter your email address')
+      showPopup('Email Required', 'Please enter your email address')
       setLoading(false)
       return
     }
@@ -37,14 +47,14 @@ export default function ForgotPasswordPage() {
         .single()
 
       if (checkError || !existingUser) {
-        setMessage('No account found with this email address')
+        showPopup('Account Not Found', 'No account found with this email address')
         setLoading(false)
         return
       }
 
       // Send password reset email (simulated for now)
       // In real implementation, you would integrate with your email service
-      setMessage('Password reset link has been sent to your email address')
+      showPopup('Email Sent!', 'Password reset link has been sent to your email address')
       
       // Reset form
       setEmail('')
@@ -52,22 +62,17 @@ export default function ForgotPasswordPage() {
       
     } catch (error) {
       console.error('Error:', error)
-      setMessage('An unexpected error occurred')
+      showPopup('Unexpected Error', 'An unexpected error occurred')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
-      <h1 className="text-2xl font-bold mb-4 text-center">Reset Password</h1>
-      <p className="text-gray-600 mb-6 text-center">Enter your email address and we'll send you a link to reset your password.</p>
-      
-      {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('sent') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {message}
-        </div>
-      )}
+    <>
+      <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
+        <h1 className="text-2xl font-bold mb-4 text-center">Reset Password</h1>
+        <p className="text-gray-600 mb-6 text-center">Enter your email address and we'll send you a link to reset your password.</p>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input 
@@ -105,5 +110,13 @@ export default function ForgotPasswordPage() {
         </div>
       </form>
     </div>
+
+    <SuccessModal 
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      title={modalTitle}
+      message={modalMessage}
+    />
+  </>
   )
 } 

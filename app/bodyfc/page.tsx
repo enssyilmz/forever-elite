@@ -1,6 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
+import SuccessModal from '../../components/SuccessModal'
 
 export default function BodyFatCalculator() {
   const [unit, setUnit] = useState<'metric' | 'us'>('metric')
@@ -21,13 +22,30 @@ export default function BodyFatCalculator() {
   const [hipInches, setHipInches] = useState('')
   const [result, setResult] = useState<number | null>(null)
   const [category, setCategory] = useState<string>('')
+  const [showModal, setShowModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
 
-  const getCategory = (bf: number) => {
-    if (bf < 6) return 'Essential'
-    if (bf < 14) return 'Athletes'
-    if (bf < 18) return 'Fitness'
-    if (bf < 25) return 'Average'
-    return 'Obese'
+  const showPopup = (title: string, message: string) => {
+    setModalTitle(title)
+    setModalMessage(message)
+    setShowModal(true)
+  }
+
+  const getCategory = (bf: number, gender: string) => {
+    if (gender === 'male') {
+      if (bf < 6) return 'Essential Fat'
+      if (bf < 14) return 'Athletes'
+      if (bf < 18) return 'Fitness'
+      if (bf < 25) return 'Average'
+      return 'Obese'
+    } else {
+      if (bf < 14) return 'Essential Fat'
+      if (bf < 21) return 'Athletes'
+      if (bf < 25) return 'Fitness'
+      if (bf < 32) return 'Average'
+      return 'Obese'
+    }
   }
 
   const calculate = () => {
@@ -37,6 +55,16 @@ export default function BodyFatCalculator() {
     let ws: number
     let hp: number = 0
 
+    if (!age || !weight || !height || !neck || !waist) {
+      showPopup('Missing Information', 'Please fill in all required fields')
+      return
+    }
+
+    if (gender === 'female' && !hip && unit === 'metric') {
+      showPopup('Missing Information', 'Hip measurement is required for female calculations')
+      return
+    }
+
     if (unit === 'metric') {
       h = parseFloat(height)
       w = parseFloat(weight)
@@ -44,29 +72,45 @@ export default function BodyFatCalculator() {
       ws = parseFloat(waist)
       if (gender === 'female') hp = parseFloat(hip)
     } else {
+      if (!heightFeet || !heightInches || !neckFeet || !neckInches || !waistFeet || !waistInches) {
+        showPopup('Missing Information', 'Please fill in all measurement fields')
+        return
+      }
+      
+      if (gender === 'female' && (!hipFeet || !hipInches)) {
+        showPopup('Missing Information', 'Hip measurements are required for female calculations')
+        return
+      }
+
       const totalHeightInInches = parseFloat(heightFeet) * 12 + parseFloat(heightInches)
       const totalNeckInInches = parseFloat(neckFeet) * 12 + parseFloat(neckInches)
       const totalWaistInInches = parseFloat(waistFeet) * 12 + parseFloat(waistInches)
-      const totalHipInches = parseFloat(hipFeet) * 12 + parseFloat(hipInches)
-
+      
       h = totalHeightInInches * 2.54
       w = parseFloat(weight) * 0.453592
       n = totalNeckInInches * 2.54
       ws = totalWaistInInches * 2.54
-      if (gender === 'female') hp = totalHipInches * 2.54
+      
+      if (gender === 'female') {
+        const totalHipInches = parseFloat(hipFeet) * 12 + parseFloat(hipInches)
+        hp = totalHipInches * 2.54
+      }
     }
 
+    let bodyFat: number
+
     if (gender === 'male') {
-      const bodyFat = 495 / (1.0324 - 0.19077 * Math.log10(ws - n) + 0.15456 * Math.log10(h)) - 450
-      const bfRounded = parseFloat(bodyFat.toFixed(1))
-      setResult(bfRounded)
-      setCategory(getCategory(bfRounded))
+      bodyFat = 495 / (1.0324 - 0.19077 * Math.log10(ws - n) + 0.15456 * Math.log10(h)) - 450
     } else {
-      const bodyFat = 495 / (1.29579 - 0.35004 * Math.log10(ws + hp - n) + 0.221 * Math.log10(h)) - 450
-      const bfRounded = parseFloat(bodyFat.toFixed(1))
-      setResult(bfRounded)
-      setCategory(getCategory(bfRounded))
+      bodyFat = 495 / (1.29579 - 0.35004 * Math.log10(ws + hp - n) + 0.221 * Math.log10(h)) - 450
     }
+
+    if (bodyFat < 0) bodyFat = 0
+    if (bodyFat > 50) bodyFat = 50
+
+    const bfRounded = parseFloat(bodyFat.toFixed(1))
+    setResult(bfRounded)
+    setCategory(getCategory(bfRounded, gender))
   }
 
   const clear = () => {
@@ -88,89 +132,315 @@ export default function BodyFatCalculator() {
     setCategory('')
   }
 
+  const saveToProfile = () => {
+    if (result !== null) {
+      localStorage.setItem('bodyFatResult', result.toString())
+      showPopup('Success!', 'Body fat result saved successfully! Go to your dashboard to update your profile.')
+    }
+  }
+
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
-      <h2 className="text-2xl font-bold mb-4 text-center">Body Fat Calculator</h2>
+    <>
+        <div className="min-h-screen bg-gray-50 py-6 px-4">
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-6 text-black">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center text-gray-800">Body Fat Calculator</h2>
 
-      <div className="flex justify-center gap-4 mb-4">
-        <button
-          className={`px-4 py-2 rounded ${unit === 'metric' ? 'bg-sky-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setUnit('metric')}
-        >
-          Metric Units
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${unit === 'us' ? 'bg-sky-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-          onClick={() => setUnit('us')}
-        >
-          US Units
-        </button>
-      </div>
+          <div className="flex justify-center gap-3 mb-4 md:mb-6">
+            <button
+              className={`px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition text-sm md:text-base ${
+                unit === 'metric' 
+                  ? 'bg-sky-500 text-white shadow-md' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              onClick={() => setUnit('metric')}
+            >
+              Metric Units
+            </button>
+            <button
+              className={`px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition text-sm md:text-base ${
+                unit === 'us' 
+                  ? 'bg-sky-500 text-white shadow-md' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              onClick={() => setUnit('us')}
+            >
+              US Units
+            </button>
+          </div>
 
-      <div className="flex gap-4 justify-center mb-4">
-        <label className="flex items-center gap-2">
-          <input type="radio" name="gender" value="male" checked={gender === 'male'} onChange={() => setGender('male')} />
-          Male
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="radio" name="gender" value="female" checked={gender === 'female'} onChange={() => setGender('female')} />
-          Female
-        </label>
-      </div>
+          <div className="flex gap-4 md:gap-6 justify-center mb-4 md:mb-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="radio" 
+                name="gender" 
+                value="male" 
+                checked={gender === 'male'} 
+                onChange={() => setGender('male')}
+                className="w-4 h-4 text-sky-500"
+              />
+              <span className="font-medium">Male</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input 
+                type="radio" 
+                name="gender" 
+                value="female" 
+                checked={gender === 'female'} 
+                onChange={() => setGender('female')}
+                className="w-4 h-4 text-sky-500"
+              />
+              <span className="font-medium">Female</span>
+            </label>
+          </div>
 
-      <div className="grid gap-4 mb-4">
-        <input placeholder="Age" className="border p-2 rounded" value={age} onChange={(e) => setAge(e.target.value)} />
-        {unit === 'metric' ? (
-          <>
-            <input placeholder="Weight (kg)" className="border p-2 rounded" value={weight} onChange={(e) => setWeight(e.target.value)} />
-            <input placeholder="Height (cm)" className="border p-2 rounded" value={height} onChange={(e) => setHeight(e.target.value)} />
-            <input placeholder="Neck (cm)" className="border p-2 rounded" value={neck} onChange={(e) => setNeck(e.target.value)} />
-            <input placeholder="Waist (cm)" className="border p-2 rounded" value={waist} onChange={(e) => setWaist(e.target.value)} />
-            {gender === 'female' && (
-              <input placeholder="Hip (cm)" className="border p-2 rounded" value={hip} onChange={(e) => setHip(e.target.value)} />
-            )}
-          </>
-        ) : (
-          <>
-            <input placeholder="Weight (pounds)" className="border p-2 rounded" value={weight} onChange={(e) => setWeight(e.target.value)} />
-            <div className="grid grid-cols-2 gap-4">
-              <input placeholder="Height (feet)" className="border p-2 rounded" value={heightFeet} onChange={(e) => setHeightFeet(e.target.value)} />
-              <input placeholder="Height (inches)" className="border p-2 rounded" value={heightInches} onChange={(e) => setHeightInches(e.target.value)} />
-              <input placeholder="Neck (feet)" className="border p-2 rounded" value={neckFeet} onChange={(e) => setNeckFeet(e.target.value)} />
-              <input placeholder="Neck (inches)" className="border p-2 rounded" value={neckInches} onChange={(e) => setNeckInches(e.target.value)} />
-              <input placeholder="Waist (feet)" className="border p-2 rounded" value={waistFeet} onChange={(e) => setWaistFeet(e.target.value)} />
-              <input placeholder="Waist (inches)" className="border p-2 rounded" value={waistInches} onChange={(e) => setWaistInches(e.target.value)} />
-              {gender === 'female' && (
-                <>
-                  <input placeholder="Hip (feet)" className="border p-2 rounded" value={hipFeet} onChange={(e) => setHipFeet(e.target.value)} />
-                  <input placeholder="Hip (inches)" className="border p-2 rounded" value={hipInches} onChange={(e) => setHipInches(e.target.value)} />
-                </>
-              )}
+          <div className="space-y-4 md:space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Age (years)</label>
+              <input 
+                type="number"
+                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                value={age} 
+                onChange={(e) => setAge(e.target.value)}
+                min="1"
+                max="120"
+              />
             </div>
-          </>
-        )}
-      </div>
 
-      <div className="flex gap-4">
-        <button className="btn-primary w-full" onClick={calculate}>Calculate</button>
-        <button className="btn-secondary w-full" onClick={clear}>Clear</button>
-      </div>
+            {unit === 'metric' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
+                  <input 
+                    type="number"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    value={weight} 
+                    onChange={(e) => setWeight(e.target.value)}
+                    min="1"
+                    step="0.1"
+                  />
+                </div>
 
-      {result !== null && (
-        <div className="mt-6 text-center bg-gray-50 dark:bg-neutral-800 p-4 rounded shadow-inner">
-          <h3 className="text-lg font-semibold text-sky-500">Body Fat: {result}%</h3>
-          <p className="text-sm text-gray-700 dark:text-gray-300">Category: {category}</p>
-          <button 
-            className="btn-primary mt-3 px-4 py-2 text-sm"
-            onClick={() => {
-              localStorage.setItem('bodyFatResult', result.toString())
-              alert('Body fat result saved! Go to your dashboard to update your profile.')
-            }}
-          >
-            Save to Profile
-          </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
+                  <input 
+                    type="number"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    value={height} 
+                    onChange={(e) => setHeight(e.target.value)}
+                    min="1"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Neck Circumference (cm)</label>
+                  <input 
+                    type="number"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    value={neck} 
+                    onChange={(e) => setNeck(e.target.value)}
+                    min="1"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Waist Circumference (cm)</label>
+                  <input 
+                    type="number"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    value={waist} 
+                    onChange={(e) => setWaist(e.target.value)}
+                    min="1"
+                    step="0.1"
+                  />
+                </div>
+
+                {gender === 'female' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Hip Circumference (cm)</label>
+                    <input 
+                      type="number"
+                      className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                      value={hip} 
+                      onChange={(e) => setHip(e.target.value)}
+                      min="1"
+                      step="0.1"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weight (pounds)</label>
+                  <input 
+                    type="number"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    value={weight} 
+                    onChange={(e) => setWeight(e.target.value)}
+                    min="1"
+                    step="0.1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Feet</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={heightFeet} 
+                        onChange={(e) => setHeightFeet(e.target.value)}
+                        min="1"
+                        max="8"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Inches</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={heightInches} 
+                        onChange={(e) => setHeightInches(e.target.value)}
+                        min="0"
+                        max="11"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Neck Circumference</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Feet</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={neckFeet} 
+                        onChange={(e) => setNeckFeet(e.target.value)}
+                        min="0"
+                        max="2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Inches</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={neckInches} 
+                        onChange={(e) => setNeckInches(e.target.value)}
+                        min="0"
+                        max="11"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Waist Circumference</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Feet</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={waistFeet} 
+                        onChange={(e) => setWaistFeet(e.target.value)}
+                        min="0"
+                        max="5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Inches</label>
+                      <input 
+                        type="number"
+                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        value={waistInches} 
+                        onChange={(e) => setWaistInches(e.target.value)}
+                        min="0"
+                        max="11"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {gender === 'female' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Hip Circumference</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Feet</label>
+                        <input 
+                          type="number"
+                          className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                          value={hipFeet} 
+                          onChange={(e) => setHipFeet(e.target.value)}
+                          min="0"
+                          max="5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Inches</label>
+                        <input 
+                          type="number"
+                          className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                          value={hipInches} 
+                          onChange={(e) => setHipInches(e.target.value)}
+                          min="0"
+                          max="11"
+                          step="0.1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-6 md:mt-8">
+            <button 
+              className="btn-primary flex-1 py-2 md:py-3 text-base md:text-lg font-medium"
+              onClick={calculate}
+            >
+              Calculate Body Fat
+            </button>
+            <button 
+              className="btn-secondary flex-1 py-2 md:py-3 text-base md:text-lg font-medium"
+              onClick={clear}
+            >
+              Clear All
+            </button>
+          </div>
+
+          {result !== null && (
+            <div className="mt-6 md:mt-8 text-center bg-gradient-to-r from-sky-50 to-blue-50 p-4 md:p-6 rounded-xl border border-sky-200">
+              <h3 className="text-xl md:text-2xl font-bold text-sky-600 mb-2">Body Fat: {result}%</h3>
+              <p className="text-base md:text-lg text-gray-700 mb-3 md:mb-4">Category: <span className="font-semibold">{category}</span></p>
+              <button 
+                className="btn-primary px-4 md:px-6 py-2 md:py-3 text-base md:text-lg font-medium"
+                onClick={saveToProfile}
+              >
+                Save to Profile
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+
+      <SuccessModal 
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+      />
+    </>
   )
 }

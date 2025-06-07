@@ -130,81 +130,71 @@ export default function Home() {
           </p>
           
           {/* Programs Carousel */}
-          <div className="relative overflow-hidden">
-            {/* Previous Button */}
-            <button 
-              onClick={goToPrevious}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition-colors duration-300"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
+          <div className="flex items-center justify-center gap-4 w-full px-4">
+  {/* Sol Buton */}
+  <button 
+    onClick={goToPrevious}
+    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
 
-            {/* Next Button */}
-            <button 
-              onClick={goToNext}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition-colors duration-300"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-
-            <div 
-              className="flex transition-transform duration-1000 ease-in-out gap-6 mx-12"
-              style={{ 
-                transform: `translateX(-${(currentIndex * (300 + 24))}px)`,
-                width: `${programs.length * (300 + 24)}px`
-              }}
-            >
-              {programs.map((program) => (
-                <div 
-                  key={program.id}
-                  className="w-[300px] h-[410px] bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-sky-100 hover:border-sky-300 flex flex-col"
-                >
-                  {/* Logo */}
-                  <div className="flex justify-start mb-4">
-                    <div className="text-4xl bg-gradient-to-br from-sky-400 to-sky-600 w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-                      {program.logo}
-                    </div>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="flex flex-col flex-1">
-                    {/* Body Fat Range - Top Right */}
-                    <div className="text-right mb-3">
-                      <span className="inline-block bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border border-sky-200">
-                        {program.bodyFatRange}
-                      </span>
-                    </div>
-                    
-                    {/* Program Title */}
-                    <h3 className="text-xl font-bold text-gray-800 mb-3">
-                      {program.title}
-                    </h3>
-                    
-                    {/* Description - Bottom */}
-                    <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-4">
-                      {program.description}
-                    </p>
-                    
-                    {/* Learn More Button - Fixed at bottom */}
-                    <div className="mt-auto">
-                      <Link href="/programs">
-                        <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-300 shadow-md hover:shadow-lg">
-                          Learn More
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+  {/* Slider Container */}
+  <div className="overflow-hidden flex-1 max-w-[1320px] mx-auto"> {/* 4 kart × (300px + 24px gap) + extra space */}
+    <div 
+      className="flex transition-transform duration-1000 ease-in-out gap-6"
+      style={{ 
+        transform: `translateX(-${currentIndex * (300 + 24)}px)`, // 300px kart + 24px gap
+        width: `${programs.length * (300 + 24)}px`
+      }}
+    >
+      {programs.map((program) => (
+        <div 
+          key={program.id}
+          className="w-[300px] h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col shrink-0 border hover:border-sky-300 transition hover:shadow-xl"
+        >
+          <div className="text-4xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
+            {program.logo}
           </div>
+
+          <div className="text-right mb-3">
+            <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border">
+              {program.bodyFatRange}
+            </span>
+          </div>
+
+          <h3 className="text-xl font-bold text-gray-800 mb-3">{program.title}</h3>
+
+          <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
+
+          <div className="mt-auto">
+            <Link href="/programs">
+              <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
+                Learn More
+              </button>
+            </Link>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Sağ Buton */}
+  <button 
+    onClick={goToNext}
+    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
+  >
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+</div>
+
           
           {/* Carousel Indicators */}
-          <div className="flex justify-center mt-8 space-x-3">
+          <div className="flex justify-center items-center mt-8 space-x-3 w-full">
             {Array.from({ length: Math.ceil(programs.length / 4) }).map((_, index) => (
               <button
                 key={index}
