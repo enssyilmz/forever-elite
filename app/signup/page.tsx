@@ -35,8 +35,6 @@ export default function SignUpPage() {
     setShowModal(true)
   }
 
-
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement
     setFormData({ 
@@ -57,7 +55,30 @@ export default function SignUpPage() {
     }
 
     try {
-      // Kullanıcı kayıt verilerini Supabase'e kaydet
+      // First create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            gender: formData.gender,
+            phone: formData.phone,
+            birthdate: formData.birthdate,
+          }
+        }
+      })
+
+      if (authError) {
+        console.error('Supabase Auth error:', authError)
+        showPopup('Registration Error', 'An error occurred during registration: ' + authError.message)
+        setLoading(false)
+        return
+      }
+
+      // Then save additional user data to user_registrations table
       const { data, error } = await supabase
         .from('user_registrations')
         .insert([
@@ -65,7 +86,7 @@ export default function SignUpPage() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             email: formData.email,
-            password: formData.password, // In a real application, the password should be hashed
+            password: formData.password, // Consider removing this in production
             gender: formData.gender,
             country_code: formData.countryCode,
             phone: formData.phone,
@@ -78,26 +99,29 @@ export default function SignUpPage() {
         ])
 
       if (error) {
-        console.error('Supabase error:', error)
-        showPopup('Registration Error', 'An error occurred during registration: ' + error.message)
+        console.error('Supabase table error:', error)
+        // Auth user was created but table insert failed - you might want to handle this
+        showPopup('Registration Warning', 'Account created but some data could not be saved. Please complete your profile in the dashboard.')
       } else {
-        showPopup('Success!', 'Registration completed successfully!')
-        // Clear form data
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          gender: '',
-          countryCode: '+44',
-          phone: '',
-          birthdate: '',
-          agreeMarketing: false,
-          agreeMembership: false,
-          agreePrivacy: false,
-        })
-        setCaptchaVerified(false)
+        showPopup('Success!', 'Registration completed successfully! Please check your email to confirm your account.')
       }
+
+      // Clear form data
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        gender: '',
+        countryCode: '+44',
+        phone: '',
+        birthdate: '',
+        agreeMarketing: false,
+        agreeMembership: false,
+        agreePrivacy: false,
+      })
+      setCaptchaVerified(false)
+
     } catch (error) {
       console.error('Error:', error)
       showPopup('Unexpected Error', 'An unexpected error occurred')
