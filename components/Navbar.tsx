@@ -12,6 +12,9 @@ export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
   const drawerRef = useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
 
@@ -22,6 +25,35 @@ export default function Navbar() {
         redirectTo: `${window.location.origin}/dashboard`,
       }
     })
+  }
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginLoading(true)
+    setLoginError('')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginForm.email,
+        password: loginForm.password,
+      })
+
+      if (error) {
+        setLoginError(error.message)
+      } else {
+        setIsLoginOpen(false)
+        setLoginForm({ email: '', password: '' })
+      }
+    } catch (error) {
+      setLoginError('An unexpected error occurred')
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setLoginForm(prev => ({ ...prev, [name]: value }))
   }
 
   // Get user on component mount
@@ -170,16 +202,30 @@ export default function Navbar() {
               <h5 className="text-lg text-gray-500">Log in for fast and secure shopping!</h5>
 
               <div className="py-6">
-                <form className="flex flex-col gap-4">
+                <form className="flex flex-col gap-4" onSubmit={handleEmailLogin}>
+                  {loginError && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                      {loginError}
+                    </div>
+                  )}
+                  
                   <input
                     type="email"
+                    name="email"
                     placeholder="E-mail"
+                    value={loginForm.email}
+                    onChange={handleLoginInputChange}
                     className="border p-2 rounded"
+                    required
                   />
                   <input
                     type="password"
+                    name="password"
                     placeholder="Password"
+                    value={loginForm.password}
+                    onChange={handleLoginInputChange}
                     className="border p-2 rounded"
+                    required
                   />
 
                   <div className="flex items-center justify-between text-sm text-gray-600">
@@ -198,11 +244,10 @@ export default function Navbar() {
 
                   <button
                     type="submit"
-                    className="bg-sky-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-sky-500"
-                    onSubmit={() => {
-                      setIsLoginOpen(false);
-                    }}>
-                    Login
+                    disabled={loginLoading}
+                    className="bg-sky-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-sky-500 disabled:opacity-50 transition"
+                  >
+                    {loginLoading ? 'Logging in...' : 'Login'}
                   </button>
                 </form>
               </div>
