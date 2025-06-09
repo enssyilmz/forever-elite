@@ -35,6 +35,14 @@ export default function Dashboard() {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    // Handle OAuth code from Google login
+    const code = searchParams.get('code')
+    if (code) {
+      console.log('🔄 OAuth code detected, letting Supabase handle it')
+      // Clean the URL to remove the code parameter
+      window.history.replaceState({}, '', '/dashboard')
+    }
+
     // Set active section from URL parameter
     const section = searchParams.get('section')
     if (section && ['profile', 'communication', 'cart', 'orders', 'payments', 'favorites', 'support'].includes(section)) {
@@ -189,10 +197,13 @@ export default function Dashboard() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
+        <div className="text-center p-6 max-w-md">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">Please log in to access the dashboard.</p>
-          <a href="/" className="btn-primary px-4 py-2 rounded">Go Home</a>
+          <p className="text-gray-600 mb-4">You need to be logged in to access the dashboard.</p>
+          <p className="text-gray-500 text-sm mb-6">
+            If you just signed up, please check your email to verify your account before logging in.
+          </p>
+          <a href="/" className="btn-primary px-6 py-2 rounded">Go to Home Page</a>
         </div>
       </div>
     )

@@ -68,8 +68,14 @@ export default function Navbar() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('🔄 Auth state change:', event, session?.user?.email || 'No user')
         setUser(session?.user ?? null)
         setLoading(false)
+        
+        // Close login drawer on successful login
+        if (event === 'SIGNED_IN' && session?.user) {
+          setIsLoginOpen(false)
+        }
       }
     )
 
