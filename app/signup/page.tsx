@@ -60,6 +60,7 @@ export default function SignUpPage() {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
@@ -78,33 +79,9 @@ export default function SignUpPage() {
         return
       }
 
-      // Then save additional user data to user_registrations table
-      const { data, error } = await supabase
-        .from('user_registrations')
-        .insert([
-          {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            password: formData.password, // Consider removing this in production
-            gender: formData.gender,
-            country_code: formData.countryCode,
-            phone: formData.phone,
-            birthdate: formData.birthdate,
-            agree_marketing: formData.agreeMarketing,
-            agree_membership: formData.agreeMembership,
-            agree_privacy: formData.agreePrivacy,
-            created_at: new Date().toISOString(),
-          }
-        ])
-
-      if (error) {
-        console.error('Supabase table error:', error)
-        // Auth user was created but table insert failed - you might want to handle this
-        showPopup('Registration Warning', 'Account created but some data could not be saved. Please complete your profile in the dashboard.')
-      } else {
-        showPopup('Success!', 'Registration completed successfully! Please check your email to confirm your account.')
-      }
+      // The trigger will handle creating the user profile in user_registrations.
+      // So we don't need to insert it from the client side anymore.
+      showPopup('Success!', 'Registration completed successfully! Please check your email to confirm your account.')
 
       // Clear form data
       setFormData({
@@ -288,7 +265,13 @@ export default function SignUpPage() {
 
     <SuccessModal 
       isOpen={showModal}
-      onClose={() => setShowModal(false)}
+      onClose={() => {
+        setShowModal(false)
+        // After successful registration, redirect to homepage
+        if (modalTitle === 'Success!') {
+          window.location.href = '/'
+        }
+      }}
       title={modalTitle}
       message={modalMessage}
     />
