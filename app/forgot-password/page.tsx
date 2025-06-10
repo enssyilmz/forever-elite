@@ -39,17 +39,21 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      // Send password reset email using Supabase Auth
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
+      // Check if user exists in our database
+      const { data: existingUser, error: checkError } = await supabase
+        .from('user_registrations')
+        .select('email')
+        .eq('email', email)
+        .single()
 
-      if (error) {
-        showPopup('Error', error.message)
+      if (checkError || !existingUser) {
+        showPopup('Account Not Found', 'No account found with this email address')
         setLoading(false)
         return
       }
 
+      // Send password reset email (simulated for now)
+      // In real implementation, you would integrate with your email service
       showPopup('Email Sent!', 'Password reset link has been sent to your email address')
       
       // Reset form

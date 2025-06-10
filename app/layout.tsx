@@ -3,6 +3,7 @@
 import './globals.css'
 import { ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
+import { AppProvider } from '@/contexts/AppContext'
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -11,8 +12,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="tr">
       <body>
-        {showNavbar && <Navbar />}
-        {children}
+        <AppProvider>
+          {showNavbar && <Navbar />}
+          {children}
+        </AppProvider>
       </body>
     </html>
   )
