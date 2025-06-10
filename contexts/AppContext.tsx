@@ -1,6 +1,9 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { User } from '@supabase/supabase-js'
+import { programs } from '@/lib/programsData' // Import from centralized file
 
 interface CartItem {
   id: number
@@ -51,90 +54,71 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
-const programs = [
-  {
-    id: 1,
-    title: 'Elite Athletes Program',
-    bodyFatRange: '6-10% Body Fat',
-    originalPrice: 299,
-    discountedPrice: 199,
-    discount: 33
-  },
-  {
-    id: 2,
-    title: 'Advanced Fitness Program',
-    bodyFatRange: '10-14% Body Fat',
-    originalPrice: 249,
-    discountedPrice: 169,
-    discount: 32
-  },
-  {
-    id: 3,
-    title: 'Active Lifestyle Program',
-    bodyFatRange: '14-18% Body Fat',
-    originalPrice: 199,
-    discountedPrice: 139,
-    discount: 30
-  },
-  {
-    id: 4,
-    title: 'Transformation Program',
-    bodyFatRange: '18-22% Body Fat',
-    originalPrice: 179,
-    discountedPrice: 129,
-    discount: 28
-  },
-  {
-    id: 5,
-    title: 'Beginner Boost Program',
-    bodyFatRange: '22-26% Body Fat',
-    originalPrice: 149,
-    discountedPrice: 99,
-    discount: 34
-  },
-  {
-    id: 6,
-    title: 'Health Foundation Program',
-    bodyFatRange: '26-30% Body Fat',
-    originalPrice: 129,
-    discountedPrice: 89,
-    discount: 31
-  },
-  {
-    id: 7,
-    title: 'Wellness Journey Program',
-    bodyFatRange: '30%+ Body Fat',
-    originalPrice: 199,
-    discountedPrice: 149,
-    discount: 25
-  },
-  {
-    id: 8,
-    title: 'Personalized Program',
-    bodyFatRange: 'Custom Body Fat',
-    originalPrice: 399,
-    discountedPrice: 299,
-    discount: 25
-  }
-]
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const supabase = createClientComponentClient()
 
-  // Load data from localStorage on mount
+  // Get user and their favorites on mount
+  useEffect(() => {
+    const fetchUserAndFavorites = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+
+      if (user) {
+        // Fetch favorites from Supabase
+        const { data: userFavorites, error } = await supabase
+          .from('user_favorites')
+          .select('product_id')
+          .eq('user_id', user.id)
+        
+        if (error) {
+          console.error('Error fetching user favorites:', error)
+          return
+        }
+
+        const favoriteProgramIds = userFavorites.map(fav => fav.product_id)
+        const favoritePrograms = programs
+          .filter(p => favoriteProgramIds.includes(p.id))
+          .map(p => ({
+            id: p.id,
+            title: p.title,
+            price: p.discountedPrice,
+            originalPrice: p.originalPrice,
+            discount: p.discount,
+            bodyFatRange: p.bodyFatRange
+          }))
+        
+        setFavoriteItems(favoritePrograms)
+      } else {
+        // For logged-out users, clear favorites or load from localStorage if you want to persist them non-authenticated
+        setFavoriteItems([])
+      }
+    }
+
+    fetchUserAndFavorites()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null)
+      // Re-fetch favorites on sign-in or sign-out
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        fetchUserAndFavorites()
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
+  // Load cart and reviews from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem('cartItems')
-      const savedFavorites = localStorage.getItem('favoriteItems')
       const savedReviews = localStorage.getItem('reviews')
       
       if (savedCart) {
         setCartItems(JSON.parse(savedCart))
-      }
-      if (savedFavorites) {
-        setFavoriteItems(JSON.parse(savedFavorites))
       }
       if (savedReviews) {
         setReviews(JSON.parse(savedReviews))
@@ -142,18 +126,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Save to localStorage whenever state changes
+  // Save cart and reviews to localStorage whenever state changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('cartItems', JSON.stringify(cartItems))
     }
   }, [cartItems])
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('favoriteItems', JSON.stringify(favoriteItems))
-    }
-  }, [favoriteItems])
+  // No longer using localStorage for favorites
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined' && !user) {
+  //     localStorage.setItem('favoriteItems', JSON.stringify(favoriteItems))
+  //   }
+  // }, [favoriteItems, user])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -209,27 +194,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return cartItems.reduce((total, item) => total + item.quantity, 0)
   }
 
-  const addToFavorites = (programId: number) => {
+  const addToFavorites = async (programId: number) => {
+    if (!user) {
+      alert('Please log in to add favorites.')
+      return
+    }
+
     const program = programs.find(p => p.id === programId)
     if (!program) return
 
-    setFavoriteItems(prev => {
-      const isAlreadyFavorite = prev.some(item => item.id === programId)
-      if (isAlreadyFavorite) return prev
+    // Optimistic UI update
+    const isAlreadyFavorite = favoriteItems.some(item => item.id === programId)
+    if (isAlreadyFavorite) return
+    
+    const newFavorite: FavoriteItem = {
+      id: programId,
+      title: program.title,
+      price: program.discountedPrice,
+      originalPrice: program.originalPrice,
+      discount: program.discount,
+      bodyFatRange: program.bodyFatRange
+    }
+    setFavoriteItems(prev => [...prev, newFavorite])
 
-      return [...prev, {
-        id: programId,
-        title: program.title,
-        price: program.discountedPrice,
-        originalPrice: program.originalPrice,
-        discount: program.discount,
-        bodyFatRange: program.bodyFatRange
-      }]
-    })
+    // Add to database
+    const { error } = await supabase
+      .from('user_favorites')
+      .insert({ user_id: user.id, product_id: programId })
+    
+    if (error) {
+      console.error('Error adding to favorites:', error)
+      // Revert UI change on error
+      setFavoriteItems(prev => prev.filter(item => item.id !== programId))
+      alert('Failed to add to favorites. Please try again.')
+    }
   }
 
-  const removeFromFavorites = (programId: number) => {
+  const removeFromFavorites = async (programId: number) => {
+    if (!user) return // Should not happen if item is favorited
+
+    const program = programs.find(p => p.id === programId)
+    if (!program) return
+
+    // Optimistic UI update
+    const originalFavorites = favoriteItems;
     setFavoriteItems(prev => prev.filter(item => item.id !== programId))
+
+    // Remove from database
+    const { error } = await supabase
+      .from('user_favorites')
+      .delete()
+      .match({ user_id: user.id, product_id: programId })
+
+    if (error) {
+      console.error('Error removing from favorites:', error)
+      // Revert UI change on error
+      setFavoriteItems(originalFavorites)
+      alert('Failed to remove from favorites. Please try again.')
+    }
   }
 
   const isFavorite = (programId: number) => {

@@ -1,6 +1,8 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { User } from '@supabase/supabase-js'
 import SuccessModal from '../../components/SuccessModal'
 
 export default function BodyFatCalculator() {
@@ -25,6 +27,18 @@ export default function BodyFatCalculator() {
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [supabase.auth])
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
@@ -48,7 +62,7 @@ export default function BodyFatCalculator() {
     }
   }
 
-  const calculate = () => {
+  const calculate = async () => {
     let h: number
     let w: number
     let n: number
@@ -111,6 +125,68 @@ export default function BodyFatCalculator() {
     const bfRounded = parseFloat(bodyFat.toFixed(1))
     setResult(bfRounded)
     setCategory(getCategory(bfRounded, gender))
+
+    // If user is not logged in, we are done. The result is displayed.
+    if (!user) {
+      return
+    }
+
+    // If user is logged in, proceed to save the result automatically.
+    setIsSaving(true)
+    try {
+      // 1. Log the calculation to the body_fat_logs table
+      const { error: logError } = await supabase
+        .from('body_fat_logs')
+        .insert({
+          user_id: user.id,
+          user_email: user.email,
+          body_fat_percentage: bfRounded,
+        })
+
+      if (logError) {
+        throw new Error(`Failed to log result: ${logError.message}`)
+      }
+
+      // 2. Update the user's main profile in user_registrations
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('user_registrations')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+
+      // Ignore 'not found' error (PGRST116), but throw others
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError
+      }
+
+      if (existingUser) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('user_registrations')
+          .update({ body_fat: bfRounded.toString(), updated_at: new Date().toISOString() })
+          .eq('email', user.email)
+
+        if (updateError) throw updateError
+      } else {
+        // Create a new record if one doesn't exist
+        const { error: insertError } = await supabase
+          .from('user_registrations')
+          .insert({ 
+            email: user.email, 
+            body_fat: bfRounded.toString(),
+            updated_at: new Date().toISOString()
+          })
+        
+        if (insertError) throw insertError
+      }
+
+    } catch (error) {
+      const err = error as { message?: string }
+      console.error('Error auto-saving to profile:', err)
+      showPopup('Calculation Complete, Save Failed', err.message || 'Result calculated, but failed to save to your profile.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const clear = () => {
@@ -130,13 +206,6 @@ export default function BodyFatCalculator() {
     setHipInches('')
     setResult(null)
     setCategory('')
-  }
-
-  const saveToProfile = () => {
-    if (result !== null) {
-      localStorage.setItem('bodyFatResult', result.toString())
-      showPopup('Success!', 'Body fat result saved successfully! Go to your dashboard to update your profile.')
-    }
   }
 
   return (
@@ -405,31 +474,32 @@ export default function BodyFatCalculator() {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-6 md:mt-8">
-            <button 
-              className="btn-primary flex-1 py-2 md:py-3 text-base md:text-lg font-medium"
-              onClick={calculate}
-            >
-              Calculate Body Fat
-            </button>
-            <button 
-              className="btn-secondary flex-1 py-2 md:py-3 text-base md:text-lg font-medium"
-              onClick={clear}
-            >
-              Clear All
-            </button>
+          <div className="mt-6 md:mt-8">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                className="btn-primary w-full px-6 py-3 text-base"
+                onClick={calculate}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Calculating & Saving...' : 'Calculate Body Fat'}
+              </button>
+              <button 
+                className="btn-secondary w-full px-6 py-3 text-base"
+                onClick={clear}
+                disabled={isSaving}
+              >
+                Clear All
+              </button>
+            </div>
           </div>
 
           {result !== null && (
-            <div className="mt-6 md:mt-8 text-center bg-gradient-to-r from-sky-50 to-blue-50 p-4 md:p-6 rounded-xl border border-sky-200">
-              <h3 className="text-xl md:text-2xl font-bold text-sky-600 mb-2">Body Fat: {result}%</h3>
-              <p className="text-base md:text-lg text-gray-700 mb-3 md:mb-4">Category: <span className="font-semibold">{category}</span></p>
-              <button 
-                className="btn-primary px-4 md:px-6 py-2 md:py-3 text-base md:text-lg font-medium"
-                onClick={saveToProfile}
-              >
-                Save to Profile
-              </button>
+            <div className="mt-6 md:mt-8 p-4 md:p-6 bg-sky-50 rounded-lg text-center">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-800">Your Result</h3>
+              <p className="text-4xl md:text-5xl font-extrabold text-sky-600 my-2">
+                {result}%
+              </p>
+              <p className="font-semibold text-lg text-gray-700">{category}</p>
             </div>
           )}
         </div>
