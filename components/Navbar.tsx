@@ -228,7 +228,7 @@ export default function Navbar() {
 
                 <button 
                   onClick={handleFacebookLogin}
-                  className="w-full bg-[#3b5998] text-white py-2 rounded"
+                  className="w-full bg-[#3b5998] text-white py-2 rounded hover:bg-[#2d4373] transition"
                 >
                   Continue with Facebook
                 </button>

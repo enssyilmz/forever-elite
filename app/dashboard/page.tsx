@@ -8,6 +8,15 @@ import { useSearchParams } from 'next/navigation'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
 import SuccessModal from '../../components/SuccessModal'
+import { programs as allPrograms } from '@/lib/programsData'
+import Link from 'next/link'
+
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  emoji: string;
+}
 
 export default function Dashboard() {
   const searchParams = useSearchParams()
@@ -24,6 +33,7 @@ export default function Dashboard() {
     bodyFat: ''
   })
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false)
   const [message, setMessage] = useState('')
   const [communicationPrefs, setCommunicationPrefs] = useState({
     phone: false,
@@ -31,6 +41,8 @@ export default function Dashboard() {
     sms: false
   })
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([])
+  const [favoritesLoading, setFavoritesLoading] = useState(true)
   
   const supabase = createClientComponentClient()
 
@@ -66,6 +78,11 @@ export default function Dashboard() {
             gender: userData.gender || '',
             bodyFat: savedBodyFat || userData.body_fat || ''
           })
+          setCommunicationPrefs({
+            phone: userData.comm_phone || false,
+            email: userData.comm_email || false,
+            sms: userData.comm_sms || false,
+          })
         } else {
           // Extract names from Google metadata
           const fullName = user.user_metadata?.full_name || user.user_metadata?.name || ''
@@ -83,6 +100,30 @@ export default function Dashboard() {
             bodyFat: savedBodyFat || ''
           })
         }
+
+        // Fetch favorite products
+        setFavoritesLoading(true)
+        const { data: favorites, error: favoritesError } = await supabase
+          .from('user_favorites')
+          .select('product_id')
+          .eq('user_id', user.id)
+
+        if (favoritesError) {
+          console.error('Error fetching favorites:', favoritesError)
+          setFavoriteProducts([])
+        } else {
+          const favoriteProductIds = favorites.map(fav => fav.product_id)
+          const favoriteProgramDetails = allPrograms
+            .filter(p => favoriteProductIds.includes(p.id))
+            .map(p => ({
+              id: p.id,
+              name: p.title,
+              description: p.bodyFatRange,
+              emoji: p.emoji || '⭐' // Use emoji, with a fallback
+            }))
+          setFavoriteProducts(favoriteProgramDetails)
+        }
+        setFavoritesLoading(false)
       }
       
       setLoading(false)
@@ -173,9 +214,50 @@ export default function Dashboard() {
     window.location.reload()
   }
 
-  const handleSavePreferences = () => {
-    // Here you can add logic to save preferences to database
-    setShowSuccessModal(true)
+  const handleSavePreferences = async () => {
+    if (!user) return
+
+    setIsSavingPrefs(true)
+    setMessage('')
+
+    try {
+      // Check if user exists in user_registrations
+      const { data: existingUser } = await supabase
+        .from('user_registrations')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+      
+      const prefsData = {
+        comm_phone: communicationPrefs.phone,
+        comm_email: communicationPrefs.email,
+        comm_sms: communicationPrefs.sms,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (existingUser) {
+        // Update existing record
+        const { error } = await supabase
+          .from('user_registrations')
+          .update(prefsData)
+          .eq('email', user.email)
+        if (error) throw error
+      } else {
+        // Create new record if none exists
+        const { error } = await supabase
+          .from('user_registrations')
+          .insert({ email: user.email, ...prefsData })
+        if (error) throw error
+      }
+      
+      setShowSuccessModal(true)
+    } catch (error) {
+      const err = error as { message?: string }
+      console.error('Error saving preferences:', err)
+      setMessage(err.message || 'Error saving preferences. Please try again.')
+    } finally {
+      setIsSavingPrefs(false)
+    }
   }
 
   if (loading) {
@@ -388,6 +470,12 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-lg shadow-md text-black">
             <h3 className="text-xl font-bold mb-6">Communication Preferences</h3>
             
+            {message && !message.includes('successfully') && (
+              <div className={`mb-4 p-3 rounded bg-red-100 text-red-700`}>
+                {message}
+              </div>
+            )}
+
             <div className="space-y-6">
               <div className="border-b pb-4">
                 <div className="flex items-center justify-between mb-2">
@@ -444,17 +532,56 @@ export default function Dashboard() {
                 <button
                   onClick={() => setCommunicationPrefs({phone: false, email: false, sms: false})}
                   className="btn-secondary px-6 py-3"
+                  disabled={isSavingPrefs}
                 >
                   Reset
                 </button>
                 <button
                   className="btn-primary px-6 py-3"
                   onClick={handleSavePreferences}
+                  disabled={isSavingPrefs}
                 >
-                  Save Preferences
+                  {isSavingPrefs ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
             </div>
+          </div>
+        )
+      
+      case 'favorites':
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">My Favorites</h2>
+            {favoritesLoading ? (
+              <p>Loading favorites...</p>
+            ) : favoriteProducts.length === 0 ? (
+              <p>You have no favorite products yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {favoriteProducts.map((product) => (
+                  <Link href={`/programs/${product.id}`} key={product.id}>
+                    <div className="border rounded-lg overflow-hidden shadow-sm group transform hover:-translate-y-1 transition-transform duration-300 h-full flex flex-col cursor-pointer">
+                      {/* Program Emoji */}
+                      <div className="w-full h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center">
+                         <span className="text-7xl opacity-90">{product.emoji}</span>
+                      </div>
+                      <div className="p-4 flex-grow">
+                        <h3 className="text-lg font-semibold text-gray-800 group-hover:text-sky-600 transition-colors">{product.name}</h3>
+                        <p className="text-gray-600 mt-2 text-sm">{product.description}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      
+      case 'cart':
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-md text-black">
+            <h3 className="text-xl font-bold mb-4">{menuItems.find(item => item.id === activeSection)?.label}</h3>
+            <p className="text-gray-600">This section is under development...</p>
           </div>
         )
       
