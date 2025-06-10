@@ -35,6 +35,8 @@ export default function SignUpPage() {
     setShowModal(true)
   }
 
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement
     setFormData({ 
@@ -55,50 +57,47 @@ export default function SignUpPage() {
     }
 
     try {
-      // First create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
+      // Kullanıcı kayıt verilerini Supabase'e kaydet
+      const { data, error } = await supabase
+        .from('user_registrations')
+        .insert([
+          {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            full_name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            password: formData.password, // In a real application, the password should be hashed
             gender: formData.gender,
+            country_code: formData.countryCode,
             phone: formData.phone,
             birthdate: formData.birthdate,
+            agree_marketing: formData.agreeMarketing,
+            agree_membership: formData.agreeMembership,
+            agree_privacy: formData.agreePrivacy,
+            created_at: new Date().toISOString(),
           }
-        }
-      })
+        ])
 
-      if (authError) {
-        console.error('Supabase Auth error:', authError)
-        showPopup('Registration Error', 'An error occurred during registration: ' + authError.message)
-        setLoading(false)
-        return
+      if (error) {
+        console.error('Supabase error:', error)
+        showPopup('Registration Error', 'An error occurred during registration: ' + error.message)
+      } else {
+        showPopup('Success!', 'Registration completed successfully!')
+        // Clear form data
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          gender: '',
+          countryCode: '+44',
+          phone: '',
+          birthdate: '',
+          agreeMarketing: false,
+          agreeMembership: false,
+          agreePrivacy: false,
+        })
+        setCaptchaVerified(false)
       }
-
-      // The trigger will handle creating the user profile in user_registrations.
-      // So we don't need to insert it from the client side anymore.
-      showPopup('Success!', 'Registration completed successfully! Please check your email to confirm your account.')
-
-      // Clear form data
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        gender: '',
-        countryCode: '+44',
-        phone: '',
-        birthdate: '',
-        agreeMarketing: false,
-        agreeMembership: false,
-        agreePrivacy: false,
-      })
-      setCaptchaVerified(false)
-
     } catch (error) {
       console.error('Error:', error)
       showPopup('Unexpected Error', 'An unexpected error occurred')
@@ -265,13 +264,7 @@ export default function SignUpPage() {
 
     <SuccessModal 
       isOpen={showModal}
-      onClose={() => {
-        setShowModal(false)
-        // After successful registration, redirect to homepage
-        if (modalTitle === 'Success!') {
-          window.location.href = '/'
-        }
-      }}
+      onClose={() => setShowModal(false)}
       title={modalTitle}
       message={modalMessage}
     />

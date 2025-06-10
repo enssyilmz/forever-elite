@@ -3,10 +3,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(4)
 
   const programs = [
     {
@@ -66,32 +67,48 @@ export default function Home() {
       description: 'Tailored specifically to your body composition and goals. One-on-one coaching available.'
     }
   ]
+  
+  const numPages = Math.ceil(programs.length / itemsPerPage);
+  const currentPage = Math.floor(currentIndex / itemsPerPage);
+
+  const goToPage = (page: number) => {
+    const newIndex = page * itemsPerPage;
+    // Ensure the new index does not exceed the maximum possible start index
+    const maxIndex = programs.length - itemsPerPage;
+    setCurrentIndex(Math.min(newIndex, maxIndex));
+  };
+
+
+  // Update items per page based on screen width
+  useEffect(() => {
+    const updateItemsPerPage = () => {
+      if (window.innerWidth < 640) { // sm
+        setItemsPerPage(1)
+      } else if (window.innerWidth < 1024) { // lg
+        setItemsPerPage(2)
+      } else {
+        setItemsPerPage(4)
+      }
+    }
+
+    updateItemsPerPage()
+    window.addEventListener('resize', updateItemsPerPage)
+    return () => window.removeEventListener('resize', updateItemsPerPage)
+  }, [])
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1 >= programs.length - itemsPerPage + 1 ? 0 : prevIndex + 1));
+  }, [itemsPerPage, programs.length]);
+
+  const goToPrevious = () => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 < 0 ? programs.length - itemsPerPage : prevIndex - 1));
+  }
 
   // Auto-slide every 10 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => 
-        prevIndex + 1 >= programs.length - 3 ? 0 : prevIndex + 1
-      )
-    }, 10000)
-
+    const interval = setInterval(goToNext, 10000)
     return () => clearInterval(interval)
-  }, [programs.length])
-
-  const visiblePrograms = programs.slice(currentIndex, currentIndex + 4)
-
-  // Manual navigation functions
-  const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? Math.max(0, programs.length - 4) : prevIndex - 1
-    )
-  }
-
-  const goToNext = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex + 1 >= programs.length - 3 ? 0 : prevIndex + 1
-    )
-  }
+  }, [goToNext])
 
   return (
     <>
@@ -110,22 +127,26 @@ export default function Home() {
 
         {/* Content */}
         <div className="flex flex-col items-center justify-center h-full bg-black/50">
-          <h1 className="text-4xl mb-6 text-center read-only">Discover your power!</h1>
-          <Link href="/login">
-            <button className="bg-transparent text-white border px-6 py-3 rounded-xl hover:bg-gray-200 hover:text-black transition">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6 text-center text-white">Discover your power!</h1>
+          <button 
+            onClick={() => {
+              const programsSection = document.getElementById('programs-section');
+              programsSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="bg-transparent text-white border px-6 py-3 rounded-xl hover:bg-gray-200 hover:text-black transition"
+          >
             CHECK OUT THE PROGRAMS
-            </button>
-          </Link>
+          </button>
         </div>
       </div>
 
       {/* Programs Section */}
-      <div className="bg-gray-50 py-16 px-6">
+      <div id="programs-section" className="bg-gray-50 py-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-gray-800">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-800">
             Body Fat Specific Programs
           </h2>
-          <p className="text-lg text-gray-600 text-center mb-12">
+          <p className="text-base md:text-lg text-gray-600 text-center mb-12">
             Choose the perfect program based on your current body fat percentage
           </p>
           
@@ -142,39 +163,44 @@ export default function Home() {
   </button>
 
   {/* Slider Container */}
-  <div className="overflow-hidden flex-1 max-w-[1320px] mx-auto"> {/* 4 kart × (300px + 24px gap) + extra space */}
+  <div className="overflow-hidden flex-1 w-full">
     <div 
-      className="flex transition-transform duration-1000 ease-in-out gap-6"
+      className="flex transition-transform duration-700 ease-in-out"
       style={{ 
-        transform: `translateX(-${currentIndex * (300 + 24)}px)`, // 300px kart + 24px gap
-        width: `${programs.length * (300 + 24)}px`
+        width: `${(programs.length / itemsPerPage) * 100}%`,
+        transform: `translateX(-${(currentIndex / programs.length) * 100}%)`
       }}
     >
       {programs.map((program) => (
         <div 
           key={program.id}
-          className="w-[300px] h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col shrink-0 border hover:border-sky-300 transition hover:shadow-xl"
+          className="w-full flex-shrink-0 p-3"
+          style={{ width: `${100 / programs.length}%`}}
         >
-          <div className="text-4xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
-            {program.logo}
-          </div>
+          <div
+            className="h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
+          >
+            <div className="text-4xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
+              {program.logo}
+            </div>
 
-          <div className="text-right mb-3">
-            <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border">
-              {program.bodyFatRange}
-            </span>
-          </div>
+            <div className="text-right mb-3">
+              <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border">
+                {program.bodyFatRange}
+              </span>
+            </div>
 
-          <h3 className="text-xl font-bold text-gray-800 mb-3">{program.title}</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-3">{program.title}</h3>
 
-          <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
+            <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
 
-          <div className="mt-auto">
-            <Link href="/programs">
-              <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
-                Learn More
-              </button>
-            </Link>
+            <div className="mt-auto">
+              <Link href="/programs">
+                <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
+                  View All Programs
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       ))}
@@ -191,19 +217,18 @@ export default function Home() {
     </svg>
   </button>
 </div>
-
           
           {/* Carousel Indicators */}
           <div className="flex justify-center items-center mt-8 space-x-3 w-full">
-            {Array.from({ length: Math.ceil(programs.length / 4) }).map((_, index) => (
+            {Array.from({ length: numPages }).map((_, index) => (
               <button
                 key={index}
                 className={`w-4 h-4 rounded-full transition-all duration-300 border-2 ${
-                  Math.floor(currentIndex / 4) === index 
+                  currentPage === index 
                     ? 'bg-sky-500 border-sky-500 shadow-md' 
                     : 'bg-transparent border-sky-300 hover:border-sky-400 hover:bg-sky-100'
                 }`}
-                onClick={() => setCurrentIndex(index * 4)}
+                onClick={() => goToPage(index)}
               />
             ))}
           </div>
