@@ -2,11 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
+import SuccessModal from '@/components/SuccessModal'
+import ReviewSection from '@/components/ReviewSection'
 
 export default function ProgramDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const programId = parseInt(params.id as string)
   const { addToCart, addToFavorites, removeFromFavorites, isFavorite, addReview, reviews } = useApp()
   
@@ -18,6 +21,20 @@ export default function ProgramDetailPage() {
     rating: 5,
     comment: ''
   })
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
+
+  const convertToGBP = (usdPrice: number) => {
+    // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
+    return Math.round(usdPrice * 0.79)
+  }
+
+  const showPopup = (title: string, message: string) => {
+    setModalTitle(title)
+    setModalMessage(message)
+    setShowSuccessModal(true)
+  }
 
   const programs = [
     {
@@ -313,7 +330,7 @@ export default function ProgramDetailPage() {
 
   const handleAddToCart = () => {
     addToCart(programId, quantity)
-    alert('Product added to cart!')
+    showPopup('Added to Cart!', `${program.title} has been added to your cart.`)
   }
 
   const handleFavoriteToggle = () => {
@@ -335,7 +352,7 @@ export default function ProgramDetailPage() {
       })
       setReviewForm({ name: '', rating: 5, comment: '' })
       setShowReviewForm(false)
-      alert('Review added successfully!')
+      showPopup('Review Added!', 'Thank you for your review. It has been added successfully!')
     }
   }
 
@@ -421,8 +438,8 @@ export default function ProgramDetailPage() {
                 %{program.discount} OFF - Limited Time!
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-sky-600">${program.discountedPrice}</span>
-                <span className="text-xl text-gray-400 line-through">${program.originalPrice}</span>
+                <span className="text-3xl font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</span>
+                <span className="text-xl text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</span>
               </div>
             </div>
 
@@ -436,14 +453,14 @@ export default function ProgramDetailPage() {
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
                     onClick={decreaseQuantity}
-                    className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-l-lg"
+                    className="px-3 py-2 text-gray-800 hover:bg-gray-100 rounded-l-lg"
                   >
                     -
                   </button>
-                  <span className="px-4 py-2 border-x border-gray-300 text-black">{quantity}</span>
+                  <span className="px-4 py-2 border-x border-gray-300 text-gray-800">{quantity}</span>
                   <button
                     onClick={increaseQuantity}
-                    className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-r-lg"
+                    className="px-3 py-2 text-gray-800 hover:bg-gray-100 rounded-r-lg"
                   >
                     +
                   </button>
@@ -457,7 +474,13 @@ export default function ProgramDetailPage() {
                 >
                   Add to Cart
                 </button>
-                <button className="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold transition btn-secondary">
+                <button 
+                  onClick={() => {
+                    addToCart(programId, quantity)
+                    router.push('/checkout')
+                  }}
+                  className="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold transition btn-secondary"
+                >
                   Buy Now
                 </button>
               </div>
@@ -604,6 +627,18 @@ export default function ProgramDetailPage() {
           </div>
         </div>
       </div>
+      
+      {/* Reviews Section */}
+      <div className="mt-16">
+        <ReviewSection programId={programId} />
+      </div>
+
+      <SuccessModal 
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+      />
     </div>
   )
 } 

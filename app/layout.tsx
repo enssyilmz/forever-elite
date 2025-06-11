@@ -1,20 +1,30 @@
 // app/layout.tsx
 
 import './globals.css'
-import { ReactNode } from 'react'
+import { Inter } from 'next/font/google'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import { AppProvider } from '@/contexts/AppContext'
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+const inter = Inter({ subsets: ['latin'] })
 
-  const showNavbar = pathname !== '/'
+export const metadata = {
+  title: 'Ozcan Fit',
+  description: 'Transform your body with personalized fitness programs',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="tr">
-      <body>
+    <html lang="en">
+      <body className={inter.className}>
         <AppProvider>
-          {showNavbar && <Navbar />}
+          <Navbar />
           {children}
+          <Footer />
         </AppProvider>
       </body>
     </html>

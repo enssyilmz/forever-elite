@@ -111,7 +111,7 @@ export default function Home() {
   }, [goToNext])
 
   return (
-    <>
+    <main>
       <div className="relative h-screen w-full overflow-hidden -mt-16">
         {/* Video background */}
         <video
@@ -234,6 +234,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </>
+    </main>
   )
 }
