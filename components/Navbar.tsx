@@ -2,18 +2,64 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star } from 'lucide-react'
+import { Search, User, CreditCard, Check , Star, X } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
+import { useApp } from '@/contexts/AppContext'
+import { programs } from '@/lib/programsData'
 
 export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
+  const { getCartItemCount } = useApp()
+
+  const convertToGBP = (usdPrice: number) => {
+    // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
+    return Math.round(usdPrice * 0.79)
+  }
+
+  // Search functionality
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults(programs.slice(0, 3)) // Show first 3 programs when no search
+    } else {
+      const filtered = programs.filter(program => 
+        program.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      setSearchResults(filtered)
+    }
+  }, [searchQuery])
+
+  // Handle click outside for search dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false)
+      }
+    }
+
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isSearchOpen])
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -79,6 +125,8 @@ export default function Navbar() {
     setIsLoginOpen(false)
   }
 
+  const cartItemCount = getCartItemCount()
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 w-full h-16 bg-white shadow-md px-6 flex items-center justify-between z-50">
@@ -96,7 +144,76 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          <Search className="w-5 h-5 text-gray-600 cursor-pointer" />
+          {/* Search Component */}
+          <div className="relative" ref={searchRef}>
+            <Search 
+              className="w-5 h-5 text-gray-600 cursor-pointer" 
+              onClick={() => setIsSearchOpen(true)}
+            />
+            
+            {/* Search Dropdown */}
+            {isSearchOpen && (
+              <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border z-60">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Search Programs</h3>
+                    <X 
+                      className="w-5 h-5 text-gray-600 cursor-pointer" 
+                      onClick={() => setIsSearchOpen(false)}
+                    />
+                  </div>
+                  
+                  <input
+                    type="text"
+                    placeholder="Search for programs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    autoFocus
+                  />
+                  
+                  <div className="mt-4 max-h-64 overflow-y-auto">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((program) => (
+                        <Link
+                          key={program.id}
+                          href={`/programs/${program.id}`}
+                          onClick={() => setIsSearchOpen(false)}
+                          className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <div className="text-2xl mr-3">{program.emoji}</div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-800">{program.title}</h4>
+                            <p className="text-sm text-gray-600">{program.bodyFatRange}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
+                            <div className="font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-500">
+                        No programs found for "{searchQuery}"
+                      </div>
+                    )}
+                  </div>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Link
+                        href="/programs"
+                        onClick={() => setIsSearchOpen(false)}
+                        className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold"
+                      >
+                        View All Programs →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* User Icon with Login Status */}
           <div className="relative">
@@ -109,7 +226,18 @@ export default function Navbar() {
             )}
           </div>
           
-          <CreditCard className="w-5 h-5 text-gray-600 cursor-pointer" onClick={() => setIsCartOpen(true)} />
+          {/* Shopping Cart with Badge */}
+          <div className="relative">
+            <CreditCard 
+              className="w-5 h-5 text-gray-600 cursor-pointer" 
+              onClick={() => setIsCartOpen(true)} 
+            />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {cartItemCount}
+              </span>
+            )}
+          </div>
         </div>
       </nav>
 

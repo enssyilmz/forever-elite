@@ -196,7 +196,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addToFavorites = async (programId: number) => {
     if (!user) {
-      alert('Please log in to add favorites.')
+      // User should be redirected to login or shown a modal by the calling component
       return
     }
 
@@ -226,7 +226,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Error adding to favorites:', error)
       // Revert UI change on error
       setFavoriteItems(prev => prev.filter(item => item.id !== programId))
-      alert('Failed to add to favorites. Please try again.')
+      // Error should be handled by the calling component
     }
   }
 
@@ -250,7 +250,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Error removing from favorites:', error)
       // Revert UI change on error
       setFavoriteItems(originalFavorites)
-      alert('Failed to remove from favorites. Please try again.')
+      // Error should be handled by the calling component
     }
   }
 

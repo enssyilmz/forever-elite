@@ -1,15 +1,15 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { User as UserIcon, Mail, Contact, Package, CreditCard, Star, Headset, LogOut, ShoppingCart } from 'lucide-react'
+import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ShoppingCart } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
-import SuccessModal from '../../components/SuccessModal'
+import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/programsData'
 import Link from 'next/link'
+import dayjs from 'dayjs'
 
 interface Product {
   id: number;
@@ -30,7 +30,10 @@ export default function Dashboard() {
     phone: '',
     birthdate: '',
     gender: '',
-    bodyFat: ''
+    bodyFat: '',
+    fullName: '',
+    height: '',
+    weight: ''
   })
   const [isUpdating, setIsUpdating] = useState(false)
   const [isSavingPrefs, setIsSavingPrefs] = useState(false)
@@ -41,6 +44,8 @@ export default function Dashboard() {
     sms: false
   })
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(true)
   
@@ -76,7 +81,10 @@ export default function Dashboard() {
             phone: userData.phone || '',
             birthdate: userData.birthdate || '',
             gender: userData.gender || '',
-            bodyFat: savedBodyFat || userData.body_fat || ''
+            bodyFat: savedBodyFat || userData.body_fat || '',
+            fullName: userData.first_name || userData.last_name || '',
+            height: userData.height || '',
+            weight: userData.weight || ''
           })
           setCommunicationPrefs({
             phone: userData.comm_phone || false,
@@ -97,7 +105,10 @@ export default function Dashboard() {
             phone: user.user_metadata?.phone || user.user_metadata?.phone_number || '',
             birthdate: user.user_metadata?.birthdate || user.user_metadata?.birth_date || '',
             gender: user.user_metadata?.gender || '',
-            bodyFat: savedBodyFat || ''
+            bodyFat: savedBodyFat || '',
+            fullName: fullName,
+            height: user.user_metadata?.height || '',
+            weight: user.user_metadata?.weight || ''
           })
         }
 
@@ -151,58 +162,30 @@ export default function Dashboard() {
 
   const handleUpdate = async () => {
     if (!user) return
-    
     setIsUpdating(true)
-    setMessage('')
-    
+
     try {
-      // Check if user exists in user_registrations
-      const { data: existingUser } = await supabase
-        .from('user_registrations')
-        .select('id')
-        .eq('email', user.email)
-        .single()
-      
-      if (existingUser) {
-        // Update existing record
-        const { error } = await supabase
-          .from('user_registrations')
-          .update({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            birthdate: formData.birthdate,
-            gender: formData.gender,
-            body_fat: formData.bodyFat,
-            updated_at: new Date().toISOString()
-          })
-          .eq('email', user.email)
-          
-        if (error) throw error
-      } else {
-        // Create new record
-        const { error } = await supabase
-          .from('user_registrations')
-          .insert({
-            email: formData.email,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            birthdate: formData.birthdate,
-            gender: formData.gender,
-            body_fat: formData.bodyFat,
-            created_at: new Date().toISOString()
-          })
-          
-        if (error) throw error
-      }
-      
-      setMessage('Profile updated successfully!')
-      // Clear localStorage body fat result after successful update
-      localStorage.removeItem('bodyFatResult')
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          full_name: formData.fullName,
+          phone: formData.phone,
+          birthdate: formData.birthdate,
+          gender: formData.gender,
+          height: formData.height,
+          weight: formData.weight,
+          body_fat: formData.bodyFat,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+
+      if (error) throw error
+
+      showPopup('Success', 'Your profile has been updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
-      setMessage('Error updating profile. Please try again.')
+      showPopup('Error', 'There was an error updating your profile. Please try again.')
     } finally {
       setIsUpdating(false)
     }
@@ -258,6 +241,12 @@ export default function Dashboard() {
     } finally {
       setIsSavingPrefs(false)
     }
+  }
+
+  const showPopup = (title: string, message: string) => {
+    setModalTitle(title)
+    setModalMessage(message)
+    setShowSuccessModal(true)
   }
 
   if (loading) {
@@ -577,14 +566,6 @@ export default function Dashboard() {
           </div>
         )
       
-      case 'cart':
-        return (
-          <div className="bg-white p-6 rounded-lg shadow-md text-black">
-            <h3 className="text-xl font-bold mb-4">{menuItems.find(item => item.id === activeSection)?.label}</h3>
-            <p className="text-gray-600">This section is under development...</p>
-          </div>
-        )
-      
       default:
         return (
           <div className="bg-white p-6 rounded-lg shadow-md text-black">
@@ -607,7 +588,9 @@ export default function Dashboard() {
               <p><strong>Email:</strong> {user.email}</p>
               <p><strong>Name:</strong> {user.user_metadata?.full_name || user.user_metadata?.first_name || 'Not provided'}</p>
               <p><strong>Provider:</strong> {user.app_metadata?.provider || 'Unknown'}</p>
-              <p><strong>Last Sign In:</strong> {new Date(user.last_sign_in_at || '').toLocaleDateString()}</p>
+              <p>
+                <strong>Last Sign In:</strong> {user?.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD MMM, YYYY HH:mm') : 'Not available'}
+              </p>
             </div>
           </div>
 
@@ -640,11 +623,11 @@ export default function Dashboard() {
       </div>
 
       {/* Success Modal */}
-      <SuccessModal 
+      <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        title="Success!"
-        message="Your preferences have been saved successfully!"
+        title={modalTitle}
+        message={modalMessage}
       />
     </div>
   )
