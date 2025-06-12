@@ -25,8 +25,36 @@ export default function PaymentPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setCardState((prev) => ({ ...prev, [name]: value }))
+    const { name, value } = e.target;
+
+    if (name === 'number') {
+      // Allow only numbers, limit to 16 digits, and format as XXXX XXXX XXXX XXXX
+      const cleaned = value.replace(/\D/g, '');
+      const formatted = cleaned.substring(0, 16).replace(/(.{4})/g, '$1 ').trim();
+      setCardState((prev) => ({ ...prev, number: formatted }));
+    } else if (name === 'expiry') {
+      // Allow only numbers, limit to 4 digits, and format as MM/YY
+      let cleaned = value.replace(/\D/g, '');
+      if (cleaned.length > 4) cleaned = cleaned.substring(0, 4);
+      let formatted = cleaned;
+      if (cleaned.length > 2) {
+        formatted = `${cleaned.substring(0, 2)}/${cleaned.substring(2)}`;
+      }
+      setCardState((prev) => ({ ...prev, expiry: formatted }));
+    } else if (name === 'cvc') {
+      // Allow only numbers, limit to 3 digits
+      const cleaned = value.replace(/\D/g, '').substring(0, 3);
+      setCardState((prev) => ({ ...prev, cvc: cleaned }));
+    } else if (name === 'name') {
+      // Capitalize the first letter of each word
+      const formatted = value
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      setCardState((prev) => ({ ...prev, name: formatted }));
+    } else {
+      setCardState((prev) => ({ ...prev, [name]: value }));
+    }
   }
 
   const handlePay = async (e: React.FormEvent) => {
@@ -66,7 +94,7 @@ export default function PaymentPage() {
           
           <div className="bg-white rounded-lg shadow-sm p-8">
             <div className="mb-6">
-              <h2 className="text-xl font-semibold">Total Amount: £{totalPrice.toFixed(2)}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Total Amount: £{totalPrice.toFixed(2)}</h2>
             </div>
             
             <form onSubmit={handlePay} className="space-y-6">
@@ -79,6 +107,7 @@ export default function PaymentPage() {
                     name="number"
                     className="w-full border rounded-lg p-3 pl-10 text-gray-800"
                     placeholder="0000 0000 0000 0000"
+                    value={cardState.number}
                     onChange={handleInputChange}
                     required
                   />
@@ -95,6 +124,7 @@ export default function PaymentPage() {
                       name="expiry"
                       className="w-full border rounded-lg p-3 pl-10 text-gray-800"
                       placeholder="MM/YY"
+                      value={cardState.expiry}
                       onChange={handleInputChange}
                       required
                     />
@@ -109,6 +139,7 @@ export default function PaymentPage() {
                       name="cvc"
                       className="w-full border rounded-lg p-3 pl-10 text-gray-800"
                       placeholder="123"
+                      value={cardState.cvc}
                       onChange={handleInputChange}
                       required
                     />
@@ -125,6 +156,7 @@ export default function PaymentPage() {
                     name="name"
                     className="w-full border rounded-lg p-3 pl-10 text-gray-800"
                     placeholder="John Doe"
+                    value={cardState.name}
                     onChange={handleInputChange}
                     required
                   />
@@ -151,7 +183,7 @@ export default function PaymentPage() {
       {showSmsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4">SMS Confirmation</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">SMS Confirmation</h2>
             <p className="text-gray-600 mb-6">A confirmation code has been sent to your phone. Please enter it below.</p>
             <form onSubmit={handleSmsConfirm}>
               <div className="relative">

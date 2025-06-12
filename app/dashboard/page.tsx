@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ShoppingCart, ChevronDown, Plus } from 'lucide-react'
+import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import PhoneInput from 'react-phone-input-2'
@@ -420,7 +420,6 @@ export default function Dashboard() {
   const menuItems = [
     { id: 'profile', label: 'Member Information', icon: UserIcon },
     { id: 'communication', label: 'Communication Preferences', icon: Mail },
-    { id: 'cart', label: 'Shopping Cart', icon: ShoppingCart },
     { id: 'orders', label: 'Order and Return', icon: Package },
     { id: 'payments', label: 'Payments', icon: CreditCard },
     { id: 'favorites', label: 'Favorites Products', icon: Star },
@@ -688,11 +687,11 @@ export default function Dashboard() {
       case 'favorites':
         return (
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">My Favorites</h2>
+            <h2 className="text-xl font-bold mb-6 text-gray-900">My Favorites</h2>
             {favoritesLoading ? (
               <p>Loading favorites...</p>
             ) : favoriteProducts.length === 0 ? (
-              <p>You have no favorite products yet.</p>
+              <p className="text-gray-500">You have no favorite products yet.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {favoriteProducts.map((product) => (
