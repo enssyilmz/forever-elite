@@ -267,7 +267,9 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=profile" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => setIsLoginOpen(false)}
+                  onClick={() => {
+                    setTimeout(() => setIsLoginOpen(false), 100)
+                  }}
                 >
                   <User className="w-5 h-5 mr-3 text-gray-600" />
                   Edit Profile
@@ -276,7 +278,9 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=orders" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => setIsLoginOpen(false)}
+                  onClick={() => {
+                    setTimeout(() => setIsLoginOpen(false), 100)
+                  }}
                 >
                   <CreditCard className="w-5 h-5 mr-3 text-gray-600" />
                   View Orders
@@ -285,7 +289,9 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=favorites" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => setIsLoginOpen(false)}
+                  onClick={() => {
+                    setTimeout(() => setIsLoginOpen(false), 100)
+                  }}
                 >
                   <Star className='w-5 h-5 mr-3 text-gray-600' />
                   My Favorites

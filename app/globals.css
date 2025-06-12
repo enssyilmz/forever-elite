@@ -33,3 +33,11 @@ body {
 .btn-secondary {
   @apply bg-gray-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-gray-500 transition;
 }
+
+/* Line clamp utility for text truncation */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
