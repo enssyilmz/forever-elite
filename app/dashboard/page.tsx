@@ -62,10 +62,19 @@ export default function Dashboard() {
     const savedBodyFat = localStorage.getItem('bodyFatResult')
     
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
       
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        return
+      }
+
       if (user) {
+        setUser(user)
+        console.log('User session:', session) // Debug log
+        console.log('Last sign in:', user.last_sign_in_at) // Debug log
+        
         // Load user data from user_registrations table
         const { data: userData } = await supabase
           .from('user_registrations')
@@ -588,9 +597,8 @@ export default function Dashboard() {
               <p><strong>Email:</strong> {user.email}</p>
               <p><strong>Name:</strong> {user.user_metadata?.full_name || user.user_metadata?.first_name || 'Not provided'}</p>
               <p><strong>Provider:</strong> {user.app_metadata?.provider || 'Unknown'}</p>
-              <p>
-                <strong>Last Sign In:</strong> {user?.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD MMM, YYYY HH:mm') : 'Not available'}
-              </p>
+              <p><strong>Last Sign In:</strong> {user.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
+              <p><strong>Created At:</strong> {user.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
             </div>
           </div>
 

@@ -1,28 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { User } from '@supabase/supabase-js'
-import { Star, StarHalf } from 'lucide-react'
+import { useState } from 'react'
+import { Star } from 'lucide-react'
 import SuccessModal from './SuccessModal'
-
-interface Review {
-  id: number
-  user_id: string
-  program_id: number
-  rating: number
-  comment: string
-  created_at: string
-  user_name: string
-}
+import { useApp } from '@/contexts/AppContext'
 
 interface ReviewSectionProps {
   programId: number
 }
 
 export default function ReviewSection({ programId }: ReviewSectionProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
+  const { user, reviews, addReview, deleteReview } = useApp()
+  
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -31,34 +20,7 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
 
-  const supabase = createClientComponentClient()
-
-  useEffect(() => {
-    // Get current user
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-
-    // Get reviews for this program
-    const getReviews = async () => {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('program_id', programId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching reviews:', error)
-        return
-      }
-
-      setReviews(data)
-    }
-
-    getUser()
-    getReviews()
-  }, [programId, supabase])
+  const programReviews = reviews.filter(review => review.program_id === programId);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,26 +29,8 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
     setIsSubmitting(true)
 
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .insert({
-          user_id: user.id,
-          program_id: programId,
-          rating,
-          comment,
-          user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous'
-        })
+      await addReview(programId, rating, comment)
 
-      if (error) throw error
-
-      // Refresh reviews
-      const { data: newReviews } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('program_id', programId)
-        .order('created_at', { ascending: false })
-
-      setReviews(newReviews || [])
       setShowReviewForm(false)
       setRating(0)
       setComment('')
@@ -103,6 +47,20 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
       setIsSubmitting(false)
     }
   }
+
+  const handleDeleteReview = async (reviewId: number) => {
+    try {
+      await deleteReview(reviewId)
+      setModalTitle('Success');
+      setModalMessage('Your review has been deleted.');
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Error deleting review:', error);
+      setModalTitle('Error');
+      setModalMessage(error.message || 'There was an error deleting your review. Please try again.');
+      setShowSuccessModal(true);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -182,25 +140,37 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
 
       {/* Reviews List */}
       <div className="space-y-6">
-        {reviews.length === 0 ? (
+        {programReviews.length === 0 ? (
           <p className="text-gray-600">No reviews yet. Be the first to review!</p>
         ) : (
-          reviews.map((review) => (
+          programReviews.map((review) => (
             <div key={review.id} className="bg-white p-6 rounded-lg shadow-sm">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-900">{review.user_name}</h3>
                   <p className="text-sm text-gray-500">{formatDate(review.created_at)}</p>
                 </div>
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-5 h-5 ${
-                        star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
+                <div className="flex items-center">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {user && user.id === review.user_id && (
+                    <button
+                      onClick={() => handleDeleteReview(review.id)}
+                      className="ml-4 text-red-500 hover:text-red-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="text-gray-700">{review.comment}</p>
