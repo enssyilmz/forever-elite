@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star, X } from 'lucide-react'
+import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
 import { programs } from '@/lib/programsData'
+import { useRouter } from 'next/navigation'
 
 export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -17,10 +18,17 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
   const { getCartItemCount } = useApp()
+  const router = useRouter()
+  const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
   const convertToGBP = (usdPrice: number) => {
     // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
@@ -120,6 +128,27 @@ export default function Navbar() {
     }
   }, [isLoginOpen])
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) {
+      if (error.message === 'Invalid login credentials') {
+        setError('Incorrect email or password.')
+      } else {
+        setError(error.message)
+      }
+    } else {
+      setIsLoginOpen(false)
+      if (data.user?.email === ADMIN_EMAIL) {
+        router.push('/admin')
+      }
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setIsLoginOpen(false)
@@ -130,10 +159,15 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 w-full h-16 bg-white shadow-md px-6 flex items-center justify-between z-50">
-        <div className="flex gap-6">
+        <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold text-gray-900 hover:text-black">
             Özcan-fit
           </Link>
+          {user && user.email === ADMIN_EMAIL && (
+            <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
+              Admin Panel
+            </Link>
+          )}
         </div>
         <div className="flex gap-6">
           <Link href="/programs" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3 ">
@@ -313,21 +347,43 @@ export default function Navbar() {
               <h5 className="text-lg text-gray-500">Log in for fast and secure shopping!</h5>
 
               <div className="py-6">
-                <form className="flex flex-col gap-4">
+                <form className="flex flex-col gap-4" onSubmit={handleLogin}>
                   <input
                     type="email"
                     placeholder="E-mail"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="border p-2 rounded"
                   />
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    className="border p-2 rounded"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="border p-2 rounded w-full pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
 
                   <div className="flex items-center justify-between text-sm text-gray-600">
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" className="accent-black" />
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="accent-black"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
                       Remember me
                     </label>
                     <Link 
@@ -342,11 +398,10 @@ export default function Navbar() {
                   <button
                     type="submit"
                     className="bg-sky-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-sky-500"
-                    onSubmit={() => {
-                      setIsLoginOpen(false);
-                    }}>
+                  >
                     Login
                   </button>
+                  {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                 </form>
               </div>
 

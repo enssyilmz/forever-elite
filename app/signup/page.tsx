@@ -56,15 +56,14 @@ export default function SignUpPage() {
     }
 
     try {
-      // Kullanıcı kayıt verilerini Supabase'e kaydet
-      const { data, error } = await supabase
-        .from('user_registrations')
-        .insert([
-          {
+      // Step 1: Sign up the user with Supabase Auth, passing all data
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            email: formData.email,
-            password: formData.password, // In a real application, the password should be hashed
             gender: formData.gender,
             country_code: formData.countryCode,
             phone: formData.phone,
@@ -72,31 +71,43 @@ export default function SignUpPage() {
             agree_marketing: formData.agreeMarketing,
             agree_membership: formData.agreeMembership,
             agree_privacy: formData.agreePrivacy,
-            created_at: new Date().toISOString(),
           }
-        ])
+        }
+      });
 
-      if (error) {
-        console.error('Supabase error:', error)
-        showPopup('Registration Error', 'An error occurred during registration: ' + error.message)
-      } else {
-        showPopup('Success!', 'Registration completed successfully!')
-        // Clear form data
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          gender: '',
-          countryCode: '+44',
-          phone: '',
-          birthdate: '',
-          agreeMarketing: false,
-          agreeMembership: false,
-          agreePrivacy: false,
-        })
-        setCaptchaVerified(false)
+      if (authError) {
+        console.error('Supabase auth error:', authError)
+        showPopup('Registration Error', 'An error occurred during authentication: ' + authError.message)
+        setLoading(false)
+        return
       }
+
+      if (!authData.user) {
+        showPopup('Registration Error', 'Could not create user account.')
+        setLoading(false)
+        return
+      }
+
+      // The trigger now handles inserting into user_registrations.
+      // So, the manual insert logic is no longer needed.
+
+      showPopup('Success!', 'Registration successful! Please check your email to confirm your account.')
+      // Clear form data
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        gender: '',
+        countryCode: '+44',
+        phone: '',
+        birthdate: '',
+        agreeMarketing: false,
+        agreeMembership: false,
+        agreePrivacy: false,
+      })
+      setCaptchaVerified(false)
+      
     } catch (error) {
       console.error('Error:', error)
       showPopup('Unexpected Error', 'An unexpected error occurred')
