@@ -78,39 +78,7 @@ export default function CheckoutPage() {
 
   const handleCompleteOrder = async () => {
     if (cartItems.length === 0) return
-    
-    try {
-      // Create a payment intent on the server
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: finalTotal,
-          currency: 'gbp',
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.clientSecret) {
-        // Redirect to payment page
-        const stripe = await stripePromise
-        if (stripe) {
-          const { error } = await stripe.redirectToCheckout({
-            sessionId: data.clientSecret,
-          })
-
-          if (error) {
-            showPopup('Payment Error', 'There was an error processing your payment. Please try again.')
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Payment error:', error)
-      showPopup('Payment Error', 'There was an error processing your payment. Please try again.')
-    }
+    router.push('/checkout/payment')
   }
 
   useEffect(() => {
@@ -266,13 +234,20 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={handleCompleteOrder}
-                  className="w-full btn-primary mt-6 py-3 flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  Complete Order
-                </button>
+                <div className="mt-8">
+                  <button
+                    onClick={handleCompleteOrder}
+                    className="w-full btn-primary py-3"
+                  >
+                    Complete Order
+                  </button>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    By completing the order, you agree to our <Link href="/terms" className="text-blue-500">Terms of Service</Link> and <Link href="/privacy" className="text-blue-500">Privacy Policy</Link>.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

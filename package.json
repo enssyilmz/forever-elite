@@ -14,15 +14,18 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.10",
     "@types/react-google-recaptcha": "^2.1.9",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.10",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.3",
     "lucide-react": "^0.487.0",
     "next": "15.2.4",
+    "postcss": "^8",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "react-google-recaptcha": "^3.1.0",
     "react-google-recaptcha-v3": "^1.11.0",
     "react-phone-input-2": "^2.15.1",
-    "stripe": "^18.2.1"
+    "stripe": "^18.2.1",
+    "tailwindcss": "^3.4.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,9 +33,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.2.4",
-    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }
