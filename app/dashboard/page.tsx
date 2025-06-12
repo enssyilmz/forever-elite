@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ShoppingCart } from 'lucide-react'
+import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ShoppingCart, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import PhoneInput from 'react-phone-input-2'
@@ -18,10 +18,21 @@ interface Product {
   emoji: string;
 }
 
+interface SupportTicket {
+  id: number;
+  subject: string;
+  content: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  admin_response?: string;
+  admin_response_at?: string;
+}
+
 export default function Dashboard() {
   const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
   const [activeSection, setActiveSection] = useState('profile')
   const [formData, setFormData] = useState({
     firstName: '',
@@ -49,6 +60,20 @@ export default function Dashboard() {
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(true)
   
+  // Support ticket states
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
+  const [supportLoading, setSupportLoading] = useState(true)
+  const [supportSectionExpanded, setSupportSectionExpanded] = useState({
+    myTickets: false,
+    newTicket: false
+  })
+  const [newTicketForm, setNewTicketForm] = useState({
+    subject: '',
+    content: ''
+  })
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
+  const [recaptchaVerified, setRecaptchaVerified] = useState(false)
+  
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -60,100 +85,169 @@ export default function Dashboard() {
 
     // Check for body fat result from localStorage
     const savedBodyFat = localStorage.getItem('bodyFatResult')
-    
+
     const getUser = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        return
-      }
-
-      if (user) {
-        setUser(user)
-        console.log('User session:', session) // Debug log
-        console.log('Last sign in:', user.last_sign_in_at) // Debug log
+      try {
+        // Get both session and user data
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
         
-        // Load user data from user_registrations table
-        const { data: userData } = await supabase
-          .from('user_registrations')
-          .select('*')
-          .eq('email', user.email)
-          .single()
-          
-        if (userData) {
-          setFormData({
-            firstName: userData.first_name || '',
-            lastName: userData.last_name || '',
-            email: userData.email || '',
-            phone: userData.phone || '',
-            birthdate: userData.birthdate || '',
-            gender: userData.gender || '',
-            bodyFat: savedBodyFat || userData.body_fat || '',
-            fullName: userData.first_name || userData.last_name || '',
-            height: userData.height || '',
-            weight: userData.weight || ''
-          })
-          setCommunicationPrefs({
-            phone: userData.comm_phone || false,
-            email: userData.comm_email || false,
-            sms: userData.comm_sms || false,
-          })
-        } else {
-          // Extract names from Google metadata
-          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || ''
-          const nameParts = fullName.split(' ')
-          const firstName = user.user_metadata?.first_name || nameParts[0] || ''
-          const lastName = user.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
-          
-          setFormData({
-            firstName: firstName,
-            lastName: lastName,
-            email: user.email || '',
-            phone: user.user_metadata?.phone || user.user_metadata?.phone_number || '',
-            birthdate: user.user_metadata?.birthdate || user.user_metadata?.birth_date || '',
-            gender: user.user_metadata?.gender || '',
-            bodyFat: savedBodyFat || '',
-            fullName: fullName,
-            height: user.user_metadata?.height || '',
-            weight: user.user_metadata?.weight || ''
-          })
+        if (sessionError) {
+          console.error('Session error:', sessionError)
         }
 
-        // Fetch favorite products
-        setFavoritesLoading(true)
-        const { data: favorites, error: favoritesError } = await supabase
-          .from('user_favorites')
-          .select('product_id')
-          .eq('user_id', user.id)
+        // Try to get user from session first, then from getUser
+        const currentUser = user || session?.user
+        
+        if (currentUser) {
+          setUser(currentUser)
+          
+          // Load user data from user_registrations table
+          try {
+            const { data: userData } = await supabase
+              .from('user_registrations')
+              .select('*')
+              .eq('email', currentUser.email)
+              .single()
+              
+            if (userData) {
+              setFormData({
+                firstName: userData.first_name || '',
+                lastName: userData.last_name || '',
+                email: userData.email || '',
+                phone: userData.phone || '',
+                birthdate: userData.birthdate || '',
+                gender: userData.gender || '',
+                bodyFat: savedBodyFat || userData.body_fat || '',
+                fullName: userData.first_name || userData.last_name || '',
+                height: userData.height || '',
+                weight: userData.weight || ''
+              })
+            } else {
+              // Extract names from Google metadata
+              const fullName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || ''
+              const nameParts = fullName.split(' ')
+              const firstName = currentUser.user_metadata?.first_name || nameParts[0] || ''
+              const lastName = currentUser.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
+              
+              setFormData({
+                firstName: firstName,
+                lastName: lastName,
+                email: currentUser.email || '',
+                phone: currentUser.user_metadata?.phone || currentUser.user_metadata?.phone_number || '',
+                birthdate: currentUser.user_metadata?.birthdate || currentUser.user_metadata?.birth_date || '',
+                gender: currentUser.user_metadata?.gender || '',
+                bodyFat: savedBodyFat || '',
+                fullName: fullName,
+                height: currentUser.user_metadata?.height || '',
+                weight: currentUser.user_metadata?.weight || ''
+              })
+            }
+          } catch (error) {
+            console.error('Error loading user data:', error)
+          }
 
-        if (favoritesError) {
-          console.error('Error fetching favorites:', favoritesError)
-          setFavoriteProducts([])
+          // Load communication preferences separately
+          try {
+            const { data: commPrefs } = await supabase
+              .from('user_communication_preferences')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .single()
+              
+            if (commPrefs) {
+              setCommunicationPrefs({
+                phone: commPrefs.phone_notifications || false,
+                email: commPrefs.email_notifications || false,
+                sms: commPrefs.sms_notifications || false,
+              })
+            }
+          } catch (error) {
+            console.error('Error loading communication preferences:', error)
+          }
+
+          // Load favorites and support tickets in background
+          Promise.all([
+            // Fetch favorite products
+            (async () => {
+              try {
+                setFavoritesLoading(true)
+                const { data: favorites, error: favoritesError } = await supabase
+                  .from('user_favorites')
+                  .select('product_id')
+                  .eq('user_id', currentUser.id)
+
+                if (favoritesError) {
+                  console.error('Error fetching favorites:', favoritesError)
+                  setFavoriteProducts([])
+                } else {
+                  const favoriteProductIds = favorites.map(fav => fav.product_id)
+                  const favoriteProgramDetails = allPrograms
+                    .filter(p => favoriteProductIds.includes(p.id))
+                    .map(p => ({
+                      id: p.id,
+                      name: p.title,
+                      description: p.bodyFatRange,
+                      emoji: p.emoji || '⭐'
+                    }))
+                  setFavoriteProducts(favoriteProgramDetails)
+                }
+              } catch (error) {
+                console.error('Error fetching favorites:', error)
+                setFavoriteProducts([])
+              } finally {
+                setFavoritesLoading(false)
+              }
+            })(),
+            
+            // Fetch support tickets
+            (async () => {
+              try {
+                setSupportLoading(true)
+                const { data: tickets, error: ticketsError } = await supabase
+                  .from('support_tickets')
+                  .select('*')
+                  .eq('user_id', currentUser.id)
+                  .order('created_at', { ascending: false })
+
+                if (ticketsError) {
+                  console.error('Error fetching support tickets:', ticketsError)
+                  setSupportTickets([])
+                } else {
+                  setSupportTickets(tickets || [])
+                }
+              } catch (error) {
+                console.error('Error fetching support tickets:', error)
+                setSupportTickets([])
+              } finally {
+                setSupportLoading(false)
+              }
+            })()
+          ]).catch(error => {
+            console.error('Error in parallel data fetching:', error)
+          })
+
         } else {
-          const favoriteProductIds = favorites.map(fav => fav.product_id)
-          const favoriteProgramDetails = allPrograms
-            .filter(p => favoriteProductIds.includes(p.id))
-            .map(p => ({
-              id: p.id,
-              name: p.title,
-              description: p.bodyFatRange,
-              emoji: p.emoji || '⭐' // Use emoji, with a fallback
-            }))
-          setFavoriteProducts(favoriteProgramDetails)
+          setUser(null)
         }
-        setFavoritesLoading(false)
+      } catch (error) {
+        console.error('Error in getUser:', error)
       }
-      
-      setLoading(false)
     }
 
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null)
+      async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await getUser()
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setFavoriteProducts([])
+          setSupportTickets([])
+        } else {
+          setUser(session?.user ?? null)
+        }
       }
     )
 
@@ -213,40 +307,28 @@ export default function Dashboard() {
     setMessage('')
 
     try {
-      // Check if user exists in user_registrations
-      const { data: existingUser } = await supabase
-        .from('user_registrations')
-        .select('id')
-        .eq('email', user.email)
-        .single()
-      
       const prefsData = {
-        comm_phone: communicationPrefs.phone,
-        comm_email: communicationPrefs.email,
-        comm_sms: communicationPrefs.sms,
+        user_id: user.id,
+        phone_notifications: communicationPrefs.phone,
+        email_notifications: communicationPrefs.email,
+        sms_notifications: communicationPrefs.sms,
         updated_at: new Date().toISOString(),
       }
 
-      if (existingUser) {
-        // Update existing record
-        const { error } = await supabase
-          .from('user_registrations')
-          .update(prefsData)
-          .eq('email', user.email)
-        if (error) throw error
-      } else {
-        // Create new record if none exists
-        const { error } = await supabase
-          .from('user_registrations')
-          .insert({ email: user.email, ...prefsData })
-        if (error) throw error
-      }
+      // Use upsert to insert or update
+      const { error } = await supabase
+        .from('user_communication_preferences')
+        .upsert(prefsData, {
+          onConflict: 'user_id'
+        })
+        
+      if (error) throw error
       
-      setShowSuccessModal(true)
+      showPopup('Success', 'Communication preferences saved successfully!')
     } catch (error) {
       const err = error as { message?: string }
       console.error('Error saving preferences:', err)
-      setMessage(err.message || 'Error saving preferences. Please try again.')
+      showPopup('Error', err.message || 'Error saving preferences. Please try again.')
     } finally {
       setIsSavingPrefs(false)
     }
@@ -258,12 +340,69 @@ export default function Dashboard() {
     setShowSuccessModal(true)
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Loading...</div>
-      </div>
-    )
+  const handleNewTicketSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!user) return
+    if (!newTicketForm.subject.trim() || !newTicketForm.content.trim()) {
+      showPopup('Error', 'Please fill in all fields.')
+      return
+    }
+    if (!recaptchaVerified) {
+      showPopup('Error', 'Please verify reCAPTCHA.')
+      return
+    }
+
+    setIsSubmittingTicket(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: user.id,
+          subject: newTicketForm.subject,
+          content: newTicketForm.content,
+          status: 'open',
+          priority: 'normal'
+        })
+        .select()
+
+      if (error) throw error
+
+      // Reset form
+      setNewTicketForm({ subject: '', content: '' })
+      setRecaptchaVerified(false)
+      
+      // Refresh tickets
+      const { data: tickets } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      setSupportTickets(tickets || [])
+      
+      showPopup('Success', 'Your support ticket has been submitted successfully!')
+      
+      // Close new ticket form and open my tickets
+      setSupportSectionExpanded({ myTickets: true, newTicket: false })
+      
+    } catch (error) {
+      console.error('Error submitting ticket:', error)
+      showPopup('Error', 'Failed to submit ticket. Please try again.')
+    } finally {
+      setIsSubmittingTicket(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open': return 'bg-blue-100 text-blue-800'
+      case 'in_progress': return 'bg-yellow-100 text-yellow-800'
+      case 'resolved': return 'bg-green-100 text-green-800'
+      case 'closed': return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
   }
 
   if (!user) {
@@ -575,6 +714,146 @@ export default function Dashboard() {
           </div>
         )
       
+      case 'support':
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-md text-black">
+            <h3 className="text-xl font-bold mb-6 text-gray-900">Support</h3>
+            
+            <div className="space-y-4">
+              {/* My Support Tickets Section */}
+              <div className="border rounded-lg">
+                <button
+                  onClick={() => setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-semibold text-gray-800">My Support Tickets</span>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${supportSectionExpanded.myTickets ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {supportSectionExpanded.myTickets && (
+                  <div className="border-t p-4">
+                    {supportLoading ? (
+                      <p className="text-gray-500">Loading tickets...</p>
+                    ) : supportTickets.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-4">No support tickets found.</p>
+                        <button
+                          onClick={() => setSupportSectionExpanded({ myTickets: true, newTicket: true })}
+                          className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create New Support Ticket
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Total: {supportTickets.length} tickets</span>
+                          <button
+                            onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
+                            className="inline-flex items-center px-3 py-1 text-sm bg-sky-500 text-white rounded hover:bg-sky-600 transition-colors"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            New Ticket
+                          </button>
+                        </div>
+                        
+                        {supportTickets.map((ticket) => (
+                          <div key={ticket.id} className="border rounded-lg p-4 bg-gray-50">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-gray-800">#{ticket.id} - {ticket.subject}</h4>
+                              <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
+                                {ticket.status.replace('_', ' ').toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-2 line-clamp-2">{ticket.content}</p>
+                            <div className="flex justify-between items-center text-xs text-gray-500">
+                              <span>Created: {dayjs(ticket.created_at).format('DD/MM/YYYY HH:mm')}</span>
+                              <span>Updated: {dayjs(ticket.updated_at).format('DD/MM/YYYY HH:mm')}</span>
+                            </div>
+                            {ticket.admin_response && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                                <p className="text-sm text-blue-800 font-medium">Admin Response:</p>
+                                <p className="text-sm text-blue-700 mt-1">{ticket.admin_response}</p>
+                                <p className="text-xs text-blue-600 mt-2">
+                                  Responded: {dayjs(ticket.admin_response_at).format('DD/MM/YYYY HH:mm')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* New Support Ticket Section */}
+              <div className="border rounded-lg">
+                <button
+                  onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-semibold text-gray-800">Create New Support Ticket</span>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${supportSectionExpanded.newTicket ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {supportSectionExpanded.newTicket && (
+                  <div className="border-t p-4">
+                    <form onSubmit={handleNewTicketSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <input
+                          type="text"
+                          value={newTicketForm.subject}
+                          onChange={(e) => setNewTicketForm(prev => ({ ...prev, subject: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                          placeholder="Brief description of your issue"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                        <textarea
+                          value={newTicketForm.content}
+                          onChange={(e) => setNewTicketForm(prev => ({ ...prev, content: e.target.value }))}
+                          rows={6}
+                          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                          placeholder="Please provide detailed information about your issue..."
+                          required
+                        />
+                      </div>
+                      
+                      {/* Simple reCAPTCHA simulation */}
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="recaptcha"
+                          checked={recaptchaVerified}
+                          onChange={(e) => setRecaptchaVerified(e.target.checked)}
+                          className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
+                        />
+                        <label htmlFor="recaptcha" className="text-sm text-gray-700">
+                          I'm not a robot (reCAPTCHA verification)
+                        </label>
+                      </div>
+                      
+                      <button
+                        type="submit"
+                        disabled={isSubmittingTicket || !recaptchaVerified}
+                        className="w-full bg-sky-500 text-white py-3 px-4 rounded-lg hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isSubmittingTicket ? 'Submitting...' : 'Submit Support Ticket'}
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      
       default:
         return (
           <div className="bg-white p-6 rounded-lg shadow-md text-black">
@@ -597,7 +876,13 @@ export default function Dashboard() {
               <p><strong>Email:</strong> {user.email}</p>
               <p><strong>Name:</strong> {user.user_metadata?.full_name || user.user_metadata?.first_name || 'Not provided'}</p>
               <p><strong>Provider:</strong> {user.app_metadata?.provider || 'Unknown'}</p>
-              <p><strong>Last Sign In:</strong> {user.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
+              <p><strong>Last Sign In:</strong> {
+                user.last_sign_in_at 
+                  ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss')
+                  : user.user_metadata?.last_sign_in_at
+                    ? dayjs(user.user_metadata.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss')
+                    : 'Not available'
+              }</p>
               <p><strong>Created At:</strong> {user.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
             </div>
           </div>
