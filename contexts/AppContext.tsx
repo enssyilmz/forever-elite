@@ -25,14 +25,18 @@ interface FavoriteItem {
 
 interface Review {
   id: number
-  programId: number
-  name: string
+  user_id: string
+  program_id: number
   rating: number
   comment: string
-  date: string
+  created_at: string
+  user_name: string
 }
 
 interface AppContextType {
+  // User
+  user: User | null
+
   // Cart
   cartItems: CartItem[]
   addToCart: (programId: number, quantity: number) => void
@@ -49,7 +53,8 @@ interface AppContextType {
   
   // Reviews
   reviews: Review[]
-  addReview: (programId: number, review: Omit<Review, 'id' | 'programId'>) => void
+  addReview: (programId: number, rating: number, comment: string) => Promise<void>
+  deleteReview: (reviewId: number) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -61,21 +66,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const supabase = createClientComponentClient()
 
-  // Get user and their favorites on mount
+  // Get user, favorites, and reviews on mount
   useEffect(() => {
-    const fetchUserAndFavorites = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+    const fetchInitialData = async () => {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        return
+      }
+
       setUser(user)
+      console.log('Initial session:', session) // Debug log
+      console.log('Initial user:', user) // Debug log
 
       if (user) {
         // Fetch favorites from Supabase
-        const { data: userFavorites, error } = await supabase
+        const { data: userFavorites, error: favoritesError } = await supabase
           .from('user_favorites')
           .select('product_id')
           .eq('user_id', user.id)
         
-        if (error) {
-          console.error('Error fetching user favorites:', error)
+        if (favoritesError) {
+          console.error('Error fetching user favorites:', favoritesError)
           return
         }
 
@@ -93,40 +107,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         
         setFavoriteItems(favoritePrograms)
       } else {
-        // For logged-out users, clear favorites or load from localStorage if you want to persist them non-authenticated
         setFavoriteItems([])
       }
     }
 
-    fetchUserAndFavorites()
+    fetchInitialData()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
-      // Re-fetch favorites on sign-in or sign-out
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        fetchUserAndFavorites()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event) // Debug log
+      console.log('Session update:', session) // Debug log
+      
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        setUser(null)
+        setFavoriteItems([])
+      }
+
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchInitialData()
       }
     })
 
     return () => subscription.unsubscribe()
   }, [supabase])
 
-  // Load cart and reviews from localStorage on mount
+  // Load cart from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem('cartItems')
-      const savedReviews = localStorage.getItem('reviews')
-      
       if (savedCart) {
         setCartItems(JSON.parse(savedCart))
-      }
-      if (savedReviews) {
-        setReviews(JSON.parse(savedReviews))
       }
     }
   }, [])
 
-  // Save cart and reviews to localStorage whenever state changes
+  // Save cart to localStorage whenever state changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('cartItems', JSON.stringify(cartItems))
@@ -258,31 +274,73 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return favoriteItems.some(item => item.id === programId)
   }
 
-  const addReview = (programId: number, review: Omit<Review, 'id' | 'programId'>) => {
-    const newReview: Review = {
-      ...review,
-      id: Date.now(),
-      programId,
-      date: new Date().toISOString().split('T')[0]
+  const addReview = async (programId: number, rating: number, comment: string) => {
+    if (!user) throw new Error("User must be logged in to add a review.");
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({
+        user_id: user.id,
+        program_id: programId,
+        rating,
+        comment,
+        user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding review:', error)
+      throw error;
     }
-    setReviews(prev => [...prev, newReview])
+    
+    if (data) {
+      setReviews(prev => [data as Review, ...prev]);
+    }
+  }
+
+  const deleteReview = async (reviewId: number) => {
+    if (!user) throw new Error("User must be logged in to delete a review.");
+
+    // First, check if the user is the owner of the review
+    const reviewToDelete = reviews.find(r => r.id === reviewId);
+    if (!reviewToDelete || reviewToDelete.user_id !== user.id) {
+      throw new Error("You can only delete your own reviews.");
+    }
+
+    const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId)
+        .eq('user_id', user.id);
+      
+    if (error) {
+      console.error('Error deleting review:', error)
+      throw error;
+    }
+
+    setReviews(prev => prev.filter(review => review.id !== reviewId));
   }
 
   return (
-    <AppContext.Provider value={{
-      cartItems,
-      addToCart,
-      removeFromCart,
-      updateCartQuantity,
-      getTotalPrice,
-      getCartItemCount,
-      favoriteItems,
-      addToFavorites,
-      removeFromFavorites,
-      isFavorite,
-      reviews,
-      addReview
-    }}>
+    <AppContext.Provider
+      value={{
+        user,
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateCartQuantity,
+        getTotalPrice,
+        getCartItemCount,
+        favoriteItems,
+        addToFavorites,
+        removeFromFavorites,
+        isFavorite,
+        reviews,
+        addReview,
+        deleteReview
+      }}
+    >
       {children}
     </AppContext.Provider>
   )

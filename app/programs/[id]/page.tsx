@@ -6,21 +6,17 @@ import { useParams, useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
 import SuccessModal from '@/components/SuccessModal'
 import ReviewSection from '@/components/ReviewSection'
+import { programs } from '@/lib/programsData' // Import programs
 
 export default function ProgramDetailPage() {
   const params = useParams()
   const router = useRouter()
   const programId = parseInt(params.id as string)
-  const { addToCart, addToFavorites, removeFromFavorites, isFavorite, addReview, reviews } = useApp()
+  const { addToCart, addToFavorites, removeFromFavorites, isFavorite, reviews } = useApp()
   
   const [quantity, setQuantity] = useState(1)
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
-  const [reviewForm, setReviewForm] = useState({
-    name: '',
-    rating: 5,
-    comment: ''
-  })
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
@@ -36,273 +32,13 @@ export default function ProgramDetailPage() {
     setShowSuccessModal(true)
   }
 
-  const programs = [
-    {
-      id: 1,
-      title: 'Elite Athletes Program',
-      bodyFatRange: '6-10% Body Fat',
-      description: 'Designed for professional athletes and bodybuilders.',
-      longDescription: 'This elite-level program is specifically designed for professional athletes, competitive bodybuilders, and individuals who have already achieved a high level of fitness. The program focuses on extreme cutting protocols, advanced training techniques, and precise nutrition strategies.',
-      features: [
-        'Advanced cutting protocols',
-        'Competition prep guidance', 
-        'Supplement optimization',
-        'Performance tracking',
-        'Elite nutrition plans'
-      ],
-      originalPrice: 299,
-      discountedPrice: 199,
-      discount: 33,
-      specifications: [
-        '12-week intensive program',
-        '6 days per week training',
-        'Advanced nutrition protocols',
-        'Weekly progress assessments'
-      ],
-      recommendations: [
-        'Minimum 2 years of training experience',
-        'Current body fat below 12%',
-        'Access to well-equipped gym'
-      ],
-      reviews: []
-    },
-    {
-      id: 2,
-      title: 'Advanced Fitness Program',
-      bodyFatRange: '10-14% Body Fat',
-      description: 'Perfect for experienced fitness enthusiasts.',
-      longDescription: 'Built for experienced fitness enthusiasts who want to take their physique to the next level. This program combines advanced strength training protocols with lean muscle maintenance strategies.',
-      features: [
-        'Advanced strength training',
-        'Muscle maintenance protocols',
-        'Progressive overload systems',
-        'Recovery optimization'
-      ],
-      originalPrice: 249,
-      discountedPrice: 169,
-      discount: 32,
-      specifications: [
-        '10-week progressive program',
-        '5 days per week training',
-        'Strength-focused protocols',
-        'Bi-weekly progress assessments'
-      ],
-      recommendations: [
-        'Minimum 1 year of training',
-        'Basic compound movement knowledge',
-        'Access to free weights'
-      ],
-      reviews: []
-    },
-    {
-      id: 3,
-      title: 'Active Lifestyle Program',
-      bodyFatRange: '14-18% Body Fat',
-      description: 'Great for active individuals looking to improve their physique.',
-      longDescription: 'Perfect program for active individuals who want to balance fitness with their busy lifestyle. Combines efficient workouts with flexible scheduling options.',
-      features: [
-        'Balanced training approach',
-        'Cardio-strength integration',
-        'Lifestyle-friendly schedules',
-        'Flexible meal plans'
-      ],
-      originalPrice: 199,
-      discountedPrice: 139,
-      discount: 30,
-      specifications: [
-        '8-week balanced program',
-        '4 days per week training',
-        'Flexible scheduling options',
-        'Weekly progress check-ins'
-      ],
-      recommendations: [
-        'Basic fitness foundation',
-        'Consistent workout habit',
-        'Time for 4 weekly sessions'
-      ],
-      reviews: []
-    },
-    {
-      id: 4,
-      title: 'Transformation Program',
-      bodyFatRange: '18-22% Body Fat',
-      description: 'Ideal for those starting their fitness journey.',
-      longDescription: 'Comprehensive transformation program designed for beginners who want to make lasting changes. Focus on building healthy habits and sustainable progress.',
-      features: [
-        'Progressive workout system',
-        'Weight loss strategies',
-        'Habit formation guidance',
-        'Motivation techniques'
-      ],
-      originalPrice: 179,
-      discountedPrice: 129,
-      discount: 28,
-      specifications: [
-        '12-week transformation program',
-        '3-4 days per week training',
-        'Progressive difficulty increase',
-        'Habit tracking tools'
-      ],
-      recommendations: [
-        'Ready to commit to change',
-        'Basic gym access',
-        'Willingness to track progress'
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: 'David Wilson',
-          rating: 5,
-          comment: 'Lost 25 pounds and gained so much confidence! Highly recommend.',
-          date: '2024-01-08'
-        }
-      ]
-    },
-    {
-      id: 5,
-      title: 'Beginner Boost Program',
-      bodyFatRange: '22-26% Body Fat',
-      description: 'Perfect starting point for fitness beginners.',
-      longDescription: 'Gentle introduction to fitness with low-impact exercises and gradual progression. Perfect for those who are new to exercise or returning after a long break.',
-      features: [
-        'Beginner-friendly exercises',
-        'Low-impact movements',
-        'Gradual progression',
-        'Basic nutrition education'
-      ],
-      originalPrice: 149,
-      discountedPrice: 99,
-      discount: 34,
-      specifications: [
-        '8-week beginner program',
-        '3 days per week training',
-        'Low-impact focus',
-        'Educational materials included'
-      ],
-      recommendations: [
-        'New to exercise',
-        'Previous injuries or concerns',
-        'Prefer gentle approach'
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: 'Maria Rodriguez',
-          rating: 5,
-          comment: 'Great for beginners! Felt supported throughout the journey.',
-          date: '2024-01-05'
-        }
-      ]
-    },
-    {
-      id: 6,
-      title: 'Health Foundation Program',
-      bodyFatRange: '26-30% Body Fat',
-      description: 'Focus on building healthy habits and basic fitness.',
-      longDescription: 'Foundational program focusing on health improvement rather than intense fitness. Emphasis on building sustainable healthy habits and gentle movement.',
-      features: [
-        'Gentle movement protocols',
-        'Lifestyle modification',
-        'Health habit building',
-        'Stress management'
-      ],
-      originalPrice: 129,
-      discountedPrice: 89,
-      discount: 31,
-      specifications: [
-        '10-week foundation program',
-        '2-3 days per week activities',
-        'Health-focused approach',
-        'Lifestyle coaching included'
-      ],
-      recommendations: [
-        'Health improvement focus',
-        'Gentle approach preferred',
-        'Building basic habits'
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: 'Robert Kim',
-          rating: 4,
-          comment: 'Helped me build healthy habits that actually stick. Great approach.',
-          date: '2024-01-03'
-        }
-      ]
-    },
-    {
-      id: 7,
-      title: 'Wellness Journey Program',
-      bodyFatRange: '30%+ Body Fat',
-      description: 'Comprehensive approach to health improvement.',
-      longDescription: 'Holistic wellness program with medical support and comprehensive health assessment. Focus on safe, sustainable health improvement with professional guidance.',
-      features: [
-        'Medical supervision',
-        'Comprehensive health assessment',
-        'Safe progression protocols',
-        'Mental health support'
-      ],
-      originalPrice: 199,
-      discountedPrice: 149,
-      discount: 25,
-      specifications: [
-        '16-week wellness program',
-        'Medical assessment included',
-        'Supervised progression',
-        'Mental health resources'
-      ],
-      recommendations: [
-        'Medical clearance obtained',
-        'Commitment to long-term change',
-        'Open to professional guidance'
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: 'Jennifer Brown',
-          rating: 5,
-          comment: 'Life-changing program! The medical support made all the difference.',
-          date: '2024-01-01'
-        }
-      ]
-    },
-    {
-      id: 8,
-      title: 'Personalized Program',
-      bodyFatRange: 'Custom Body Fat',
-      description: 'Tailored specifically to your body composition and goals.',
-      longDescription: 'Completely customized program designed specifically for your unique needs, goals, and circumstances. Includes one-on-one coaching and personalized meal and workout plans.',
-      features: [
-        'Complete personalization',
-        'One-on-one coaching',
-        'Custom meal plans',
-        'Individual workout design'
-      ],
-      originalPrice: 399,
-      discountedPrice: 299,
-      discount: 25,
-      specifications: [
-        'Fully customized duration',
-        'Personalized schedule',
-        'Individual assessment',
-        'Unlimited coach access'
-      ],
-      recommendations: [
-        'Specific unique goals',
-        'Previous program experience',
-        'Investment in personalization'
-      ],
-      reviews: [
-        {
-          id: 1,
-          name: 'Thomas Anderson',
-          rating: 5,
-          comment: 'Worth every penny! Having a personalized approach made all the difference.',
-          date: '2023-12-28'
-        }
-      ]
-    }
-  ]
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  }
 
   const program = programs.find(p => p.id === programId)
 
@@ -341,23 +77,8 @@ export default function ProgramDetailPage() {
     }
   }
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (reviewForm.name.trim() && reviewForm.comment.trim()) {
-      addReview(programId, {
-        name: reviewForm.name,
-        rating: reviewForm.rating,
-        comment: reviewForm.comment,
-        date: new Date().toISOString().split('T')[0]
-      })
-      setReviewForm({ name: '', rating: 5, comment: '' })
-      setShowReviewForm(false)
-      showPopup('Review Added!', 'Thank you for your review. It has been added successfully!')
-    }
-  }
-
   // Get reviews for this program
-  const programReviews = reviews.filter(review => review.programId === programId)
+  const programReviews = reviews.filter(review => review.program_id === programId)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-6">
@@ -382,13 +103,7 @@ export default function ProgramDetailPage() {
             }`}>
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-8xl text-white opacity-80">
-                  {program.id === 1 ? '💎' : 
-                   program.id === 2 ? '🏆' : 
-                   program.id === 3 ? '🎯' : 
-                   program.id === 4 ? '🔥' : 
-                   program.id === 5 ? '⚡' : 
-                   program.id === 6 ? '🌟' : 
-                   program.id === 7 ? '💪' : '🚀'}
+                  {program.emoji}
                 </div>
               </div>
             </div>
@@ -406,13 +121,7 @@ export default function ProgramDetailPage() {
                 >
                   <div className="w-full h-full flex items-center justify-center">
                     <div className="text-2xl text-white opacity-80">
-                      {program.id === 1 ? '💎' : 
-                       program.id === 2 ? '🏆' : 
-                       program.id === 3 ? '🎯' : 
-                       program.id === 4 ? '🔥' : 
-                       program.id === 5 ? '⚡' : 
-                       program.id === 6 ? '🌟' : 
-                       program.id === 7 ? '💪' : '🚀'}
+                      {program.emoji}
                     </div>
                   </div>
                 </button>
@@ -489,12 +198,18 @@ export default function ProgramDetailPage() {
             {/* Yorum Yaz */}
             <div className="border-t pt-4">
               <button 
-                onClick={() => setShowReviewForm(true)}
+                onClick={() => setShowReviewForm(!showReviewForm)}
                 className="text-sky-600 hover:text-sky-700 font-medium"
               >
                 📝 Write a Review
               </button>
             </div>
+
+            {showReviewForm && (
+              <div className="mt-8">
+                <ReviewSection programId={programId} />
+              </div>
+            )}
 
             {/* Favorilere Ekle */}
             <div>
@@ -586,7 +301,7 @@ export default function ProgramDetailPage() {
                   onClick={() => toggleAccordion('reviews')}
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                 >
-                  <span className="font-medium text-gray-900">Customer Reviews ({program.reviews.length})</span>
+                  <span className="font-medium text-gray-900">Customer Reviews ({programReviews.length})</span>
                   <svg
                     className={`w-5 h-5 transition-transform ${
                       activeAccordion === 'reviews' ? 'rotate-180' : ''
@@ -600,10 +315,10 @@ export default function ProgramDetailPage() {
                 </button>
                 {activeAccordion === 'reviews' && (
                   <div className="px-4 pb-4 space-y-4">
-                    {program.reviews.map((review) => (
+                    {programReviews.map((review) => (
                       <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-gray-900">{review.name}</span>
+                          <span className="font-medium text-gray-900">{review.user_name}</span>
                           <div className="flex text-yellow-400">
                             {[...Array(5)].map((_, i) => (
                               <svg
@@ -615,7 +330,7 @@ export default function ProgramDetailPage() {
                               </svg>
                             ))}
                           </div>
-                          <span className="text-sm text-gray-500">{review.date}</span>
+                          <span className="text-sm text-gray-500">{formatDate(review.created_at)}</span>
                         </div>
                         <p className="text-gray-600">{review.comment}</p>
                       </div>
@@ -628,11 +343,6 @@ export default function ProgramDetailPage() {
         </div>
       </div>
       
-      {/* Reviews Section */}
-      <div className="mt-16">
-        <ReviewSection programId={programId} />
-      </div>
-
       <SuccessModal 
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
