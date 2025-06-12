@@ -342,7 +342,7 @@ export default function ProgramDetailPage() {
           </div>
         </div>
       </div>
-      
+
       <SuccessModal 
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
