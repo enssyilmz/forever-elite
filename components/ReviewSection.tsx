@@ -35,9 +35,6 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
       setRating(0)
       setComment('')
       
-      setModalTitle('Success')
-      setModalMessage('Your review has been submitted successfully!')
-      setShowSuccessModal(true)
     } catch (error) {
       console.error('Error submitting review:', error)
       setModalTitle('Error')
