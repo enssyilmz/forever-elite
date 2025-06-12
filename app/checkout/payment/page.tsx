@@ -168,7 +168,7 @@ export default function PaymentPage() {
                 className="w-full btn-primary py-3 mt-4"
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Processing...' : `Pay £${totalPrice.toFixed(2)}`}
+                {isProcessing ? 'Processing...' : `Pay`}
               </button>
             </form>
           </div>
