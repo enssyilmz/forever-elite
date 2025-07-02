@@ -7,6 +7,7 @@ import { supabase } from '@/utils/supabaseClient'
 import ReCAPTCHA from 'react-google-recaptcha'
 import SuccessModal from '../../components/SuccessModal'
 import Link from 'next/link'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -29,6 +30,7 @@ export default function SignUpPage() {
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
@@ -147,15 +149,27 @@ export default function SignUpPage() {
             className="w-full border p-2 rounded" 
             required 
           />
-          <input 
-            name="password" 
-            placeholder="Password" 
-            type="password" 
-            value={formData.password}
-            onChange={handleChange} 
-            className="w-full border p-2 rounded" 
-            required 
-          />
+          <div className="relative">
+            <input 
+              name="password" 
+              placeholder="Password" 
+              type={showPassword ? 'text' : 'password'} 
+              value={formData.password}
+              onChange={handleChange} 
+              className="w-full border p-2 rounded" 
+              required 
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                setShowPassword(!showPassword)
+              }}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
           
           <div className="flex gap-4 items-center">
             <label><input type="radio" name="gender" value="male" checked={formData.gender === 'male'} onChange={handleChange} /> Male</label>
