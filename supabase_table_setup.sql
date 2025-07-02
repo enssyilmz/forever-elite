@@ -116,11 +116,35 @@ BEGIN
       'email', u.email,
       'created_at', u.created_at,
       'last_sign_in_at', u.last_sign_in_at,
-      'first_name', u.raw_user_meta_data->>'first_name',
-      'last_name', u.raw_user_meta_data->>'last_name',
-      'provider', u.raw_app_meta_data->>'provider'
+      'first_name', COALESCE(
+        u.raw_user_meta_data->>'first_name',
+        u.user_metadata->>'first_name',
+        split_part(COALESCE(u.raw_user_meta_data->>'full_name', u.user_metadata->>'full_name', u.raw_user_meta_data->>'name', u.user_metadata->>'name'), ' ', 1)
+      ),
+      'last_name', COALESCE(
+        u.raw_user_meta_data->>'last_name',
+        u.user_metadata->>'last_name',
+        nullif(substring(COALESCE(u.raw_user_meta_data->>'full_name', u.user_metadata->>'full_name', u.raw_user_meta_data->>'name', u.user_metadata->>'name') from position(' ' in COALESCE(u.raw_user_meta_data->>'full_name', u.user_metadata->>'full_name', u.raw_user_meta_data->>'name', u.user_metadata->>'name')) + 1), '')
+      ),
+      'display_name', COALESCE(
+        u.raw_user_meta_data->>'full_name',
+        u.user_metadata->>'full_name',
+        u.raw_user_meta_data->>'name',
+        u.user_metadata->>'name',
+        u.raw_user_meta_data->>'display_name',
+        u.user_metadata->>'display_name',
+        CONCAT_WS(' ', u.raw_user_meta_data->>'first_name', u.raw_user_meta_data->>'last_name'),
+        CONCAT_WS(' ', u.user_metadata->>'first_name', u.user_metadata->>'last_name')
+      ),
+      'providers', (
+        SELECT json_agg(DISTINCT i.provider)
+        FROM auth.identities i
+        WHERE i.user_id = u.id
+      ),
+      'primary_provider', u.raw_app_meta_data->>'provider'
     )
-    FROM auth.users u;
+    FROM auth.users u
+    ORDER BY u.created_at DESC;
   ELSE
     -- Eğer çağıran admin değilse, boş bir set döndür
     RETURN;
