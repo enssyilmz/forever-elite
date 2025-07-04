@@ -119,9 +119,16 @@ export default function Dashboard() {
                 birthdate: userData.birthdate || '',
                 gender: userData.gender || '',
                 bodyFat: savedBodyFat || userData.body_fat || '',
-                fullName: userData.first_name || userData.last_name || '',
+                fullName: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
                 height: userData.height || '',
                 weight: userData.weight || ''
+              })
+              
+              // İletişim tercihlerini de yükle
+              setCommunicationPrefs({
+                phone: userData.comm_phone || false,
+                email: userData.comm_email || false,
+                sms: userData.comm_sms || false,
               })
             } else {
               // Extract names from Google metadata
@@ -147,24 +154,7 @@ export default function Dashboard() {
             console.error('Error loading user data:', error)
           }
 
-          // Load communication preferences separately
-          try {
-            const { data: commPrefs } = await supabase
-              .from('user_communication_preferences')
-              .select('*')
-              .eq('user_id', currentUser.id)
-              .single()
-              
-            if (commPrefs) {
-              setCommunicationPrefs({
-                phone: commPrefs.phone_notifications || false,
-                email: commPrefs.email_notifications || false,
-                sms: commPrefs.sms_notifications || false,
-              })
-            }
-          } catch (error) {
-            console.error('Error loading communication preferences:', error)
-          }
+          // İletişim tercihleri artık user_registrations tablosundan yükleniyor
 
           // Load favorites and support tickets in background
           Promise.all([
@@ -268,27 +258,63 @@ export default function Dashboard() {
     setIsUpdating(true)
 
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          full_name: formData.fullName,
-          phone: formData.phone,
-          birthdate: formData.birthdate,
-          gender: formData.gender,
-          height: formData.height,
-          weight: formData.weight,
-          body_fat: formData.bodyFat,
-          updated_at: new Date().toISOString()
-        })
-        .select()
+      // Doğrudan formData'dan firstName ve lastName'i kullan
+      const firstName = formData.firstName.trim()
+      const lastName = formData.lastName.trim()
 
-      if (error) throw error
+      // Önce kayıt var mı kontrol et
+      const { data: existingUser } = await supabase
+        .from('user_registrations')
+        .select('id')
+        .eq('email', user.email)
+        .single()
 
-      showPopup('Success', 'Your profile has been updated successfully!')
+      if (!existingUser) {
+        // Kayıt yoksa oluştur
+        const { error: insertError } = await supabase
+          .from('user_registrations')
+          .insert({
+            id: user.id,
+            email: user.email,
+            first_name: firstName,
+            last_name: lastName,
+            phone: formData.phone,
+            birthdate: formData.birthdate,
+            gender: formData.gender,
+            height: formData.height || null,
+            weight: formData.weight || null,
+            body_fat: formData.bodyFat || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+
+        if (insertError) throw insertError
+      } else {
+        // Kayıt varsa güncelle
+        const { error: updateError } = await supabase
+          .from('user_registrations')
+          .update({
+            first_name: firstName,
+            last_name: lastName,
+            phone: formData.phone,
+            birthdate: formData.birthdate,
+            gender: formData.gender,
+            height: formData.height || null,
+            weight: formData.weight || null,
+            body_fat: formData.bodyFat || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('email', user.email)
+
+        if (updateError) throw updateError
+      }
+
+      showPopup('Success', 'Profiliniz başarıyla güncellendi!')
     } catch (error) {
-      console.error('Error updating profile:', error)
-      showPopup('Error', 'There was an error updating your profile. Please try again.')
+      const err = error as { message?: string; details?: string; hint?: string }
+      console.error('Profil güncelleme hatası:', err)
+      const errorMessage = err.message || err.details || err.hint || 'Bilinmeyen bir hata oluştu'
+      showPopup('Error', `Profilinizi güncellerken bir hata oluştu: ${errorMessage}`)
     } finally {
       setIsUpdating(false)
     }
@@ -307,28 +333,25 @@ export default function Dashboard() {
     setMessage('')
 
     try {
-      const prefsData = {
-        user_id: user.id,
-        phone_notifications: communicationPrefs.phone,
-        email_notifications: communicationPrefs.email,
-        sms_notifications: communicationPrefs.sms,
-        updated_at: new Date().toISOString(),
-      }
-
-      // Use upsert to insert or update
       const { error } = await supabase
-        .from('user_communication_preferences')
-        .upsert(prefsData, {
-          onConflict: 'user_id'
+        .from('user_registrations')
+        .update({
+          comm_phone: communicationPrefs.phone,
+          comm_email: communicationPrefs.email,
+          comm_sms: communicationPrefs.sms,
+          updated_at: new Date().toISOString(),
         })
+        .eq('email', user.email)
+        .select()
         
       if (error) throw error
       
-      showPopup('Success', 'Communication preferences saved successfully!')
+      showPopup('Success', 'İletişim tercihleri başarıyla kaydedildi!')
     } catch (error) {
-      const err = error as { message?: string }
-      console.error('Error saving preferences:', err)
-      showPopup('Error', err.message || 'Error saving preferences. Please try again.')
+      const err = error as { message?: string; details?: string; hint?: string }
+      console.error('İletişim tercihleri kaydetme hatası:', err)
+      const errorMessage = err.message || err.details || err.hint || 'Bilinmeyen bir hata oluştu'
+      showPopup('Error', `İletişim tercihlerini kaydederken hata: ${errorMessage}`)
     } finally {
       setIsSavingPrefs(false)
     }
