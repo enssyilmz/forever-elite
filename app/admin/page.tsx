@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
 import { Mail, Shield, User, X, RefreshCw } from 'lucide-react'
 
-// RPC fonksiyonundan gelen JSON dönüş tipini temsil eden interface
 interface AuthUserFromAdmin {
   id: string
   first_name: string | null
@@ -82,12 +81,34 @@ export default function AdminPage() {
   const handleSendMail = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSending(true)
-    // Bu kısım daha sonra bir Edge Function ile doldurulacak
-    console.log('Sending mail:', mailContent)
-    await new Promise(resolve => setTimeout(resolve, 1500)) // Simulating network delay
-    setIsSending(false)
-    setMailModalOpen(false)
-    alert('Mail sending functionality is not yet implemented. Check console for data.')
+    
+    try {
+      const response = await fetch('/api/send-bulk-mail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subject: mailContent.subject,
+          body: mailContent.body
+        })
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(`✅ ${result.message}`)
+        setMailContent({ subject: '', body: '' })
+        setMailModalOpen(false)
+      } else {
+        throw new Error(result.error || 'Failed to send email')
+      }
+    } catch (error) {
+      console.error('Error sending bulk email:', error)
+      alert(`❌ Error: ${error instanceof Error ? error.message : 'Failed to send email'}`)
+    } finally {
+      setIsSending(false)
+    }
   }
 
   // İsim formatlaması - display_name'i öncelik ver, sonra first/last name
