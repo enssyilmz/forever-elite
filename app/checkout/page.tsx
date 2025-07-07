@@ -22,6 +22,8 @@ export default function CheckoutPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const validDiscountCodes = [
     { code: 'WELCOME10', percentage: 10 },
@@ -78,7 +80,62 @@ export default function CheckoutPage() {
 
   const handleCompleteOrder = async () => {
     if (cartItems.length === 0) return
-    router.push('/checkout/payment')
+
+    try {
+      // Prepare items for Stripe
+      const stripeItems = cartItems.map(item => {
+        const program = programs.find(p => p.id === item.id)
+        if (!program) return null
+        
+        const finalPrice = appliedDiscount 
+          ? convertToGBP(program.discountedPrice) * (1 - appliedDiscount.percentage / 100)
+          : convertToGBP(program.discountedPrice)
+
+        return {
+          name: program.title,
+          description: program.bodyFatRange,
+          price: finalPrice,
+          quantity: item.quantity,
+          images: [] // Add program images if available
+        }
+      }).filter(Boolean)
+
+      if (!customerEmail) {
+        showPopup('Error', 'Please enter your email address.')
+        return
+      }
+
+      setIsProcessing(true)
+
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: stripeItems,
+          customerEmail,
+          successUrl: `${window.location.origin}/checkout/confirmation`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        }),
+      })
+
+      const { url, error } = await response.json()
+
+      if (error) {
+        throw new Error(error)
+      }
+
+      // Redirect to Stripe Checkout
+      if (url) {
+        window.location.href = url
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      showPopup('Error', 'There was an error processing your order. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   useEffect(() => {
@@ -178,6 +235,24 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
 
+                {/* Customer Email */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Receipt and order updates will be sent to this email
+                  </p>
+                </div>
+
                 {/* Discount Code */}
                 <div className="mb-6">
                   <div className="flex gap-2 text-gray-600">
@@ -237,9 +312,17 @@ export default function CheckoutPage() {
                 <div className="mt-8">
                   <button
                     onClick={handleCompleteOrder}
-                    className="w-full btn-primary py-3"
+                    disabled={isProcessing || !customerEmail.trim()}
+                    className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Complete Order
+                    {isProcessing ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </div>
+                    ) : (
+                      'Pay with Stripe'
+                    )}
                   </button>
                 </div>
 
