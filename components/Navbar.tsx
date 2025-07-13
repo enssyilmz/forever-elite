@@ -156,6 +156,8 @@ export default function Navbar() {
 
   const cartItemCount = getCartItemCount()
 
+
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 w-full h-16 bg-white shadow-md px-6 flex items-center justify-between z-50">

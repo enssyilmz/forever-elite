@@ -10,6 +10,7 @@ interface PaymentDetails {
   amount_total: number
   currency: string
   customer_email: string
+  //enesiskim
   payment_status: string
   created: number
 }
