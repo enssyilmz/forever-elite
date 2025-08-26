@@ -116,10 +116,15 @@ export default function AdminPage() {
         return
       }
 
-      await Promise.all([fetchUsers(), fetchPrograms()])
+      // Loading'i daha erken false yap, data'lar background'da yüklensin
+      setLoading(false)
+      
+      // Data'ları background'da fetch et
+      Promise.all([fetchUsers(), fetchPrograms()]).catch((e) => {
+        setError('Failed to load data: ' + e.message)
+      })
     } catch (e: any) {
       setError('Failed to authenticate: ' + e.message)
-    } finally {
       setLoading(false)
     }
   }
@@ -385,8 +390,9 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mb-4"></div>
+        <p className="text-gray-600">Loading admin panel...</p>
       </div>
     )
   }
@@ -414,7 +420,7 @@ export default function AdminPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 transition disabled:opacity-50"
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -422,7 +428,7 @@ export default function AdminPage() {
             {activeTab === 'users' && (
               <button
                 onClick={() => setMailModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+                className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700 transition"
               >
                 <Mail size={18} />
                 Send Mail to All Users
@@ -431,7 +437,7 @@ export default function AdminPage() {
             {activeTab === 'programs' && (
               <button
                 onClick={() => openProgramModal()}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition"
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg shadow hover:bg-violet-700 transition"
               >
                 <Plus size={18} />
                 Create Custom Program

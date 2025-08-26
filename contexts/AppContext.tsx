@@ -150,14 +150,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!user) return
 
              const { data: favorites } = await supabase
-         .from('favorites')
-         .select('program_id')
+         .from('user_favorites')
+         .select('product_id')
          .eq('user_id', user.id)
 
        if (favorites) {
          const favoritePrograms = favorites
            .map(fav => {
-             const program = programs.find(p => p.id === fav.program_id)
+             const program = programs.find(p => p.id === fav.product_id)
              return program ? {
                id: program.id,
                title: program.title,
@@ -266,9 +266,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!user) return
 
       const { error } = await supabase
-        .from('favorites')
+        .from('user_favorites')
         .insert([
-          { user_id: user.id, program_id: programId }
+          { user_id: user.id, product_id: programId }
         ])
 
       if (error) {
@@ -299,10 +299,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!user) return
 
       const { error } = await supabase
-        .from('favorites')
+        .from('user_favorites')
         .delete()
         .eq('user_id', user.id)
-        .eq('program_id', programId)
+        .eq('product_id', programId)
 
       if (error) {
         console.error('Error removing from favorites:', error)

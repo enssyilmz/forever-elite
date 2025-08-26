@@ -309,12 +309,12 @@ function DashboardContent() {
         if (updateError) throw updateError
       }
 
-      showPopup('Success', 'Profiliniz başarıyla güncellendi!')
+      showPopup('Success', 'Profile updated successfully!')
     } catch (error) {
       const err = error as { message?: string; details?: string; hint?: string }
-      console.error('Profil güncelleme hatası:', err)
-      const errorMessage = err.message || err.details || err.hint || 'Bilinmeyen bir hata oluştu'
-      showPopup('Error', `Profilinizi güncellerken bir hata oluştu: ${errorMessage}`)
+      console.error('Profile update error:', err)
+      const errorMessage = err.message || err.details || err.hint || 'An unknown error occurred'
+      showPopup('Error', `Error updating profile: ${errorMessage}`)
     } finally {
       setIsUpdating(false)
     }
@@ -346,12 +346,12 @@ function DashboardContent() {
         
       if (error) throw error
       
-      showPopup('Success', 'İletişim tercihleri başarıyla kaydedildi!')
+      showPopup('Success', 'Communication preferences saved successfully!')
     } catch (error) {
       const err = error as { message?: string; details?: string; hint?: string }
-      console.error('İletişim tercihleri kaydetme hatası:', err)
-      const errorMessage = err.message || err.details || err.hint || 'Bilinmeyen bir hata oluştu'
-      showPopup('Error', `İletişim tercihlerini kaydederken hata: ${errorMessage}`)
+      console.error('Communication preferences save error:', err)
+      const errorMessage = err.message || err.details || err.hint || 'An unknown error occurred'
+      showPopup('Error', `Error saving communication preferences: ${errorMessage}`)
     } finally {
       setIsSavingPrefs(false)
     }

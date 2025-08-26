@@ -282,15 +282,31 @@ export default function SignUpPage() {
           </div>
 
           <div className="flex justify-center pt-4">
-            <ReCAPTCHA
-              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key for development
-              onChange={(value) => {
-                setCaptchaVerified(!!value)
-              }}
-              onExpired={() => {
-                setCaptchaVerified(false)
-              }}
-            />
+            {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                hl="en"
+                onChange={(value) => {
+                  setCaptchaVerified(!!value)
+                }}
+                onExpired={() => {
+                  setCaptchaVerified(false)
+                }}
+              />
+            ) : (
+              <div className="text-center p-4 bg-yellow-100 border border-yellow-400 rounded">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ reCAPTCHA not configured. Please add NEXT_PUBLIC_RECAPTCHA_SITE_KEY to .env.local
+                </p>
+                <button 
+                  type="button"
+                  onClick={() => setCaptchaVerified(true)}
+                  className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded text-xs"
+                >
+                  Skip for Development
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
