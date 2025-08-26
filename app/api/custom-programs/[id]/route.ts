@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 // GET - Get specific program
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -15,7 +15,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const programId = parseInt(params.id)
+    const { id } = await params
+    const programId = parseInt(id)
     
     const { data: program, error } = await supabase
       .from('custom_programs')
@@ -44,7 +45,7 @@ export async function GET(
 // PUT - Update program
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -60,7 +61,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const programId = parseInt(params.id)
+    const { id } = await params
+    const programId = parseInt(id)
     const body = await request.json()
     
     const {
@@ -164,7 +166,7 @@ export async function PUT(
 // DELETE - Delete program
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -180,7 +182,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const programId = parseInt(params.id)
+    const { id } = await params
+    const programId = parseInt(id)
     
     // Soft delete by setting is_active to false
     const { error } = await supabase
@@ -202,4 +205,4 @@ export async function DELETE(
     console.error('Error in DELETE /api/custom-programs/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-} 
+}
