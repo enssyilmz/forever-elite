@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
 import { supabase } from '@/utils/supabaseClient'
 import ReCAPTCHA from 'react-google-recaptcha'
 import SuccessModal from '../../components/SuccessModal'
+import CustomPhoneInput from '../../components/CustomPhoneInput'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -16,8 +15,7 @@ export default function SignUpPage() {
     email: '',
     password: '',
     gender: '',
-    countryCode: '+44',
-    phone: '',
+    phone: '+44',
     birthdate: '',
     agreeMarketing: false,
     agreeMembership: false,
@@ -67,7 +65,6 @@ export default function SignUpPage() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             gender: formData.gender,
-            country_code: formData.countryCode,
             phone: formData.phone,
             birthdate: formData.birthdate,
             agree_marketing: formData.agreeMarketing,
@@ -101,8 +98,7 @@ export default function SignUpPage() {
         email: '',
         password: '',
         gender: '',
-        countryCode: '+44',
-        phone: '',
+        phone: '+44',
         birthdate: '',
         agreeMarketing: false,
         agreeMembership: false,
@@ -177,48 +173,16 @@ export default function SignUpPage() {
             <label><input type="radio" name="gender" value="none" checked={formData.gender === 'none'} onChange={handleChange} /> Prefer not to say</label>
           </div>
 
-          <PhoneInput
-            value={`${formData.countryCode}${formData.phone}`}
-            onChange={(phone, country: any) => {
-              const dialCode = country.dialCode;
-              const newPhone = phone.startsWith(dialCode) ? phone.substring(dialCode.length) : phone;
+          <CustomPhoneInput
+            value={formData.phone}
+            onChange={(phone, countryCode) => {
               setFormData(prev => ({
                 ...prev,
-                phone: newPhone,
-                countryCode: `+${dialCode}`,
+                phone: phone,
               }));
             }}
-            enableSearch={true}
-            inputStyle={{
-              width: '100%',
-              height: '44px',
-              paddingLeft: '60px',
-              paddingRight: '12px',
-              paddingTop: '12px',
-              paddingBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-              fontSize: '16px',
-            }}
-            buttonStyle={{
-              backgroundColor: 'transparent',
-              border: '1px solid #ccc',
-              borderRight: 'none',
-              borderRadius: '8px 0 0 8px',
-              paddingLeft: '12px',
-              paddingRight: '8px',
-            }}
-            containerStyle={{ 
-              width: '100%',
-            }}
-            dropdownStyle={{
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-            }}
-            inputProps={{
-              placeholder: 'Enter phone number'
-            }}
-            specialLabel=""
+            placeholder="Enter phone number"
+            className="w-full"
           />
 
           <input 
