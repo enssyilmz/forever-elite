@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import PhoneInput from 'react-phone-input-2'
 import 'react-phone-input-2/lib/style.css'
+import ReCAPTCHA from 'react-google-recaptcha'
 import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/programsData'
 import Link from 'next/link'
@@ -73,13 +74,14 @@ function DashboardContent() {
   })
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
   
   const supabase = createClientComponentClient()
 
   useEffect(() => {
     // Set active section from URL parameter
     const section = searchParams.get('section')
-    if (section && ['profile', 'communication', 'cart', 'orders', 'payments', 'favorites', 'support'].includes(section)) {
+    if (section && ['profile', 'communication', 'cart', 'orders', 'favorites', 'support'].includes(section)) {
       setActiveSection(section)
     }
 
@@ -396,6 +398,11 @@ function DashboardContent() {
       setNewTicketForm({ subject: '', content: '' })
       setRecaptchaVerified(false)
       
+      // Reset reCAPTCHA widget
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset()
+      }
+      
       // Refresh tickets
       const { data: tickets } = await supabase
         .from('support_tickets')
@@ -443,8 +450,7 @@ function DashboardContent() {
   const menuItems = [
     { id: 'profile', label: 'Member Information', icon: UserIcon },
     { id: 'communication', label: 'Communication Preferences', icon: Mail },
-    { id: 'orders', label: 'Order and Return', icon: Package },
-    { id: 'payments', label: 'Payments', icon: CreditCard },
+    { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'favorites', label: 'Favorites Products', icon: Star },
     { id: 'support', label: 'Support', icon: Headset },
     { id: 'logout', label: 'Logout', icon: LogOut }
@@ -847,18 +853,34 @@ function DashboardContent() {
                         />
                       </div>
                       
-                      {/* Simple reCAPTCHA simulation */}
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="recaptcha"
-                          checked={recaptchaVerified}
-                          onChange={(e) => setRecaptchaVerified(e.target.checked)}
-                          className="w-4 h-4 text-sky-600 rounded focus:ring-sky-500"
-                        />
-                        <label htmlFor="recaptcha" className="text-sm text-gray-700">
-                          I'm not a robot (reCAPTCHA verification)
-                        </label>
+                      {/* reCAPTCHA */}
+                      <div className="flex justify-center">
+                        {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
+                          <ReCAPTCHA
+                            ref={recaptchaRef}
+                            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                            hl="en"
+                            onChange={(value) => {
+                              setRecaptchaVerified(!!value)
+                            }}
+                            onExpired={() => {
+                              setRecaptchaVerified(false)
+                            }}
+                          />
+                        ) : (
+                          <div className="text-center p-4 bg-yellow-100 border border-yellow-400 rounded">
+                            <p className="text-yellow-800 text-sm">
+                              ⚠️ reCAPTCHA not configured. Please add NEXT_PUBLIC_RECAPTCHA_SITE_KEY to .env.local
+                            </p>
+                            <button 
+                              type="button"
+                              onClick={() => setRecaptchaVerified(true)}
+                              className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded text-xs"
+                            >
+                              Skip for Development
+                            </button>
+                          </div>
+                        )}
                       </div>
                       
                       <button
