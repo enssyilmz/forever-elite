@@ -4,9 +4,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
-import PhoneInput from 'react-phone-input-2'
-import 'react-phone-input-2/lib/style.css'
 import ReCAPTCHA from 'react-google-recaptcha'
+import CustomPhoneInput from '@/components/CustomPhoneInput'
 import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/programsData'
 import Link from 'next/link'
@@ -506,42 +505,13 @@ function DashboardContent() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <PhoneInput
-                  country={'gb'}
-                  onlyCountries={['gb']}
-                  disableDropdown={true}
+                <CustomPhoneInput
                   value={formData.phone}
-                  onChange={(phone) => {
+                  onChange={(phone, countryCode) => {
                     setFormData(prev => ({ ...prev, phone }));
                   }}
-                  inputStyle={{
-                    width: '100%',
-                    height: '48px',
-                    paddingLeft: '60px',
-                    paddingRight: '12px',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #ccc',
-                    fontSize: '16px',
-                  }}
-                  buttonStyle={{
-                    backgroundColor: 'transparent',
-                    border: '1px solid #ccc',
-                    borderRight: 'none',
-                    borderRadius: '8px 0 0 8px',
-                    paddingLeft: '12px',
-                    paddingRight: '8px',
-                  }}
-                  containerStyle={{ 
-                    width: '100%',
-                  }}
-                  inputProps={{
-                    placeholder: 'Enter phone number'
-                  }}
-                  enableAreaCodes={true}
-                  countryCodeEditable={false}
-                  specialLabel=""
+                  placeholder="Enter phone number"
+                  className="w-full"
                 />
               </div>
               
