@@ -147,7 +147,7 @@ export default function CheckoutPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-16 px-6">
+      <div className="min-h-screen py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">Your Cart is Empty</h1>
           <p className="text-gray-600 mb-8">Add some programs to your cart to proceed with checkout.</p>
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
 
   return (
     <Elements stripe={stripePromise}>
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen py-12">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 

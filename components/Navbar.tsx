@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
@@ -162,8 +163,16 @@ export default function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 w-full h-16 bg-white shadow-md px-6 flex items-center justify-between z-50">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold text-gray-900 hover:text-black">
-            Özcan-fit
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <div className="w-10 h-10 relative overflow-hidden rounded-full border-2 border-gray-200 hover:border-sky-500 transition-colors">
+              <Image
+                src="/logo.jpg"
+                alt="Özcan-fit Logo"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
           </Link>
           {user && user.email === ADMIN_EMAIL && (
             <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">

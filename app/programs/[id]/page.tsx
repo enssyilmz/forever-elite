@@ -81,7 +81,7 @@ export default function ProgramDetailPage() {
   const programReviews = reviews.filter(review => review.program_id === programId)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-6">
+    <div className="min-h-screen py-8 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="mb-8">

@@ -63,7 +63,7 @@ function ConfirmationContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading payment details...</p>
@@ -73,7 +73,7 @@ function ConfirmationContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen  py-12">
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-xl overflow-hidden">
           {/* Header */}
@@ -131,7 +131,7 @@ function ConfirmationContent() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 mt-6">
+                <div className=" rounded-lg p-4 mt-6">
                   <p className="text-sm text-gray-600">
                     <strong>Order ID:</strong> {paymentDetails.id}
                   </p>
@@ -165,7 +165,7 @@ function ConfirmationContent() {
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
