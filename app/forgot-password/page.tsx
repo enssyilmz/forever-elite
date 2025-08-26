@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { supabase } from '@/utils/supabaseClient'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ export default function ForgotPasswordPage() {
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
@@ -39,26 +40,28 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      // Check if user exists in our database
-      const { data: existingUser, error: checkError } = await supabase
-        .from('user_registrations')
-        .select('email')
-        .eq('email', email)
-        .single()
+      // Use Supabase auth to send password reset email
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
 
-      if (checkError || !existingUser) {
-        showPopup('Account Not Found', 'No account found with this email address')
+      if (resetError) {
+        console.error('Password reset error:', resetError)
+        showPopup('Error', 'Failed to send password reset email. Please check your email address.')
         setLoading(false)
         return
       }
 
-      // Send password reset email (simulated for now)
-      // In real implementation, you would integrate with your email service
       showPopup('Email Sent!', 'Password reset link has been sent to your email address')
       
-      // Reset form
+      // Reset form and reCAPTCHA
       setEmail('')
       setCaptchaVerified(false)
+      
+      // Reset reCAPTCHA widget
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset()
+      }
       
     } catch (error) {
       console.error('Error:', error)
@@ -85,15 +88,32 @@ export default function ForgotPasswordPage() {
         />
 
         <div className="flex justify-center">
-          <ReCAPTCHA
-            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key for development
-            onChange={(value) => {
-              setCaptchaVerified(!!value)
-            }}
-            onExpired={() => {
-              setCaptchaVerified(false)
-            }}
-          />
+          {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+              hl="en"
+              onChange={(value) => {
+                setCaptchaVerified(!!value)
+              }}
+              onExpired={() => {
+                setCaptchaVerified(false)
+              }}
+            />
+          ) : (
+            <div className="text-center p-4 bg-yellow-100 border border-yellow-400 rounded">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ reCAPTCHA not configured.
+              </p>
+              <button 
+                type="button"
+                onClick={() => setCaptchaVerified(true)}
+                className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded text-xs"
+              >
+                Skip for Development
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-center gap-2">
