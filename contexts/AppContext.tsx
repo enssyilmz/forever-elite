@@ -118,6 +118,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Hydrate cart from localStorage on mount (client-side only)
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      const storedCart = window.localStorage.getItem('ozcanfit.cart')
+      if (storedCart) {
+        const parsed: CartItem[] = JSON.parse(storedCart)
+        if (Array.isArray(parsed)) {
+          setCartItems(parsed)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to read cart from localStorage:', error)
+    }
+  }, [])
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem('ozcanfit.cart', JSON.stringify(cartItems))
+    } catch (error) {
+      console.error('Failed to write cart to localStorage:', error)
+    }
+  }, [cartItems])
+
   const fetchFavorites = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()

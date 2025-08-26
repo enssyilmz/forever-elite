@@ -5,7 +5,8 @@ import { cookies } from 'next/headers'
 // GET - List custom programs
 export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    // Next.js 15 dynamic cookies API must be awaited; provide a function
+    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
 // POST - Create new custom program
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
