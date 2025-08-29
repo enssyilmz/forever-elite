@@ -1,7 +1,7 @@
 export const programs = [
   {
     id: 1,
-    title: 'Elite Athletes Program',
+    title: 'Elite Athletes Package',
     bodyFatRange: '6-10% Body Fat',
     description: 'Designed for professional athletes and bodybuilders. Extreme cutting and muscle definition workouts with advanced techniques.',
     longDescription: 'This elite-level program is specifically designed for professional athletes, competitive bodybuilders, and individuals who have already achieved a high level of fitness. The program focuses on extreme cutting protocols, advanced training techniques, and precise nutrition strategies.',
@@ -31,7 +31,7 @@ export const programs = [
   },
   {
     id: 2,
-    title: 'Advanced Fitness Program',
+    title: 'Advanced Fitness Package',
     bodyFatRange: '10-14% Body Fat',
     description: 'Perfect for experienced fitness enthusiasts. Focus on strength building and lean muscle maintenance with scientific approach.',
     longDescription: 'Built for experienced fitness enthusiasts who want to take their physique to the next level. This program combines advanced strength training protocols with lean muscle maintenance strategies.',
@@ -61,7 +61,7 @@ export const programs = [
   },
   {
     id: 3,
-    title: 'Active Lifestyle Program',
+    title: 'Active Lifestyle Package',
     bodyFatRange: '14-18% Body Fat',
     description: 'Great for active individuals looking to improve their physique. Balanced cardio and strength training for optimal results.',
     longDescription: 'Perfect program for active individuals who want to balance fitness with their busy lifestyle. Combines efficient workouts with flexible scheduling options.',
@@ -91,7 +91,7 @@ export const programs = [
   },
   {
     id: 4,
-    title: 'Transformation Program',
+    title: 'Transformation Package',
     bodyFatRange: '18-22% Body Fat',
     description: 'Ideal for those starting their fitness journey. Progressive workouts for sustainable weight loss and body transformation.',
     longDescription: 'Comprehensive transformation program designed for beginners who want to make lasting changes. Focus on building healthy habits and sustainable progress.',
@@ -121,7 +121,7 @@ export const programs = [
   },
   {
     id: 5,
-    title: 'Beginner Boost Program',
+    title: 'Beginner Boost Package',
     bodyFatRange: '22-26% Body Fat',
     description: 'Perfect starting point for fitness beginners. Low-impact exercises with gradual intensity increase for safe progress.',
     longDescription: 'Gentle introduction to fitness with low-impact exercises and gradual progression. Perfect for those who are new to exercise or returning after a long break.',
@@ -151,7 +151,7 @@ export const programs = [
   },
   {
     id: 6,
-    title: 'Health Foundation Program',
+    title: 'Health Foundation Package',
     bodyFatRange: '26-30% Body Fat',
     description: 'Focus on building healthy habits and basic fitness. Gentle movements and lifestyle changes for long-term health.',
     longDescription: 'Foundational program focusing on health improvement rather than intense fitness. Emphasis on building sustainable healthy habits and gentle movement.',
@@ -181,7 +181,7 @@ export const programs = [
   },
   {
     id: 7,
-    title: 'Wellness Journey Program',
+    title: 'Wellness Journey Package',
     bodyFatRange: '30%+ Body Fat',
     description: 'Comprehensive approach to health improvement. Medical support and supervised progress tracking for safe transformation.',
     longDescription: 'Holistic wellness program with medical support and comprehensive health assessment. Focus on safe, sustainable health improvement with professional guidance.',
@@ -211,7 +211,7 @@ export const programs = [
   },
   {
     id: 8,
-    title: 'Personalized Program',
+    title: 'Personalized Package',
     bodyFatRange: 'Custom Body Fat',
     description: 'Tailored specifically to your body composition and goals. One-on-one coaching available with personalized meal and workout plans.',
     longDescription: 'Completely customized program designed specifically for your unique needs, goals, and circumstances. Includes one-on-one coaching and personalized meal and workout plans.',

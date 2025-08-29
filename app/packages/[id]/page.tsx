@@ -6,9 +6,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
 import SuccessModal from '@/components/SuccessModal'
 import ReviewSection from '@/components/ReviewSection'
-import { programs } from '@/lib/programsData' // Import programs
+import { programs } from '@/lib/packagesData' // Import programs
 
-export default function ProgramDetailPage() {
+export default function PackageDetailPage() {
   const params = useParams()
   const router = useRouter()
   const programId = parseInt(params.id as string)
@@ -46,10 +46,10 @@ export default function ProgramDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Program Not Found</h1>
-          <Link href="/programs">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Package Not Found</h1>
+          <Link href="/packages">
             <button className="bg-sky-500 text-white px-6 py-3 rounded-lg">
-              Back to Programs
+              Back to Packages
             </button>
           </Link>
         </div>
@@ -88,7 +88,7 @@ export default function ProgramDetailPage() {
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
             <li><Link href="/" className="hover:text-sky-600">Home</Link></li>
             <li><span className="mx-2">/</span></li>
-            <li><Link href="/programs" className="hover:text-sky-600">Programs</Link></li>
+            <li><Link href="/packages" className="hover:text-sky-600">Packages</Link></li>
             <li><span className="mx-2">/</span></li>
             <li className="text-gray-900">{program.title}</li>
           </ol>
@@ -131,7 +131,7 @@ export default function ProgramDetailPage() {
 
           {/* Sağ Taraf - Program Bilgileri */}
           <div className="space-y-6">
-            {/* Program Başlığı */}
+            {/* Package Başlığı */}
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full">
@@ -233,7 +233,7 @@ export default function ProgramDetailPage() {
                   onClick={() => toggleAccordion('specifications')}
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
                 >
-                  <span className="font-medium text-gray-900">Product Specifications</span>
+                  <span className="font-medium text-gray-900">Package Specifications</span>
                   <svg
                     className={`w-5 h-5 transition-transform ${
                       activeAccordion === 'specifications' ? 'rotate-180' : ''

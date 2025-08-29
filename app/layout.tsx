@@ -9,7 +9,7 @@ import { AppProvider } from '@/contexts/AppContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Ozcan Fit',
+  title: 'Forever',
   description: 'Transform your body with personalized fitness programs',
 }
 

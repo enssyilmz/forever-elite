@@ -195,9 +195,9 @@ export default function Home() {
             <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
 
             <div className="mt-auto">
-              <Link href="/programs">
+              <Link href="/packages">
                 <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
-                  View All Programs
+                  View All Packages
                 </button>
               </Link>
             </div>

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
-import { programs } from '@/lib/programsData' // Import from centralized file
+import { programs } from '@/lib/packagesData' // Import from centralized file
 import { CustomProgram } from '@/lib/database.types'
 
 interface CartItem {
@@ -61,6 +61,10 @@ interface AppContextType {
   customPrograms: CustomProgram[]
   fetchCustomPrograms: () => Promise<void>
   refreshCustomPrograms: () => Promise<void>
+  
+  // Navbar
+  isNavbarOpen: boolean
+  toggleNavbar: () => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -71,6 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [customPrograms, setCustomPrograms] = useState<CustomProgram[]>([])
   const [user, setUser] = useState<User | null>(null)
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false)
   const supabase = createClientComponentClient()
 
   // Get user, favorites, reviews, and custom programs on mount
@@ -374,6 +379,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const toggleNavbar = () => {
+    setIsNavbarOpen(!isNavbarOpen)
+  }
+
   return (
     <AppContext.Provider value={{
       user,
@@ -392,7 +401,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteReview,
       customPrograms,
       fetchCustomPrograms,
-      refreshCustomPrograms
+      refreshCustomPrograms,
+      isNavbarOpen,
+      toggleNavbar
     }}>
       {children}
     </AppContext.Provider>

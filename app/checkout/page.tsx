@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/programsData'
+import { programs } from '@/lib/packagesData'
 import { Trash2, Plus, Minus, Tag, Truck, Receipt, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import SuccessModal from '@/components/SuccessModal'
@@ -141,7 +141,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (cartItems.length === 0) {
       // Redirect to programs page if cart is empty
-      router.push('/programs')
+      router.push('/packages')
     }
   }, [cartItems, router])
 
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">Your Cart is Empty</h1>
           <p className="text-gray-600 mb-8">Add some programs to your cart to proceed with checkout.</p>
-          <Link href="/programs" className="btn-primary px-8 py-3">
+          <Link href="/packages" className="btn-primary px-8 py-3">
             Browse Programs
           </Link>
         </div>

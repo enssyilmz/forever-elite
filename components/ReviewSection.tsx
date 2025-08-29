@@ -10,7 +10,7 @@ interface ReviewSectionProps {
 }
 
 export default function ReviewSection({ programId }: ReviewSectionProps) {
-  const { user, reviews, addReview, deleteReview } = useApp()
+  const { user, reviews, addReview, deleteReview, toggleNavbar } = useApp()
   
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [rating, setRating] = useState(0)
@@ -68,7 +68,7 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white p-3 rounded-lg shadow-sm">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Reviews</h2>
         {user && !showReviewForm && (
@@ -179,9 +179,12 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
       {!user && (
         <div className="bg-gray-50 p-6 rounded-lg text-center">
           <p className="text-gray-600 mb-4">Please sign in to write a review</p>
-          <a href="/login" className="btn-primary px-6 py-2 inline-block">
+          <button 
+            onClick={toggleNavbar}
+            className="btn-primary px-6 py-2"
+          >
             Sign In
-          </a>
+          </button>
         </div>
       )}
 

@@ -187,10 +187,10 @@ export default function MyWorkoutsPage() {
               Your trainer hasn't created any custom programs for you yet.
             </p>
             <button
-              onClick={() => router.push('/programs')}
+              onClick={() => router.push('/packages')}
               className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
-              Browse General Programs
+              Browse General Packages
             </button>
           </div>
         ) : (

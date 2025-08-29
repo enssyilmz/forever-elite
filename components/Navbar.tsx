@@ -8,11 +8,10 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/programsData'
+import { programs } from '@/lib/packagesData'
 import { useRouter } from 'next/navigation'
 
 export default function Navbar() {
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,7 +26,7 @@ export default function Navbar() {
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const supabase = createClientComponentClient()
-  const { getCartItemCount } = useApp()
+  const { getCartItemCount, isNavbarOpen, toggleNavbar } = useApp()
   const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
@@ -114,11 +113,11 @@ export default function Navbar() {
         drawerRef.current &&
         !drawerRef.current.contains(event.target as Node)
       ) {
-        setIsLoginOpen(false)
+        toggleNavbar()
       }
     }
 
-    if (isLoginOpen) {
+    if (isNavbarOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     } else {
       document.removeEventListener('mousedown', handleClickOutside)
@@ -127,7 +126,7 @@ export default function Navbar() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isLoginOpen])
+  }, [isNavbarOpen, toggleNavbar])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,7 +142,7 @@ export default function Navbar() {
         setError(error.message)
       }
     } else {
-      setIsLoginOpen(false)
+      toggleNavbar()
       if (data.user?.email === ADMIN_EMAIL) {
         router.push('/admin')
       }
@@ -152,7 +151,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setIsLoginOpen(false)
+    toggleNavbar()
   }
 
   const cartItemCount = getCartItemCount()
@@ -181,8 +180,8 @@ export default function Navbar() {
           )}
         </div>
         <div className="flex gap-6">
-          <Link href="/programs" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3 ">
-            Programs
+          <Link href="/packages" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3 ">
+            Packages
           </Link>
           <Link href="/bodyfc" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3">
             Body fat calculator
@@ -201,7 +200,7 @@ export default function Navbar() {
               <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border z-60">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Search Programs</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">Search Packages</h3>
                     <X 
                       className="w-5 h-5 text-gray-600 cursor-pointer" 
                       onClick={() => setIsSearchOpen(false)}
@@ -210,10 +209,10 @@ export default function Navbar() {
                   
                   <input
                     type="text"
-                    placeholder="Search for programs..."
+                    placeholder="Search for packages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black"
                     autoFocus
                   />
                   
@@ -222,7 +221,7 @@ export default function Navbar() {
                       searchResults.map((program) => (
                         <Link
                           key={program.id}
-                          href={`/programs/${program.id}`}
+                          href={`/packages/${program.id}`}
                           onClick={() => setIsSearchOpen(false)}
                           className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
                         >
@@ -239,7 +238,7 @@ export default function Navbar() {
                       ))
                     ) : (
                       <div className="p-4 text-center text-gray-500">
-                        No programs found for "{searchQuery}"
+                        No packages found for "{searchQuery}"
                       </div>
                     )}
                   </div>
@@ -247,11 +246,11 @@ export default function Navbar() {
                   {searchResults.length > 0 && (
                     <div className="mt-4 pt-4 border-t">
                       <Link
-                        href="/programs"
+                        href="/packages"
                         onClick={() => setIsSearchOpen(false)}
                         className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold"
                       >
-                        View All Programs →
+                        View All Packages →
                       </Link>
                     </div>
                   )}
@@ -264,7 +263,7 @@ export default function Navbar() {
           <div className="relative">
             <User 
               className="w-5 h-5 text-gray-600 cursor-pointer" 
-              onClick={() => setIsLoginOpen(true)} 
+              onClick={toggleNavbar} 
             />
             {user && (
               <Check className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
@@ -286,14 +285,14 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {isLoginOpen && (
+      {isNavbarOpen && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40"></div>
       )}
 
       <div
         ref={drawerRef}
         className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
-          isLoginOpen ? 'translate-x-0' : 'translate-x-full'
+          isNavbarOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="px-4 py-4 border-b">
@@ -313,7 +312,7 @@ export default function Navbar() {
                   href="/dashboard?section=profile" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
                   onClick={() => {
-                    setTimeout(() => setIsLoginOpen(false), 100)
+                    setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
                   <User className="w-5 h-5 mr-3 text-gray-600" />
@@ -324,7 +323,7 @@ export default function Navbar() {
                   href="/dashboard?section=orders" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
                   onClick={() => {
-                    setTimeout(() => setIsLoginOpen(false), 100)
+                    setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
                   <CreditCard className="w-5 h-5 mr-3 text-gray-600" />
@@ -335,7 +334,7 @@ export default function Navbar() {
                   href="/dashboard?section=favorites" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
                   onClick={() => {
-                    setTimeout(() => setIsLoginOpen(false), 100)
+                    setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
                   <Star className='w-5 h-5 mr-3 text-gray-600' />
@@ -400,7 +399,7 @@ export default function Navbar() {
                     <Link 
                       href="/forgot-password" 
                       className="text-gray-600 underline"
-                      onClick={() => setIsLoginOpen(false)}
+                      onClick={() => toggleNavbar()}
                     >
                       Forgot password?
                     </Link>
@@ -421,7 +420,7 @@ export default function Navbar() {
 
               <div className="mt-4 flex flex-col gap-3">
                 <Link href="/signup"
-                onClick={() => setIsLoginOpen(false)}
+                onClick={() => toggleNavbar()}
                 className="bg-black text-white py-2 rounded mt-2 text-center hover:bg-white hover:text-black">
                   Sign Up
                 </Link>
