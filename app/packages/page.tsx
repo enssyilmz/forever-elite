@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
 import { useState } from 'react'
-import { programs } from '@/lib/programsData'
+import { programs } from '@/lib/packagesData'
 import SuccessModal from '@/components/SuccessModal'
 
-export default function ProgramsPage() {
+export default function PackagesPage() {
   const router = useRouter()
   const { addToCart } = useApp()
   const [addingToCart, setAddingToCart] = useState<number | null>(null)
@@ -48,19 +48,19 @@ export default function ProgramsPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-            Choose Your Perfect Program
+            Choose Your Perfect Package
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Transform your body with our scientifically designed programs. Each program is specifically 
+            Transform your body with our scientifically designed packages. Each package is specifically 
             tailored to different body fat percentages for maximum effectiveness.
           </p>
         </div>
 
-        {/* Programs Grid */}
+        {/* Packages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {programs.map((program) => (
             <div key={program.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-              {/* Program Image */}
+              {/* Package Image */}
               <div className="relative h-48 bg-gradient-to-br from-sky-400 to-sky-600">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-6xl text-white opacity-80">
@@ -75,7 +75,7 @@ export default function ProgramsPage() {
                 </div>
               </div>
 
-              {/* Program Content */}
+              {/* Package Content */}
               <div className="p-6 flex flex-col h-[calc(100%-12rem)]">
                 <h3 className="text-xl font-bold text-gray-800 mb-3">
                   {program.title}
@@ -118,7 +118,7 @@ export default function ProgramsPage() {
 
                   {/* CTA Buttons */}
                   <div className="space-y-2">
-                  <Link href={`/programs/${program.id}`}>
+                  <Link href={`/packages/${program.id}`}>
                     <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg font-semibold transition-colors">
                         View Details
                     </button>
@@ -134,10 +134,10 @@ export default function ProgramsPage() {
         <div className="text-center mt-16">
           <div className="bg-white rounded-2xl p-8 shadow-lg max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Not Sure Which Program is Right for You?
+              Not Sure Which Package is Right for You?
             </h2>
             <p className="text-gray-600 mb-6">
-              Take our free body fat assessment to get a personalized program recommendation
+              Take our free body fat assessment to get a personalized package recommendation
             </p>
             <Link href="/bodyfc">
               <button className="bg-sky-500 hover:bg-sky-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">

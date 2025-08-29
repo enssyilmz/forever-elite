@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import ReCAPTCHA from 'react-google-recaptcha'
 import CustomPhoneInput from '@/components/CustomPhoneInput'
 import SuccessModal from '@/components/SuccessModal'
-import { programs as allPrograms } from '@/lib/programsData'
+import { programs as allPrograms } from '@/lib/packagesData'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 
@@ -694,7 +694,7 @@ function DashboardContent() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {favoriteProducts.map((product) => (
-                  <Link href={`/programs/${product.id}`} key={product.id}>
+                  <Link href={`/packages/${product.id}`} key={product.id}>
                     <div className="border rounded-lg overflow-hidden shadow-sm group transform hover:-translate-y-1 transition-transform duration-300 h-full flex flex-col cursor-pointer">
                       {/* Program Emoji */}
                       <div className="w-full h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center">

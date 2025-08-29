@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CreditCard, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/programsData'
+import { programs } from '@/lib/packagesData'
 import SuccessModal from './SuccessModal'
 
 interface ShoppingCartProps {
@@ -105,10 +105,10 @@ export default function ShoppingCart({ isCartOpen, setIsCartOpen }: ShoppingCart
             <div className="text-center">
               <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-600 mb-2">Your cart is empty</h3>
-              <p className="text-gray-500 mb-6">Add some amazing fitness programs to get started!</p>
+              <p className="text-gray-500 mb-6">Add some amazing fitness packages to get started!</p>
               
               <Link 
-                href="/programs"
+                href="/packages"
                 onClick={() => setIsCartOpen(false)}
                 className="btn-primary px-6 py-3 inline-block text-center"
               >

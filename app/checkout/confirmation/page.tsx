@@ -151,8 +151,8 @@ function ConfirmationContent() {
               <Link href="/" className="btn-primary px-6 py-3 text-center">
                 Back to Homepage
               </Link>
-              <Link href="/programs" className="btn-secondary px-6 py-3 text-center">
-                Browse More Programs
+              <Link href="/packages" className="btn-secondary px-6 py-3 text-center">
+                Browse More Packages
               </Link>
             </div>
           </div>
