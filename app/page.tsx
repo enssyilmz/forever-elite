@@ -14,56 +14,56 @@ export default function Home() {
       id: 1,
       logo: '💎',
       bodyFatRange: '6-10% Body Fat',
-      title: 'Elite Athletes Program',
+      title: 'Elite Athletes Package',
       description: 'Designed for professional athletes and bodybuilders. Extreme cutting and muscle definition workouts.'
     },
     {
       id: 2,
       logo: '🏆',
       bodyFatRange: '10-14% Body Fat',
-      title: 'Advanced Fitness Program',
+      title: 'Advanced Fitness Package',
       description: 'Perfect for experienced fitness enthusiasts. Focus on strength building and lean muscle maintenance.'
     },
     {
       id: 3,
       logo: '🎯',
       bodyFatRange: '14-18% Body Fat',
-      title: 'Active Lifestyle Program',
+      title: 'Active Lifestyle Package',
       description: 'Great for active individuals looking to improve their physique. Balanced cardio and strength training.'
     },
     {
       id: 4,
       logo: '🔥',
       bodyFatRange: '18-22% Body Fat',
-      title: 'Transformation Program',
+      title: 'Transformation Package',
       description: 'Ideal for those starting their fitness journey. Progressive workouts for sustainable weight loss.'
     },
     {
       id: 5,
       logo: '⚡',
       bodyFatRange: '22-26% Body Fat',
-      title: 'Beginner Boost Program',
+      title: 'Beginner Boost Package',
       description: 'Perfect starting point for fitness beginners. Low-impact exercises with gradual intensity increase.'
     },
     {
       id: 6,
       logo: '🌟',
       bodyFatRange: '26-30% Body Fat',
-      title: 'Health Foundation Program',
+      title: 'Health Foundation Package',
       description: 'Focus on building healthy habits and basic fitness. Gentle movements and lifestyle changes.'
     },
     {
       id: 7,
       logo: '💪',
       bodyFatRange: '30%+ Body Fat',
-      title: 'Wellness Journey Program',
+      title: 'Wellness Journey Package',
       description: 'Comprehensive approach to health improvement. Medical support and supervised progress tracking.'
     },
     {
       id: 8,
       logo: '🚀',
       bodyFatRange: 'Custom Body Fat',
-      title: 'Personalized Program',
+      title: 'Personalized Package',
       description: 'Tailored specifically to your body composition and goals. One-on-one coaching available.'
     }
   ]
@@ -135,7 +135,7 @@ export default function Home() {
             }}
             className="bg-transparent text-white border px-6 py-3 rounded-xl hover:bg-gray-200 hover:text-black transition"
           >
-            CHECK OUT THE PROGRAMS
+            CHECK OUT THE PACKAGES
           </button>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function Home() {
       <div id="programs-section" className="py-16 px-6">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-800">
-            Body Fat Specific Programs
+            Body Fat Specific Packages
           </h2>
           <p className="text-base md:text-lg text-gray-600 text-center mb-12">
             Choose the perfect program based on your current body fat percentage

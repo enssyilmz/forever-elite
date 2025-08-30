@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^3.7.0",
-    "@stripe/stripe-js": "^7.4.0",
+    "@stripe/react-stripe-js": "^3.9.2",
+    "@stripe/stripe-js": "^7.9.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.10",
     "@types/react-google-recaptcha": "^2.1.9",
@@ -22,7 +22,7 @@
     "eslint-config-next": "14.2.3",
     "express": "^5.1.0",
     "lucide-react": "^0.487.0",
-    "next": "15.2.4",
+    "next": "^15.5.2",
     "postcss": "^8",
     "react": "^19.0.0",
     "react-google-recaptcha": "^3.1.0",
