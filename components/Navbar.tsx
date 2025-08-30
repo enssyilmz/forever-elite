@@ -70,19 +70,21 @@ export default function Navbar() {
   }, [isSearchOpen])
 
   const handleGoogleLogin = async () => {
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ozcan-fit.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${redirectUrl}/dashboard`,
       }
     })
   }
 
   const handleFacebookLogin = async () => {
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ozcan-fit.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${redirectUrl}/dashboard`,
       }
     })
   }
