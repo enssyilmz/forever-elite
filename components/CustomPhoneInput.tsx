@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 
 interface Country {
-  name: string
-  dial_code: string
   code: string
+  label: string
+  phone: string
+  phoneLength: string | string[]
+  suggested?: boolean
+  min?: string
+  max?: string
 }
 
 interface CustomPhoneInputProps {
@@ -37,7 +41,7 @@ export default function CustomPhoneInput({
   useEffect(() => {
     const loadCountries = async () => {
       try {
-        const response = await fetch('/CountryCodes.json')
+        const response = await fetch('/Countries.json')
         const countryData: Country[] = await response.json()
         setCountries(countryData)
         
@@ -59,21 +63,44 @@ export default function CustomPhoneInput({
     if (value && countries.length > 0) {
       // Find country by dial code
       for (const country of countries) {
-        if (value.startsWith(country.dial_code)) {
+        if (value.startsWith(country.phone)) {
           setSelectedCountry(country)
-          setPhoneNumber(value.substring(country.dial_code.length))
+          setPhoneNumber(value.substring(country.phone.length))
           break
         }
       }
     }
   }, [value, countries])
 
-  // Handle phone number change
+  // Get phone length for validation
+  const getPhoneLength = (country: Country): { min: number; max: number } => {
+    if (country.min && country.max) {
+      return { min: parseInt(country.min), max: parseInt(country.max) }
+    }
+    
+    if (Array.isArray(country.phoneLength)) {
+      const lengths = country.phoneLength.map(l => parseInt(l))
+      return { min: Math.min(...lengths), max: Math.max(...lengths) }
+    }
+    
+    const length = parseInt(country.phoneLength)
+    return { min: length, max: length }
+  }
+
+  // Handle phone number change with validation
   const handlePhoneChange = (newPhoneNumber: string) => {
-    setPhoneNumber(newPhoneNumber)
+    // Only allow numbers
+    const numbersOnly = newPhoneNumber.replace(/\D/g, '')
+    
     if (selectedCountry) {
-      const fullNumber = selectedCountry.dial_code + newPhoneNumber
-      onChange(fullNumber, selectedCountry.dial_code)
+      const { max } = getPhoneLength(selectedCountry)
+      
+      // Limit input to phone length
+      const limitedNumber = numbersOnly.slice(0, max)
+      
+      setPhoneNumber(limitedNumber)
+      const fullNumber = selectedCountry.phone + limitedNumber
+      onChange(fullNumber, selectedCountry.phone)
     }
   }
 
@@ -82,14 +109,20 @@ export default function CustomPhoneInput({
     setSelectedCountry(country)
     setIsDropdownOpen(false)
     setSearchTerm('')
-    const fullNumber = country.dial_code + phoneNumber
-    onChange(fullNumber, country.dial_code)
+    
+    // Clear phone number when changing country and apply length validation
+    const { max } = getPhoneLength(country)
+    const limitedNumber = phoneNumber.slice(0, max)
+    setPhoneNumber(limitedNumber)
+    
+    const fullNumber = country.phone + limitedNumber
+    onChange(fullNumber, country.phone)
   }
 
   // Filter countries based on search
   const filteredCountries = countries.filter(country =>
-    country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.dial_code.includes(searchTerm)
+    country.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    country.phone.includes(searchTerm)
   )
 
   // Close dropdown when clicking outside
@@ -129,7 +162,7 @@ export default function CustomPhoneInput({
                   {getFlagEmoji(selectedCountry.code)}
                 </span>
                 <span className="text-sm font-medium text-gray-700">
-                  {selectedCountry.dial_code}
+                  +{selectedCountry.phone}
                 </span>
               </>
             )}
@@ -168,10 +201,10 @@ export default function CustomPhoneInput({
                         {getFlagEmoji(country.code)}
                       </span>
                       <span className="flex-1 text-sm">
-                        {country.name}
+                        {country.label}
                       </span>
                       <span className="text-sm text-gray-500 font-medium">
-                        {country.dial_code}
+                        +{country.phone}
                       </span>
                     </button>
                   ))
@@ -190,7 +223,7 @@ export default function CustomPhoneInput({
           type="tel"
           value={phoneNumber}
           onChange={(e) => handlePhoneChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={selectedCountry ? `${getPhoneLength(selectedCountry).max} digits` : placeholder}
           required={required}
           disabled={disabled}
           className="flex-1 px-3 py-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
