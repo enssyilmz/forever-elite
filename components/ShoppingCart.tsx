@@ -148,7 +148,7 @@ export default function ShoppingCart({ isCartOpen, setIsCartOpen }: ShoppingCart
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">Quantity:</span>
-                          <div className="flex items-center border border-gray-300 rounded-lg">
+                          <div className="flex items-center border border-gray-300 rounded-lg bg-white">
                             <button
                               onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                               className="p-2 hover:bg-gray-100 rounded-l-lg text-gray-800"
@@ -156,7 +156,7 @@ export default function ShoppingCart({ isCartOpen, setIsCartOpen }: ShoppingCart
                             >
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="px-4 py-2 bg-white border-x border-gray-300 min-w-[3rem] text-center text-gray-800">
+                            <span className="px-4 py-2 border-x border-gray-300 min-w-[3rem] text-center text-gray-800">
                               {item.quantity}
                             </span>
                             <button

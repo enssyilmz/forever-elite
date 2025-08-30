@@ -177,7 +177,7 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
       </div>
 
       {!user && (
-        <div className="bg-gray-50 p-6 rounded-lg text-center">
+        <div className="border p-6 rounded-lg text-center">
           <p className="text-gray-600 mb-4">Please sign in to write a review</p>
           <button 
             onClick={toggleNavbar}
