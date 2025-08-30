@@ -70,21 +70,21 @@ export default function Navbar() {
   }, [isSearchOpen])
 
   const handleGoogleLogin = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ozcan-fit.vercel.app'
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${redirectUrl}/dashboard`,
+        redirectTo: redirectUrl, // Sadece ana sayfa
       }
     })
   }
 
   const handleFacebookLogin = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ozcan-fit.vercel.app'
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: `${redirectUrl}/dashboard`,
+        redirectTo: redirectUrl, // Sadece ana sayfa
       }
     })
   }
@@ -158,146 +158,209 @@ export default function Navbar() {
 
   const cartItemCount = getCartItemCount()
 
-
-
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 w-full h-16 bg-white shadow-md px-6 flex items-center justify-between z-50">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 relative overflow-hidden rounded-full border-2 border-gray-200 hover:border-sky-500 transition-colors">
+      {/* Mobile & Desktop Responsive Navbar */}
+      <nav className="fixed top-0 left-0 right-0 w-full bg-white shadow-md z-50">
+        {/* Mobile Layout (md breakpoint altı) */}
+        <div className="md:hidden h-14 px-4 flex items-center justify-between">
+          {/* Mobile Left: Logo */}
+          <Link href="/" className="flex items-center">
+            <div className="w-8 h-8 relative overflow-hidden rounded-full border-2 border-gray-200">
               <Image
                 src="/logo.jpg"
-                alt="Özcan-fit Logo"
+                alt="Logo"
                 fill
                 className="object-cover"
                 priority
               />
             </div>
           </Link>
-          {user && user.email === ADMIN_EMAIL && (
-            <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
-              Admin Panel
+          
+          {/* Mobile Center: Compact Navigation */}
+          <div className="flex items-center gap-1">
+            <Link href="/packages" className="text-sm font-semibold text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
+              Packages
             </Link>
-          )}
-        </div>
-        <div className="flex gap-6">
-          <Link href="/packages" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3 ">
-            Packages
-          </Link>
-          <Link href="/bodyfc" className="font-bold text-gray-800 font-small hover:bg-sky-500 hover:text-white p-3">
-            Body fat calculator
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          {/* Search Component */}
-          <div className="relative" ref={searchRef}>
+            <Link href="/bodyfc" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
+              Calculator
+            </Link>
+          </div>
+          
+          {/* Mobile Right: Icons */}
+          <div className="flex items-center gap-3">
             <Search 
-              className="w-5 h-5 text-gray-600 cursor-pointer" 
+              className="w-4 h-4 text-gray-600 cursor-pointer" 
               onClick={() => setIsSearchOpen(true)}
             />
             
-            {/* Search Dropdown */}
-            {isSearchOpen && (
-              <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border z-60">
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Search Packages</h3>
-                    <X 
-                      className="w-5 h-5 text-gray-600 cursor-pointer" 
-                      onClick={() => setIsSearchOpen(false)}
-                    />
-                  </div>
-                  
-                  <input
-                    type="text"
-                    placeholder="Search for packages..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black"
-                    autoFocus
-                  />
-                  
-                  <div className="mt-4 max-h-64 overflow-y-auto">
-                    {searchResults.length > 0 ? (
-                      searchResults.map((program) => (
-                        <Link
-                          key={program.id}
-                          href={`/packages/${program.id}`}
-                          onClick={() => setIsSearchOpen(false)}
-                          className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                        >
-                          <div className="text-2xl mr-3">{program.emoji}</div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">{program.title}</h4>
-                            <p className="text-sm text-gray-600">{program.bodyFatRange}</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
-                            <div className="font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</div>
-                          </div>
-                        </Link>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-gray-500">
-                        No packages found for "{searchQuery}"
-                      </div>
-                    )}
-                  </div>
-                  
-                  {searchResults.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Link
-                        href="/packages"
-                        onClick={() => setIsSearchOpen(false)}
-                        className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold"
-                      >
-                        View All Packages →
-                      </Link>
-                    </div>
-                  )}
-                </div>
+            <div className="relative">
+              <User 
+                className="w-4 h-4 text-gray-600 cursor-pointer" 
+                onClick={toggleNavbar} 
+              />
+              {user && (
+                <Check className="w-2 h-2 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
+              )}
+            </div>
+            
+            <div className="relative">
+              <CreditCard 
+                className="w-4 h-4 text-gray-600 cursor-pointer" 
+                onClick={() => setIsCartOpen(true)} 
+              />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                  {cartItemCount}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Layout (md breakpoint ve üstü) */}
+        <div className="hidden md:flex h-16 px-6 items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 relative overflow-hidden rounded-full border-2 border-gray-200 hover:border-sky-500 transition-colors">
+                <Image
+                  src="/logo.jpg"
+                  alt="Özcan-fit Logo"
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
+            </Link>
+            {user && user.email === ADMIN_EMAIL && (
+              <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
+                Admin Panel
+              </Link>
             )}
           </div>
           
-          {/* User Icon with Login Status */}
-          <div className="relative">
-            <User 
-              className="w-5 h-5 text-gray-600 cursor-pointer" 
-              onClick={toggleNavbar} 
-            />
-            {user && (
-              <Check className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
-            )}
+          <div className="flex gap-6">
+            <Link href="/packages" className="font-bold text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
+              Packages
+            </Link>
+            <Link href="/bodyfc" className="font-bold text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
+              Body fat calculator
+            </Link>
           </div>
           
-          {/* Shopping Cart with Badge */}
-          <div className="relative">
-            <CreditCard 
-              className="w-5 h-5 text-gray-600 cursor-pointer" 
-              onClick={() => setIsCartOpen(true)} 
-            />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {cartItemCount}
-              </span>
-            )}
+          <div className="flex items-center gap-4">
+            {/* Search Component */}
+            <div className="relative" ref={searchRef}>
+              <Search 
+                className="w-5 h-5 text-gray-600 cursor-pointer" 
+                onClick={() => setIsSearchOpen(true)}
+              />
+            </div>
+            
+            {/* User Icon with Login Status */}
+            <div className="relative">
+              <User 
+                className="w-5 h-5 text-gray-600 cursor-pointer" 
+                onClick={toggleNavbar} 
+              />
+              {user && (
+                <Check className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
+              )}
+            </div>
+            
+            {/* Shopping Cart with Badge */}
+            <div className="relative">
+              <CreditCard 
+                className="w-5 h-5 text-gray-600 cursor-pointer" 
+                onClick={() => setIsCartOpen(true)} 
+              />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cartItemCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
+      {/* Search Dropdown - Mobile Responsive */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40" onClick={() => setIsSearchOpen(false)}>
+          <div className="absolute right-2 top-16 w-80 md:w-96 bg-white rounded-lg shadow-xl border z-60" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Search Packages</h3>
+                <X 
+                  className="w-5 h-5 text-gray-600 cursor-pointer" 
+                  onClick={() => setIsSearchOpen(false)}
+                />
+              </div>
+              
+              <input
+                type="text"
+                placeholder="Search for packages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black"
+                autoFocus
+              />
+              
+              <div className="mt-4 max-h-64 overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  searchResults.map((program) => (
+                    <Link
+                      key={program.id}
+                      href={`/packages/${program.id}`}
+                      onClick={() => setIsSearchOpen(false)}
+                      className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="text-2xl mr-3">{program.emoji}</div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800">{program.title}</h4>
+                        <p className="text-sm text-gray-600">{program.bodyFatRange}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
+                        <div className="font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</div>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    No packages found for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+              
+              {searchResults.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <Link
+                    href="/packages"
+                    onClick={() => setIsSearchOpen(false)}
+                    className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold"
+                  >
+                    View All Packages →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile & Desktop Sidebar with Responsive Width */}
       {isNavbarOpen && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40"></div>
       )}
 
       <div
         ref={drawerRef}
-        className={`fixed top-0 right-0 h-full w-96 bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
+        className={`fixed top-0 right-0 h-full bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
           isNavbarOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        } w-72 sm:w-80 md:w-96`} // Mobile: 288px, SM: 320px, MD+: 384px
       >
-        <div className="px-4 py-4 border-b">
+        <div className="px-4 py-4 border-b overflow-y-auto h-full">
           {user ? (
             /* Logged In User Menu */
             <>
