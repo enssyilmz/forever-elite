@@ -7,6 +7,14 @@ export async function POST(request: Request) {
   try {
     const { items, customerEmail, successUrl, cancelUrl } = await request.json()
 
+    // Validate email
+    if (!customerEmail || !customerEmail.includes('@')) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
+        { status: 400 }
+      )
+    }
+
     // Convert cart items to Stripe line items
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -23,7 +31,7 @@ export async function POST(request: Request) {
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal'],
+      payment_method_types: ['card'],
       mode: 'payment',
       line_items: lineItems,
       customer_email: customerEmail,
