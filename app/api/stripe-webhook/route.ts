@@ -43,30 +43,31 @@ export async function POST(request: Request) {
           const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
           
           for (const item of lineItems.data) {
-            if (item.price_data?.product_data?.name) {
-              // Insert purchase record into database
-              const { error } = await supabase
-                .from('purchases')
-                .insert({
-                  user_email: session.customer_email || session.customer_details?.email || 'unknown',
-                  user_name: session.customer_details?.name || null,
-                  package_name: item.price_data.product_data.name,
-                  amount: item.amount_total || 0,
-                  currency: session.currency || 'gbp',
-                  status: 'succeeded',
-                  stripe_session_id: session.id,
-                  stripe_payment_intent_id: session.payment_intent as string
-                })
+            // Extract package name from description or use a default
+            const packageName = item.description || 'Unknown Package'
+            
+            // Insert purchase record into database
+            const { error } = await supabase
+              .from('purchases')
+              .insert({
+                user_email: session.customer_email || session.customer_details?.email || 'unknown',
+                user_name: session.customer_details?.name || null,
+                package_name: packageName,
+                amount: item.amount_total || 0,
+                currency: session.currency || 'gbp',
+                status: 'succeeded',
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent as string
+              })
 
-              if (error) {
-                console.error('Error inserting purchase record:', error)
-              } else {
-                console.log('Purchase record inserted successfully:', {
-                  session_id: session.id,
-                  package: item.price_data.product_data.name,
-                  amount: item.amount_total
-                })
-              }
+            if (error) {
+              console.error('Error inserting purchase record:', error)
+            } else {
+              console.log('Purchase record inserted successfully:', {
+                session_id: session.id,
+                package: packageName,
+                amount: item.amount_total
+              })
             }
           }
         }

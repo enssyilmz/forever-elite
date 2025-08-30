@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         currency: 'gbp',
         product_data: {
           name: item.name,
-          description: item.description || '',
+          description: item.description || item.name, // Use name as description if no description
           images: item.images || [],
         },
         unit_amount: Math.round(item.price * 100), // Convert to pence
