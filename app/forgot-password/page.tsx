@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
-import { supabase } from '@/utils/supabaseClient'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Link from 'next/link'
 import SuccessModal from '../../components/SuccessModal'
 
@@ -15,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
   const recaptchaRef = useRef<ReCAPTCHA>(null)
+  const supabase = createClientComponentClient()
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
@@ -40,7 +41,6 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      // Use Supabase auth to send password reset email
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
       })
@@ -51,14 +51,10 @@ export default function ForgotPasswordPage() {
         setLoading(false)
         return
       }
-
       showPopup('Email Sent!', 'Password reset link has been sent to your email address')
-      
-      // Reset form and reCAPTCHA
       setEmail('')
       setCaptchaVerified(false)
-      
-      // Reset reCAPTCHA widget
+
       if (recaptchaRef.current) {
         recaptchaRef.current.reset()
       }

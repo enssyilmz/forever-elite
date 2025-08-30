@@ -70,21 +70,21 @@ export default function Navbar() {
   }, [isSearchOpen])
 
   const handleGoogleLogin = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl, // Sadece ana sayfa
+        redirectTo: `${baseUrl}/auth/callback`, // Auth callback route'una yönlendir
       }
     })
   }
 
   const handleFacebookLogin = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: redirectUrl, // Sadece ana sayfa
+        redirectTo: `${baseUrl}/auth/callback`, // Auth callback route'una yönlendir
       }
     })
   }
@@ -179,7 +179,7 @@ export default function Navbar() {
           
           {/* Mobile Center: Compact Navigation */}
           <div className="flex items-center gap-1">
-            <Link href="/packages" className="text-sm font-semibold text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
+            <Link href="/packages" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
               Packages
             </Link>
             <Link href="/bodyfc" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
