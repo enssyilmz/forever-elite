@@ -198,7 +198,7 @@ export default function CheckoutPage() {
                         <div className="mt-4 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">Quantity:</span>
-                            <div className="flex items-center border border-gray-300 rounded-lg">
+                            <div className="flex items-center border border-gray-300 rounded-lg bg-white">
                               <button
                                 onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                                 className="p-2 hover:bg-gray-100 rounded-l-lg text-gray-800"
@@ -230,7 +230,7 @@ export default function CheckoutPage() {
               })}
             </div>
 
-            {/* Order Summary */}
+            {/*  */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="Enter your email address"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg text-black px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -255,7 +255,7 @@ export default function CheckoutPage() {
 
                 {/* Discount Code */}
                 <div className="mb-6">
-                  <div className="flex gap-2 text-gray-600">
+                  <div className="flex gap-2 text-black">
                     <input
                       type="text"
                       value={discountCode}

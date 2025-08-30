@@ -159,7 +159,7 @@ export default function PackageDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium text-gray-900">Quantity:</span>
-                <div className="flex items-center border border-gray-300 rounded-lg">
+                <div className="flex items-center border border-gray-300 rounded-lg bg-white">
                   <button
                     onClick={decreaseQuantity}
                     className="px-3 py-2 text-gray-800 hover:bg-gray-100 rounded-l-lg"
@@ -179,7 +179,7 @@ export default function PackageDetailPage() {
               <div className="flex gap-3">
                 <button 
                   onClick={handleAddToCart}
-                  className="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-3 px-6 rounded-lg font-semibold transition btn-primary"
+                  className="flex-1 hover:bg-transparent text-white py-3 px-6 rounded-lg font-semibold transition btn-primary"
                 >
                   Add to Cart
                 </button>
@@ -188,7 +188,7 @@ export default function PackageDetailPage() {
                     addToCart(programId, quantity)
                     router.push('/checkout')
                   }}
-                  className="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold transition btn-secondary"
+                  className="flex-1 hover:bg-transparent text-white py-3 px-6 rounded-lg font-semibold transition btn-secondary"
                 >
                   Buy Now
                 </button>
