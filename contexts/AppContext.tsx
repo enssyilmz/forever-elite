@@ -81,22 +81,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Get user, favorites, reviews, and custom programs on mount
   useEffect(() => {
     const fetchInitialData = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('AppContext: Session error:', sessionError)
+          setUser(null)
+          return
+        }
 
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        return
-      }
+        // Only try to get user if we have a session
+        if (session) {
+          const { data: { user }, error: userError } = await supabase.auth.getUser()
+          
+          if (userError) {
+            console.error('AppContext: User error:', userError)
+            setUser(null)
+            return
+          }
+          
+          setUser(user)
+        } else {
+          setUser(null)
+          return
+        }
 
-      setUser(user)
-
-      if (user) {
-        await Promise.all([
-          fetchFavorites(),
-          fetchReviews(),
-          fetchCustomPrograms()
-        ])
+        if (user) {
+          await Promise.all([
+            fetchFavorites(),
+            fetchReviews(),
+            fetchCustomPrograms()
+          ])
+        }
+      } catch (error) {
+        console.error('AppContext: Error in fetchInitialData:', error)
+        setUser(null)
       }
     }
 
@@ -105,18 +124,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
+      console.log('AppContext: Auth state change:', event, session?.user?.email)
       
-      if (session?.user) {
-        await Promise.all([
-          fetchFavorites(),
-          fetchReviews(),
-          fetchCustomPrograms()
-        ])
-      } else {
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
         setFavoriteItems([])
         setReviews([])
         setCustomPrograms([])
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          setUser(session.user)
+          await Promise.all([
+            fetchFavorites(),
+            fetchReviews(),
+            fetchCustomPrograms()
+          ])
+        }
+      } else {
+        setUser(session?.user ?? null)
       }
     })
 
@@ -178,7 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
          setFavoriteItems(favoritePrograms)
        }
     } catch (error) {
-      console.error('Error fetching favorites:', error)
+      console.error('AppContext: Error fetching favorites:', error)
     }
   }
 
@@ -193,7 +218,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setReviews(reviews)
       }
     } catch (error) {
-      console.error('Error fetching reviews:', error)
+      console.error('AppContext: Error fetching reviews:', error)
     }
   }
 
@@ -210,7 +235,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
       setCustomPrograms(data.programs || [])
     } catch (error) {
-      console.error('Error fetching custom programs:', error)
+      console.error('AppContext: Error fetching custom programs:', error)
     }
   }
 
@@ -277,7 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ])
 
       if (error) {
-        console.error('Error adding to favorites:', error)
+        console.error('AppContext: Error adding to favorites:', error)
         return
       }
 
@@ -294,7 +319,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
          }])
        }
     } catch (error) {
-      console.error('Error adding to favorites:', error)
+      console.error('AppContext: Error adding to favorites:', error)
     }
   }
 

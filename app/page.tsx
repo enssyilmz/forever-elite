@@ -4,8 +4,12 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useApp } from '@/contexts/AppContext'
 
 export default function Home() {
+  const searchParams = useSearchParams()
+  const { toggleNavbar } = useApp()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(4)
 
@@ -79,6 +83,22 @@ export default function Home() {
   };
 
 
+  // Check URL params for opening navbar
+  useEffect(() => {
+    const openNavbar = searchParams.get('openNavbar')
+    if (openNavbar === 'true') {
+      // URL'den parametreyi temizle
+      const url = new URL(window.location.href)
+      url.searchParams.delete('openNavbar')
+      window.history.replaceState({}, '', url.toString())
+      
+      // Navbar'ı aç
+      setTimeout(() => {
+        toggleNavbar()
+      }, 100)
+    }
+  }, [searchParams, toggleNavbar])
+
   // Update items per page based on screen width
   useEffect(() => {
     const updateItemsPerPage = () => {
@@ -112,7 +132,7 @@ export default function Home() {
 
   return (
     <main>
-      <div className="relative h-screen w-full overflow-hidden -mt-16">
+      <div className="relative h-[50vh] md:h-screen w-full overflow-hidden -mt-16">
         {/* Video background */}
         <video
           autoPlay
@@ -126,14 +146,14 @@ export default function Home() {
         </video>
 
         {/* Content */}
-        <div className="flex flex-col items-center justify-center h-full bg-black/50">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6 text-center text-white">Discover your power!</h1>
+        <div className="flex flex-col items-center justify-center h-full bg-black/50 px-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6 text-center text-white">Discover your power!</h1>
           <button 
             onClick={() => {
               const programsSection = document.getElementById('programs-section');
               programsSection?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="bg-transparent text-white border px-6 py-3 rounded-xl hover:bg-gray-200 hover:text-black transition"
+            className="bg-transparent text-white border px-4 py-2 sm:px-6 sm:py-3 rounded-xl hover:bg-gray-200 hover:text-black transition text-sm sm:text-base"
           >
             CHECK OUT THE PACKAGES
           </button>
@@ -141,29 +161,29 @@ export default function Home() {
       </div>
 
       {/* Programs Section */}
-      <div id="programs-section" className="py-16 px-6">
+      <div id="programs-section" className="py-8 sm:py-12 md:py-16 px-3 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-800">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 sm:mb-4 text-gray-800 px-2">
             Body Fat Specific Packages
           </h2>
-          <p className="text-base md:text-lg text-gray-600 text-center mb-12">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 text-center mb-8 sm:mb-10 md:mb-12 px-4">
             Choose the perfect program based on your current body fat percentage
           </p>
           
           {/* Programs Carousel */}
-          <div className="flex items-center justify-center gap-4 w-full px-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 w-full px-2 sm:px-4">
   {/* Sol Buton */}
   <button 
     onClick={goToPrevious}
-    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
+    className="bg-sky-500 hover:bg-sky-600 text-white p-2 sm:p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
   >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
     </svg>
   </button>
 
   {/* Slider Container */}
-  <div className="overflow-hidden flex-1 w-full">
+  <div className="overflow-hidden flex-1 w-full max-w-full">
     <div 
       className="flex transition-transform duration-700 ease-in-out"
       style={{ 
@@ -174,29 +194,29 @@ export default function Home() {
       {programs.map((program) => (
         <div 
           key={program.id}
-          className="w-full flex-shrink-0 p-3"
+          className="w-full flex-shrink-0 p-1 sm:p-2 md:p-3"
           style={{ width: `${100 / programs.length}%`}}
         >
           <div
-            className="h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
+            className="h-[350px] sm:h-[380px] md:h-[410px] bg-white rounded-xl shadow-lg p-3 sm:p-4 md:p-6 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
           >
-            <div className="text-4xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
+            <div className="text-2xl sm:text-3xl md:text-4xl w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-3 sm:mb-4 shadow-lg">
               {program.logo}
             </div>
 
-            <div className="text-right mb-3">
-              <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border">
+            <div className="text-right mb-2 sm:mb-3">
+              <span className="bg-sky-100 text-sky-800 text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 rounded-full border">
                 {program.bodyFatRange}
               </span>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-3">{program.title}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 leading-tight">{program.title}</h3>
 
-            <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
+            <p className="text-gray-600 text-xs sm:text-sm flex-1 mb-3 sm:mb-4 leading-relaxed">{program.description}</p>
 
             <div className="mt-auto">
               <Link href="/packages">
-                <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
+                <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 sm:py-3 rounded-lg shadow-md transition text-sm sm:text-base">
                   View All Packages
                 </button>
               </Link>
@@ -210,20 +230,20 @@ export default function Home() {
   {/* Sağ Buton */}
   <button 
     onClick={goToNext}
-    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
+    className="bg-sky-500 hover:bg-sky-600 text-white p-2 sm:p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
   >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
   </button>
 </div>
           
           {/* Carousel Indicators */}
-          <div className="flex justify-center items-center mt-8 space-x-3 w-full">
+          <div className="flex justify-center items-center mt-6 sm:mt-8 space-x-2 sm:space-x-3 w-full">
             {Array.from({ length: numPages }).map((_, index) => (
               <button
                 key={index}
-                className={`w-4 h-4 rounded-full transition-all duration-300 border-2 ${
+                className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-300 border-2 ${
                   currentPage === index 
                     ? 'bg-sky-500 border-sky-500 shadow-md' 
                     : 'bg-transparent border-sky-300 hover:border-sky-400 hover:bg-sky-100'

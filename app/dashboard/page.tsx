@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, Suspense, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
@@ -9,6 +9,7 @@ import CustomPhoneInput from '@/components/CustomPhoneInput'
 import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/packagesData'
 import { Purchase } from '@/lib/database.types'
+import { useApp } from '@/contexts/AppContext'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 
@@ -78,10 +79,7 @@ function DashboardContent() {
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
   
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     // Set active section from URL parameter
@@ -95,35 +93,25 @@ function DashboardContent() {
 
     const getUser = async () => {
       try {
-        console.log('Dashboard: Getting user...')
-        
-        // Get both session and user data
+        // Get user from session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error('Dashboard Session error:', sessionError)
-        }
-
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-          console.error('Dashboard User error:', userError)
-        }
-
-        // Try to get user from session first, then from getUser
-        const currentUser = user || session?.user
-        console.log('Dashboard: Current user:', currentUser)
         
-        if (currentUser) {
-          setUser(currentUser)
+        if (sessionError) {
+          console.error('dashboard: Session error:', sessionError)
+          return
+        }
+
+        if (session?.user) {
+          setUser(session.user)
           
           // Load user data from user_registrations table
-          try {
-            const { data: userData } = await supabase
-              .from('user_registrations')
-              .select('*')
-              .eq('email', currentUser.email)
-              .single()
+          const { data: userData } = await supabase
+            .from('user_registrations')
+            .select('*')
+            .eq('email', session.user.email)
+            .single()
               
-            if (userData) {
+          if (userData) {
               setFormData({
                 firstName: userData.first_name || '',
                 lastName: userData.last_name || '',
@@ -143,28 +131,25 @@ function DashboardContent() {
                 email: userData.comm_email || false,
                 sms: userData.comm_sms || false,
               })
-            } else {
-              // Extract names from Google metadata
-              const fullName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || ''
-              const nameParts = fullName.split(' ')
-              const firstName = currentUser.user_metadata?.first_name || nameParts[0] || ''
-              const lastName = currentUser.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
-              
-              setFormData({
-                firstName: firstName,
-                lastName: lastName,
-                email: currentUser.email || '',
-                phone: currentUser.user_metadata?.phone || currentUser.user_metadata?.phone_number || '',
-                birthdate: currentUser.user_metadata?.birthdate || currentUser.user_metadata?.birth_date || '',
-                gender: currentUser.user_metadata?.gender || '',
-                bodyFat: savedBodyFat || '',
-                fullName: fullName,
-                height: currentUser.user_metadata?.height || '',
-                weight: currentUser.user_metadata?.weight || ''
-              })
-            }
-          } catch (error) {
-            console.error('Error loading user data:', error)
+          } else {
+            // Extract names from Google metadata
+            const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || ''
+            const nameParts = fullName.split(' ')
+            const firstName = session.user.user_metadata?.first_name || nameParts[0] || ''
+            const lastName = session.user.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
+            
+            setFormData({
+              firstName: firstName,
+              lastName: lastName,
+              email: session.user.email || '',
+              phone: session.user.user_metadata?.phone || session.user.user_metadata?.phone_number || '',
+              birthdate: session.user.user_metadata?.birthdate || session.user.user_metadata?.birth_date || '',
+              gender: session.user.user_metadata?.gender || '',
+              bodyFat: savedBodyFat || '',
+              fullName: fullName,
+              height: session.user.user_metadata?.height || '',
+              weight: session.user.user_metadata?.weight || ''
+            })
           }
 
           // İletişim tercihleri artık user_registrations tablosundan yükleniyor
@@ -178,7 +163,7 @@ function DashboardContent() {
                 const { data: favorites, error: favoritesError } = await supabase
                   .from('user_favorites')
                   .select('product_id')
-                  .eq('user_id', currentUser.id)
+                  .eq('user_id', session.user.id)
 
                 if (favoritesError) {
                   console.error('Error fetching favorites:', favoritesError)
@@ -210,7 +195,7 @@ function DashboardContent() {
                 const { data: userPurchases, error: purchasesError } = await supabase
                   .from('purchases')
                   .select('*')
-                  .eq('user_email', currentUser.email)
+                  .eq('user_email', session.user.email)
                   .order('created_at', { ascending: false })
 
                 if (purchasesError) {
@@ -234,7 +219,7 @@ function DashboardContent() {
                 const { data: tickets, error: ticketsError } = await supabase
                   .from('support_tickets')
                   .select('*')
-                  .eq('user_id', currentUser.id)
+                  .eq('user_id', session.user.id)
                   .order('created_at', { ascending: false })
 
                 if (ticketsError) {
@@ -251,14 +236,14 @@ function DashboardContent() {
               }
             })()
           ]).catch(error => {
-            console.error('Error in parallel data fetching:', error)
+            console.error('dashboard: Error in parallel data fetching:', error)
           })
 
         } else {
           setUser(null)
         }
       } catch (error) {
-        console.error('Error in getUser:', error)
+        console.error('dashboard: Error in getUser:', error)
       }
     }
 
@@ -266,6 +251,7 @@ function DashboardContent() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        console.log('dashboard: Auth state change:', event)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await getUser()
         } else if (event === 'SIGNED_OUT') {
@@ -273,14 +259,12 @@ function DashboardContent() {
           setFavoriteProducts([])
           setPurchases([])
           setSupportTickets([])
-        } else {
-          setUser(session?.user ?? null)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth, searchParams])
+  }, [searchParams])
 
   const handleLogout = async () => {
     try {
@@ -1038,17 +1022,15 @@ function DashboardContent() {
           <div className="bg-white rounded-lg shadow-md p-6 text-black">
             <h2 className="text-lg font-semibold mb-4">User Information</h2>
             <div className="space-y-2 text-sm">
-              <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Name:</strong> {user.user_metadata?.full_name || user.user_metadata?.first_name || 'Not provided'}</p>
-              <p><strong>Provider:</strong> {user.app_metadata?.provider || 'Unknown'}</p>
+              <p><strong>Email:</strong> {user?.email || 'Not available'}</p>
+              <p><strong>Name:</strong> {formData.firstName && formData.lastName ? `${formData.firstName} ${formData.lastName}` : user?.user_metadata?.full_name || user?.user_metadata?.first_name || 'Not provided'}</p>
+              <p><strong>Provider:</strong> {user?.app_metadata?.provider || 'Unknown'}</p>
               <p><strong>Last Sign In:</strong> {
-                user.last_sign_in_at 
+                user?.last_sign_in_at 
                   ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss')
-                  : user.user_metadata?.last_sign_in_at
-                    ? dayjs(user.user_metadata.last_sign_in_at).format('DD/MM/YYYY HH:mm:ss')
-                    : 'Not available'
+                  : 'Not available'
               }</p>
-              <p><strong>Created At:</strong> {user.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
+              <p><strong>Created At:</strong> {user?.created_at ? dayjs(user.created_at).format('DD/MM/YYYY HH:mm:ss') : 'Not available'}</p>
             </div>
           </div>
 

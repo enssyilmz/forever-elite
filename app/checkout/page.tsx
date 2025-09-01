@@ -15,7 +15,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice } = useApp()
+  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice, user } = useApp()
   const [discountCode, setDiscountCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, percentage: number} | null>(null)
   const [discountError, setDiscountError] = useState('')
@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const [modalMessage, setModalMessage] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showLoginPopup, setShowLoginPopup] = useState(false)
 
   const validDiscountCodes = [
     { code: 'WELCOME10', percentage: 10 },
@@ -78,8 +79,27 @@ export default function CheckoutPage() {
     setDiscountError('')
   }
 
+  // Auto-fill email if user is logged in
+  useEffect(() => {
+    if (user?.email) {
+      setCustomerEmail(user.email)
+    }
+  }, [user])
+
+  // Check if user is logged in before allowing checkout
+  useEffect(() => {
+    if (!user && cartItems.length > 0) {
+      setShowLoginPopup(true)
+    }
+  }, [user, cartItems])
+
   const handleCompleteOrder = async () => {
     if (cartItems.length === 0) return
+    
+    if (!user) {
+      setShowLoginPopup(true)
+      return
+    }
 
     try {
       // Prepare items for Stripe
@@ -244,12 +264,19 @@ export default function CheckoutPage() {
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full border border-gray-300 rounded-lg text-black px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder={user ? user.email : "Enter your email address"}
+                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                      user ? 'bg-gray-100 cursor-not-allowed text-gray-600' : 'text-black'
+                    }`}
                     required
+                    readOnly={!!user}
+                    disabled={!!user}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Receipt and order updates will be sent to this email
+                    {user 
+                      ? 'Email is locked to your account email address'
+                      : 'Receipt and order updates will be sent to this email'
+                    }
                   </p>
                 </div>
 
@@ -343,6 +370,27 @@ export default function CheckoutPage() {
         title={modalTitle}
         message={modalMessage}
       />
+
+      {/* Login Required Popup */}
+      {showLoginPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Login Required</h3>
+            <p className="text-gray-600 mb-6">
+              You need to be logged in to complete your purchase. Please sign in to continue.
+            </p>
+            <button
+              onClick={() => {
+                setShowLoginPopup(false)
+                router.push('/?openNavbar=true')
+              }}
+              className="btn-primary w-full"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      )}
     </Elements>
   )
 } 

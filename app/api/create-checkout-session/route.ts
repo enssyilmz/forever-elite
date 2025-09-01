@@ -58,8 +58,6 @@ export async function POST(request: Request) {
           },
         },
       },
-      // Ensure receipt emails are sent
-      receipt_email: customerEmail,
     })
 
     return NextResponse.json({ 

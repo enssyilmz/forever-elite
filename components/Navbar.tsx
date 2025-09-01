@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
@@ -16,8 +16,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -25,11 +24,8 @@ export default function Navbar() {
   const [rememberMe, setRememberMe] = useState(true)
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { getCartItemCount, isNavbarOpen, toggleNavbar } = useApp()
+  const supabase = createClientComponentClient()
+  const { getCartItemCount, isNavbarOpen, toggleNavbar, user } = useApp()
   const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
@@ -104,54 +100,7 @@ export default function Navbar() {
     })
   }
 
-  // Get user on component mount
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        // Önce session'ı kontrol et
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-        }
-
-        // Sonra user'ı kontrol et
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-          console.error('User error:', userError)
-        }
-
-        // Session'dan veya getUser'dan gelen user'ı kullan
-        const currentUser = user || session?.user
-        console.log('Current user in Navbar:', currentUser)
-        
-        setUser(currentUser || null)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error getting user:', error)
-        setLoading(false)
-      }
-    }
-
-    getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state change:', event, session?.user)
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const { data: { user } } = await supabase.auth.getUser()
-          setUser(user || null)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-        } else {
-          setUser(session?.user ?? null)
-        }
-        setLoading(false)
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  // Auth is now handled in AppContext, no need for duplicate logic here
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -189,55 +138,44 @@ export default function Navbar() {
       }
     } else {
       toggleNavbar()
-      if (data.user?.email === ADMIN_EMAIL) {
-        router.push('/admin')
-      }
+      // Admin auto-redirect removed - user can manually go to admin panel
     }
   }
 
   const handleLogout = async () => {
     try {
-      console.log('Logout attempt started...')
+      console.log('navbar: Logout attempt started...')
       
-      // Supabase logout'u önce yap
+      // Use the same supabase client as AppContext
       const { error } = await supabase.auth.signOut()
       
       if (error) {
-        console.error('Supabase logout error:', error)
+        console.error('navbar: Supabase logout error:', error)
         throw error
       }
       
-      console.log('Supabase logout successful')
+      console.log('navbar: Logout successful')
       
-      // Local state'i temizle
-      setUser(null)
+      // Clear local form state
       setEmail('')
       setPassword('')
+      setError(null)
       
-      // Navbar'ı kapat
+      // Close navbar
       toggleNavbar()
       
-      // Ana sayfaya yönlendir
+      // Redirect to home
       router.push('/')
-      
-      // Sayfayı yenile (session temizleme için)
-      setTimeout(() => {
-        window.location.reload()
-      }, 200)
-      
-      console.log('Logout completed successfully')
       
     } catch (error) {
-      console.error('Logout exception:', error)
+      console.error('navbar: Logout exception:', error)
       
-      // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
-      setUser(null)
+      // Even on error, clear local state and redirect
+      setEmail('')
+      setPassword('')
+      setError(null)
       toggleNavbar()
       router.push('/')
-      
-      setTimeout(() => {
-        window.location.reload()
-      }, 200)
     }
   }
 
@@ -263,7 +201,7 @@ export default function Navbar() {
           </Link>
           
           {/* Mobile Center: Compact Navigation */}
-          <div className="flex items-center gap-1">
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1">
             <Link href="/packages" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
               Packages
             </Link>
@@ -461,9 +399,7 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=profile" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={toggleNavbar}
                 >
                   <User className="w-5 h-5 mr-3 text-gray-600" />
                   Edit Profile
@@ -472,9 +408,7 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=orders" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={toggleNavbar}
                 >
                   <CreditCard className="w-5 h-5 mr-3 text-gray-600" />
                   View Orders
@@ -483,40 +417,19 @@ export default function Navbar() {
                 <Link 
                   href="/dashboard?section=favorites" 
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={toggleNavbar}
                 >
                   <Star className='w-5 h-5 mr-3 text-gray-600' />
                   My Favorites
                 </Link>
                 
-                                 <button 
-                   onClick={async () => {
-                     console.log('Logout button clicked')
-                     // Butonu devre dışı bırak
-                     const button = event?.target as HTMLButtonElement
-                     if (button) {
-                       button.disabled = true
-                       button.textContent = 'Çıkış yapılıyor...'
-                     }
-                     
-                     try {
-                       await handleLogout()
-                     } catch (error) {
-                       console.error('Logout failed:', error)
-                       // Butonu tekrar aktif et
-                       if (button) {
-                         button.disabled = false
-                         button.textContent = 'Logout'
-                       }
-                     }
-                   }}
-                   className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50"
-                 >
-                   <Check className="w-5 h-5 mr-3" />
-                   Logout
-                 </button>
+                <button 
+                  onClick={handleLogout}
+                  className="btn-primary flex items-center w-full p-3 text-left transition"
+                >
+                  <Check className="w-5 h-5 mr-3" />
+                  Sign Out
+                </button>
               </div>
             </>
           ) : (

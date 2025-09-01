@@ -12,6 +12,7 @@
     "@stripe/react-stripe-js": "^3.9.2",
     "@stripe/stripe-js": "^7.9.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.49.10",
     "@types/react-google-recaptcha": "^2.1.9",
     "autoprefixer": "^10.4.21",
@@ -36,6 +37,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tsconfig": "^7.0.0",
     "typescript": "^5"
   }
 }
