@@ -51,7 +51,15 @@ export async function POST(request: Request) {
       billing_address_collection: 'required',
       invoice_creation: {
         enabled: true,
+        invoice_data: {
+          description: 'Ozcan Fit Training Package',
+          metadata: {
+            customer_email: customerEmail,
+          },
+        },
       },
+      // Ensure receipt emails are sent
+      receipt_email: customerEmail,
     })
 
     return NextResponse.json({ 

@@ -8,6 +8,7 @@ import ReCAPTCHA from 'react-google-recaptcha'
 import CustomPhoneInput from '@/components/CustomPhoneInput'
 import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/packagesData'
+import { Purchase } from '@/lib/database.types'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 
@@ -59,6 +60,8 @@ function DashboardContent() {
   const [modalMessage, setModalMessage] = useState('')
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(true)
+  const [purchases, setPurchases] = useState<Purchase[]>([])
+  const [purchasesLoading, setPurchasesLoading] = useState(true)
   
   // Support ticket states
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
@@ -166,7 +169,7 @@ function DashboardContent() {
 
           // İletişim tercihleri artık user_registrations tablosundan yükleniyor
 
-          // Load favorites and support tickets in background
+          // Load favorites, purchases and support tickets in background
           Promise.all([
             // Fetch favorite products
             (async () => {
@@ -197,6 +200,30 @@ function DashboardContent() {
                 setFavoriteProducts([])
               } finally {
                 setFavoritesLoading(false)
+              }
+            })(),
+
+            // Fetch purchases
+            (async () => {
+              try {
+                setPurchasesLoading(true)
+                const { data: userPurchases, error: purchasesError } = await supabase
+                  .from('purchases')
+                  .select('*')
+                  .eq('user_email', currentUser.email)
+                  .order('created_at', { ascending: false })
+
+                if (purchasesError) {
+                  console.error('dashboard: Error fetching purchases:', purchasesError)
+                  setPurchases([])
+                } else {
+                  setPurchases(userPurchases || [])
+                }
+              } catch (error) {
+                console.error('dashboard: Error fetching purchases:', error)
+                setPurchases([])
+              } finally {
+                setPurchasesLoading(false)
               }
             })(),
             
@@ -244,6 +271,7 @@ function DashboardContent() {
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setFavoriteProducts([])
+          setPurchases([])
           setSupportTickets([])
         } else {
           setUser(session?.user ?? null)
@@ -735,6 +763,101 @@ function DashboardContent() {
                     </div>
                   </Link>
                 ))}
+              </div>
+            )}
+          </div>
+        )
+
+      case 'orders':
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-6 text-gray-900">My Orders</h2>
+            {purchasesLoading ? (
+              <p>Loading orders...</p>
+            ) : purchases.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">You have no orders yet.</p>
+                <Link href="/packages" className="btn-primary px-6 py-3">
+                  Browse Packages
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {purchases.map((purchase) => {
+                  // Find the corresponding program details
+                  const programDetails = allPrograms.find(p => p.title === purchase.package_name)
+                  const formatAmount = (amount: number, currency: string) => {
+                    const formatted = (amount / 100).toFixed(2)
+                    const symbol = currency.toUpperCase() === 'GBP' ? '£' : '$'
+                    return `${symbol}${formatted}`
+                  }
+                  
+                  return (
+                    <div key={purchase.id} className="border rounded-lg p-6 bg-gray-50">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            {programDetails && (
+                              <span className="text-2xl">{programDetails.emoji}</span>
+                            )}
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-800">{purchase.package_name}</h3>
+                              <p className="text-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
+                            </div>
+                          </div>
+                          
+                          {programDetails && (
+                            <p className="text-gray-600 text-sm mb-2">{programDetails.bodyFatRange}</p>
+                          )}
+                          
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              <strong>Amount:</strong> {formatAmount(purchase.amount, purchase.currency)}
+                            </span>
+                            <span>
+                              <strong>Date:</strong> {dayjs(purchase.created_at).format('DD/MM/YYYY')}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              purchase.status === 'completed' || purchase.status === 'paid' 
+                                ? 'bg-green-100 text-green-800' 
+                                : purchase.status === 'pending' 
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {purchase.status.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-2">
+                          {programDetails && (
+                            <Link 
+                              href={`/packages/${programDetails.id}`}
+                              className="btn-secondary px-4 py-2 text-sm"
+                            >
+                              View Details
+                            </Link>
+                          )}
+                          <a 
+                            href="https://gmail.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn-primary px-4 py-2 text-sm"
+                          >
+                            View Receipt
+                          </a>
+                        </div>
+                      </div>
+                      
+                      {programDetails && (
+                        <div className="border-t pt-4 mt-4">
+                          <p className="text-sm text-gray-600">{programDetails.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
