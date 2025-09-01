@@ -167,8 +167,40 @@ export default function Navbar() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    toggleNavbar()
+    try {
+      console.log('Logout attempt started...')
+      
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Logout error:', error)
+        // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
+      }
+      
+      // Local state'i temizle
+      setUser(null)
+      setEmail('')
+      setPassword('')
+      
+      // Navbar'ı kapat
+      toggleNavbar()
+      
+      // Ana sayfaya yönlendir
+      router.push('/')
+      
+      // Sayfayı yenile (canlıda session temizleme için)
+      window.location.reload()
+      
+      console.log('Logout completed successfully')
+      
+    } catch (error) {
+      console.error('Logout exception:', error)
+      // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
+      setUser(null)
+      toggleNavbar()
+      router.push('/')
+      window.location.reload()
+    }
   }
 
   const cartItemCount = getCartItemCount()
