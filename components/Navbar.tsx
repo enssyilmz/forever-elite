@@ -107,16 +107,45 @@ export default function Navbar() {
   // Get user on component mount
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+      try {
+        // Önce session'ı kontrol et
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+        }
+
+        // Sonra user'ı kontrol et
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+          console.error('User error:', userError)
+        }
+
+        // Session'dan veya getUser'dan gelen user'ı kullan
+        const currentUser = user || session?.user
+        console.log('Current user in Navbar:', currentUser)
+        
+        setUser(currentUser || null)
+        setLoading(false)
+      } catch (error) {
+        console.error('Error getting user:', error)
+        setLoading(false)
+      }
     }
 
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null)
+      async (event, session) => {
+        console.log('Auth state change:', event, session?.user)
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          const { data: { user } } = await supabase.auth.getUser()
+          setUser(user || null)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        } else {
+          setUser(session?.user ?? null)
+        }
         setLoading(false)
       }
     )

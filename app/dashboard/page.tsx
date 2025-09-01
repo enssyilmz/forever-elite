@@ -92,16 +92,22 @@ function DashboardContent() {
 
     const getUser = async () => {
       try {
+        console.log('Dashboard: Getting user...')
+        
         // Get both session and user data
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        
         if (sessionError) {
-          console.error('Session error:', sessionError)
+          console.error('Dashboard Session error:', sessionError)
+        }
+
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+          console.error('Dashboard User error:', userError)
         }
 
         // Try to get user from session first, then from getUser
         const currentUser = user || session?.user
+        console.log('Dashboard: Current user:', currentUser)
         
         if (currentUser) {
           setUser(currentUser)
