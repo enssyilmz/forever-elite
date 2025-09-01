@@ -126,6 +126,48 @@ export interface Database {
           created_at?: string
         }
       }
+      // Purchases table
+      purchases: {
+        Row: {
+          id: string
+          user_email: string
+          user_name: string | null
+          package_name: string
+          amount: number
+          currency: string
+          status: string
+          stripe_session_id: string
+          stripe_payment_intent_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_email: string
+          user_name?: string | null
+          package_name: string
+          amount: number
+          currency?: string
+          status?: string
+          stripe_session_id: string
+          stripe_payment_intent_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_email?: string
+          user_name?: string | null
+          package_name?: string
+          amount?: number
+          currency?: string
+          status?: string
+          stripe_session_id?: string
+          stripe_payment_intent_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       // ... existing tables ...
       reviews: {
         Row: {
@@ -200,4 +242,18 @@ export interface CustomExercise {
   notes: string | null
   order_index: number
   created_at: string
+}
+
+export interface Purchase {
+  id: string
+  user_email: string
+  user_name: string | null
+  package_name: string
+  amount: number
+  currency: string
+  status: string
+  stripe_session_id: string
+  stripe_payment_intent_id: string | null
+  created_at: string
+  updated_at: string
 } 

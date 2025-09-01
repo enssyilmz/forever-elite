@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, CreditCard, Mail, Calendar } from 'lucide-react'
+import { CheckCircle, CreditCard, Mail, Calendar, Package } from 'lucide-react'
 
 interface PaymentDetails {
   id: string
@@ -147,12 +147,19 @@ function ConfirmationContent() {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t">
-              <Link href="/" className="btn-primary px-6 py-3 text-center">
-                Back to Homepage
-              </Link>
-              <Link href="/packages" className="btn-secondary px-6 py-3 text-center">
-                Browse More Packages
+            <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t justify-center">
+              <a 
+                href="https://gmail.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-primary px-6 py-3 text-center flex items-center justify-center gap-2 w-full sm:w-auto"
+              >
+                <Mail className="w-5 h-5" />
+                View My Email
+              </a>
+              <Link href="/dashboard?section=orders" className="btn-secondary px-6 py-3 text-center flex items-center justify-center gap-2 w-full sm:w-auto">
+                <Package className="w-5 h-5" />
+                My Orders
               </Link>
             </div>
           </div>

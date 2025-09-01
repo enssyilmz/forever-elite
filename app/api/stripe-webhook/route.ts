@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message)
+      console.error('stripe-webhook: Webhook signature verification failed:', err.message)
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -55,19 +55,22 @@ export async function POST(request: Request) {
                 package_name: packageName,
                 amount: item.amount_total || 0,
                 currency: session.currency || 'gbp',
-                status: 'succeeded',
+                status: 'completed',
                 stripe_session_id: session.id,
                 stripe_payment_intent_id: session.payment_intent as string
               })
 
             if (error) {
-              console.error('Error inserting purchase record:', error)
+              console.error('stripe-webhook: Error inserting purchase record:', error)
             } else {
-              console.log('Purchase record inserted successfully:', {
+              console.log('stripe-webhook: Purchase record inserted successfully:', {
                 session_id: session.id,
                 package: packageName,
                 amount: item.amount_total
               })
+              
+              // TODO: Send custom welcome email here if needed
+              // You can add Resend integration here later
             }
           }
         }
@@ -75,21 +78,21 @@ export async function POST(request: Request) {
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log('Payment succeeded:', paymentIntent.id)
+        console.log('stripe-webhook: Payment succeeded:', paymentIntent.id)
         break
 
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object as Stripe.PaymentIntent
-        console.log('Payment failed:', failedPayment.id)
+        console.log('stripe-webhook: Payment failed:', failedPayment.id)
         break
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`stripe-webhook: Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('stripe-webhook: Webhook error:', error)
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
