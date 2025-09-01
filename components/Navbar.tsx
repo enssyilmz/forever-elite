@@ -170,14 +170,7 @@ export default function Navbar() {
     try {
       console.log('Logout attempt started...')
       
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Logout error:', error)
-        // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
-      }
-      
-      // Local state'i temizle
+      // Önce local state'i temizle
       setUser(null)
       setEmail('')
       setPassword('')
@@ -185,21 +178,34 @@ export default function Navbar() {
       // Navbar'ı kapat
       toggleNavbar()
       
+      // Supabase logout'u dene
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Supabase logout error:', error)
+      }
+      
       // Ana sayfaya yönlendir
       router.push('/')
       
-      // Sayfayı yenile (canlıda session temizleme için)
-      window.location.reload()
+      // Sayfayı yenile (session temizleme için)
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
       
       console.log('Logout completed successfully')
       
     } catch (error) {
       console.error('Logout exception:', error)
+      
       // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
       setUser(null)
       toggleNavbar()
       router.push('/')
-      window.location.reload()
+      
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     }
   }
 
@@ -453,13 +459,16 @@ export default function Navbar() {
                   My Favorites
                 </Link>
                 
-                <button 
-                  onClick={handleLogout}
-                  className="btn-primary flex items-center w-full p-3 text-left transition"
-                >
-                  <Check className="w-5 h-5 mr-3" />
-                  Logout
-                </button>
+                                 <button 
+                   onClick={() => {
+                     console.log('Logout button clicked')
+                     handleLogout()
+                   }}
+                   className="btn-primary flex items-center w-full p-3 text-left transition"
+                 >
+                   <Check className="w-5 h-5 mr-3" />
+                   Logout
+                 </button>
               </div>
             </>
           ) : (
