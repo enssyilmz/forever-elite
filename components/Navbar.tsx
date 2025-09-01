@@ -4,20 +4,17 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
 import { programs } from '@/lib/packagesData'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/utils/supabaseClient'
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -25,11 +22,8 @@ export default function Navbar() {
   const [rememberMe, setRememberMe] = useState(true)
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { getCartItemCount, isNavbarOpen, toggleNavbar } = useApp()
+
+  const { getCartItemCount, isNavbarOpen, toggleNavbar, user } = useApp()
   const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
@@ -104,7 +98,7 @@ export default function Navbar() {
     })
   }
 
-  // Get user on component mount
+    // Get user on component mount
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -123,35 +117,21 @@ export default function Navbar() {
         // Session'dan veya getUser'dan gelen user'ı kullan
         const currentUser = user || session?.user
         console.log('Current user in Navbar:', currentUser)
-        
-        setUser(currentUser || null)
-        setLoading(false)
       } catch (error) {
         console.error('Error getting user:', error)
-        setLoading(false)
       }
     }
 
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: any, session: any) => {
         console.log('Auth state change:', event, session?.user)
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const { data: { user } } = await supabase.auth.getUser()
-          setUser(user || null)
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-        } else {
-          setUser(session?.user ?? null)
-        }
-        setLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -210,7 +190,6 @@ export default function Navbar() {
       console.log('Supabase logout successful')
       
       // Local state'i temizle
-      setUser(null)
       setEmail('')
       setPassword('')
       
@@ -220,24 +199,14 @@ export default function Navbar() {
       // Ana sayfaya yönlendir
       router.push('/')
       
-      // Sayfayı yenile (session temizleme için)
-      setTimeout(() => {
-        window.location.reload()
-      }, 200)
-      
       console.log('Logout completed successfully')
       
     } catch (error) {
       console.error('Logout exception:', error)
       
       // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
-      setUser(null)
       toggleNavbar()
       router.push('/')
-      
-      setTimeout(() => {
-        window.location.reload()
-      }, 200)
     }
   }
 
@@ -492,10 +461,10 @@ export default function Navbar() {
                 </Link>
                 
                                  <button 
-                   onClick={async () => {
+                   onClick={async (event) => {
                      console.log('Logout button clicked')
                      // Butonu devre dışı bırak
-                     const button = event?.target as HTMLButtonElement
+                     const button = event.target as HTMLButtonElement
                      if (button) {
                        button.disabled = true
                        button.textContent = 'Çıkış yapılıyor...'

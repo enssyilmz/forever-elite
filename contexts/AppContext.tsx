@@ -1,10 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from '@supabase/supabase-js'
 import { programs } from '@/lib/packagesData' // Import from centralized file
 import { CustomProgram } from '@/lib/database.types'
+import { supabase } from '@/utils/supabaseClient'
 
 interface CartItem {
   id: number
@@ -76,7 +76,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [customPrograms, setCustomPrograms] = useState<CustomProgram[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isNavbarOpen, setIsNavbarOpen] = useState(false)
-  const supabase = createClientComponentClient()
 
   // Get user, favorites, reviews, and custom programs on mount
   useEffect(() => {
@@ -102,9 +101,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchInitialData()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+         const {
+       data: { subscription },
+     } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       setUser(session?.user ?? null)
       
       if (session?.user) {
@@ -161,7 +160,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
        if (favorites) {
          const favoritePrograms = favorites
-           .map(fav => {
+           .map((fav: any) => {
              const program = programs.find(p => p.id === fav.product_id)
              return program ? {
                id: program.id,
