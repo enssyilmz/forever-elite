@@ -15,7 +15,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice } = useApp()
+  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice, user } = useApp()
   const [discountCode, setDiscountCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, percentage: number} | null>(null)
   const [discountError, setDiscountError] = useState('')
@@ -145,6 +145,13 @@ export default function CheckoutPage() {
     }
   }, [cartItems, router])
 
+  // Auto-fill user email when user is logged in
+  useEffect(() => {
+    if (user?.email) {
+      setCustomerEmail(user.email)
+    }
+  }, [user])
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen py-16 px-6">
@@ -244,12 +251,19 @@ export default function CheckoutPage() {
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full border border-gray-300 rounded-lg text-black px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    placeholder={user ? "Auto-filled from your account" : "Enter your email address"}
+                    className={`w-full border border-gray-300 rounded-lg text-black px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                      user ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                     required
+                    readOnly={!!user}
+                    disabled={!!user}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Receipt and order updates will be sent to this email
+                    {user 
+                      ? "This email is auto-filled from your logged-in account" 
+                      : "Receipt and order updates will be sent to this email"
+                    }
                   </p>
                 </div>
 
