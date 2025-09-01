@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
@@ -25,7 +25,10 @@ export default function Navbar() {
   const [rememberMe, setRememberMe] = useState(true)
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
-  const supabase = createClientComponentClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const { getCartItemCount, isNavbarOpen, toggleNavbar } = useApp()
   const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
@@ -70,21 +73,33 @@ export default function Navbar() {
   }, [isSearchOpen])
 
   const handleGoogleLogin = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
+    // Localhost'ta dinamik port kullan, production'da environment variable kullan
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app')
+    
+    console.log('Google login redirect URL:', `${baseUrl}/api/auth/callback`)
+    
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${baseUrl}/auth/callback`, // Auth callback route'una yönlendir
+        redirectTo: `${baseUrl}/api/auth/callback`,
       }
     })
   }
 
   const handleFacebookLogin = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app'
+    // Localhost'ta dinamik port kullan, production'da environment variable kullan
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app')
+    
+    console.log('Facebook login redirect URL:', `${baseUrl}/api/auth/callback`)
+    
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: `${baseUrl}/auth/callback`, // Auth callback route'una yönlendir
+        redirectTo: `${baseUrl}/api/auth/callback`,
       }
     })
   }
