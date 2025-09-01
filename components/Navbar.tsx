@@ -170,7 +170,17 @@ export default function Navbar() {
     try {
       console.log('Logout attempt started...')
       
-      // Önce local state'i temizle
+      // Supabase logout'u önce yap
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Supabase logout error:', error)
+        throw error
+      }
+      
+      console.log('Supabase logout successful')
+      
+      // Local state'i temizle
       setUser(null)
       setEmail('')
       setPassword('')
@@ -178,20 +188,13 @@ export default function Navbar() {
       // Navbar'ı kapat
       toggleNavbar()
       
-      // Supabase logout'u dene
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Supabase logout error:', error)
-      }
-      
       // Ana sayfaya yönlendir
       router.push('/')
       
       // Sayfayı yenile (session temizleme için)
       setTimeout(() => {
         window.location.reload()
-      }, 100)
+      }, 200)
       
       console.log('Logout completed successfully')
       
@@ -205,7 +208,7 @@ export default function Navbar() {
       
       setTimeout(() => {
         window.location.reload()
-      }, 100)
+      }, 200)
     }
   }
 
@@ -460,11 +463,27 @@ export default function Navbar() {
                 </Link>
                 
                                  <button 
-                   onClick={() => {
+                   onClick={async () => {
                      console.log('Logout button clicked')
-                     handleLogout()
+                     // Butonu devre dışı bırak
+                     const button = event?.target as HTMLButtonElement
+                     if (button) {
+                       button.disabled = true
+                       button.textContent = 'Çıkış yapılıyor...'
+                     }
+                     
+                     try {
+                       await handleLogout()
+                     } catch (error) {
+                       console.error('Logout failed:', error)
+                       // Butonu tekrar aktif et
+                       if (button) {
+                         button.disabled = false
+                         button.textContent = 'Logout'
+                       }
+                     }
                    }}
-                   className="btn-primary flex items-center w-full p-3 text-left transition"
+                   className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50"
                  >
                    <Check className="w-5 h-5 mr-3" />
                    Logout

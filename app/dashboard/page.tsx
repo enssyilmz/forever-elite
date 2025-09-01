@@ -249,7 +249,26 @@ function DashboardContent() {
   }, [supabase.auth, searchParams])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    try {
+      console.log('Dashboard logout started...')
+      
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Dashboard logout error:', error)
+        throw error
+      }
+      
+      console.log('Dashboard logout successful')
+      
+      // Ana sayfaya yönlendir
+      window.location.href = '/'
+      
+    } catch (error) {
+      console.error('Dashboard logout failed:', error)
+      // Hata olsa bile ana sayfaya yönlendir
+      window.location.href = '/'
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
