@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, Suspense, useRef } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
@@ -75,7 +75,10 @@ function DashboardContent() {
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
   
-  const supabase = createClientComponentClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     // Set active section from URL parameter
@@ -172,7 +175,7 @@ function DashboardContent() {
                   console.error('Error fetching favorites:', favoritesError)
                   setFavoriteProducts([])
                 } else {
-                  const favoriteProductIds = favorites.map(fav => fav.product_id)
+                  const favoriteProductIds = favorites.map((fav: any) => fav.product_id)
                   const favoriteProgramDetails = allPrograms
                     .filter(p => favoriteProductIds.includes(p.id))
                     .map(p => ({
@@ -229,7 +232,7 @@ function DashboardContent() {
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: any, session: any) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await getUser()
         } else if (event === 'SIGNED_OUT') {
