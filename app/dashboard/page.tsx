@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, Suspense, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/utils/supabaseClient'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
@@ -78,10 +78,7 @@ function DashboardContent() {
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
   
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Paylaşılan Supabase client kullan
 
   useEffect(() => {
     // Set active section from URL parameter
@@ -264,23 +261,9 @@ function DashboardContent() {
 
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await getUser()
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setFavoriteProducts([])
-          setPurchases([])
-          setSupportTickets([])
-        } else {
-          setUser(session?.user ?? null)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [supabase.auth, searchParams])
+    // Auth değişikliklerini AppContext dinliyor; burada ikinci bir listener kurmuyoruz
+    return () => {}
+  }, [searchParams])
 
   const handleLogout = async () => {
     try {

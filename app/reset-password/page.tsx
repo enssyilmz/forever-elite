@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/utils/supabaseClient'
 import SuccessModal from '@/components/SuccessModal'
 
 export default function ResetPassword() {
@@ -9,7 +9,6 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const supabase = createClientComponentClient()
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()

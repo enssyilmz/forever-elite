@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/utils/supabaseClient'
 import { User } from '@supabase/supabase-js'
 import SuccessModal from '../../components/SuccessModal'
 
@@ -29,8 +29,6 @@ export default function BodyFatCalculator() {
   const [modalMessage, setModalMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const getUser = async () => {

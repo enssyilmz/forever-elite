@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/utils/supabaseClient'
 import Link from 'next/link'
 import SuccessModal from '../../components/SuccessModal'
 
@@ -15,7 +15,6 @@ export default function ForgotPasswordPage() {
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
   const recaptchaRef = useRef<ReCAPTCHA>(null)
-  const supabase = createClientComponentClient()
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)

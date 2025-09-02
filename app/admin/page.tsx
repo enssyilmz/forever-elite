@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
 import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard } from 'lucide-react'
@@ -80,7 +80,6 @@ export default function AdminPage() {
     workouts: [] as WorkoutDay[]
   })
 
-  const supabase = createClientComponentClient()
   const router = useRouter()
 
   const fetchUsers = async () => {

@@ -102,19 +102,8 @@ export default function Navbar() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        // Önce session'ı kontrol et
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-        }
-
-        // Sonra user'ı kontrol et
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-          console.error('User error:', userError)
-        }
-
-        // Session'dan veya getUser'dan gelen user'ı kullan
+        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { user } } = await supabase.auth.getUser()
         const currentUser = user || session?.user
         console.log('Current user in Navbar:', currentUser)
       } catch (error) {
@@ -123,14 +112,7 @@ export default function Navbar() {
     }
 
     getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        console.log('Auth state change:', event, session?.user)
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    // Navbar kendi auth listener'ını kurmuyor; AppContext dinliyor
   }, [])
 
   useEffect(() => {

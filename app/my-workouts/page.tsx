@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import { 
@@ -28,7 +28,6 @@ export default function MyWorkoutsPage() {
   const [expandedProgram, setExpandedProgram] = useState<number | null>(null)
   const [expandedWorkout, setExpandedWorkout] = useState<number | null>(null)
   
-  const supabase = createClientComponentClient()
   const router = useRouter()
 
   useEffect(() => {
