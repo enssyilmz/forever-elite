@@ -3,14 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/packagesData'
 import { CreditCard, Lock, Calendar, User as UserIcon, MessageSquare } from 'lucide-react'
 import SuccessModal from '@/components/SuccessModal'
 import Link from 'next/link'
 
 export default function PaymentPage() {
   const router = useRouter()
-  const { cartItems, getTotalPrice } = useApp()
+  const { getTotalPrice } = useApp()
   const [cardState, setCardState] = useState({
     number: '',
     expiry: '',

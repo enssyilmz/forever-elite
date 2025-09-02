@@ -70,7 +70,7 @@ export default function Navbar() {
     // Localhost'ta dinamik port kullan, production'da environment variable kullan
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? window.location.origin 
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app')
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
     
     console.log('Google login redirect URL:', `${baseUrl}/api/auth/callback`)
     
@@ -86,7 +86,7 @@ export default function Navbar() {
     // Localhost'ta dinamik port kullan, production'da environment variable kullan
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? window.location.origin 
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://forever-elite.vercel.app')
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
     
     console.log('Facebook login redirect URL:', `${baseUrl}/api/auth/callback`)
     
@@ -186,7 +186,7 @@ export default function Navbar() {
     } catch (error) {
       console.error('Logout exception:', error)
       
-      // Hata olsa bile kullanıcıyı çıkış yapmış gibi davran
+      // Even if there is an error, the user is logged out
       toggleNavbar()
       router.push('/')
     }
@@ -445,11 +445,11 @@ export default function Navbar() {
                                  <button 
                    onClick={async (event) => {
                      console.log('Logout button clicked')
-                     // Butonu devre dışı bırak
+                     // Disable button
                      const button = event.target as HTMLButtonElement
                      if (button) {
                        button.disabled = true
-                       button.textContent = 'Çıkış yapılıyor...'
+                       button.textContent = 'Signing out...'
                      }
                      
                      try {

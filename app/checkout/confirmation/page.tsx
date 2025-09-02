@@ -80,9 +80,6 @@ function ConfirmationContent() {
           <div className="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center">
             <CheckCircle className="w-20 h-20 text-white mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-white mb-2">Payment Successful!</h1>
-            <p className="text-green-100">
-              Your order has been confirmed and you will receive an email receipt shortly.
-            </p>
           </div>
 
           {/* Payment Details */}
@@ -139,13 +136,11 @@ function ConfirmationContent() {
               </div>
             ) : (
               <div className="text-center">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Confirmed!</h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 font-bold">
                   Thank you for your purchase. You will receive an email confirmation shortly.
                 </p>
               </div>
             )}
-
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t justify-center">
               <a 
