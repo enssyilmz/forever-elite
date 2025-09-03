@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
-import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard, Headset } from 'lucide-react'
+import { Mail, Shield, X, RefreshCw, Plus, Trash2, Users, Dumbbell, CreditCard, Headset } from 'lucide-react'
+import UsersTab from './components/UsersTab'
+import ProgramsTab from './components/ProgramsTab'
+import PurchasesTab from './components/PurchasesTab'
+import TicketsTab from './components/TicketsTab'
+import MailTab from './components/MailTab'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
 
@@ -76,7 +81,7 @@ export default function AdminPage() {
   const [programs, setPrograms] = useState<CustomProgram[]>([])
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
-  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases' | 'tickets'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases' | 'tickets' | 'mail'>('users')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -93,6 +98,7 @@ export default function AdminPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [mailLogs, setMailLogs] = useState<Array<{ id: string, subject: string, body: string, recipients: string[], sent_count: number, created_at: string }>>([])
   
   // Support ticket modal states
   const [isTicketModalOpen, setTicketModalOpen] = useState(false)
@@ -175,6 +181,20 @@ export default function AdminPage() {
     }
   }
 
+  const fetchMailLogs = async () => {
+    try {
+      setError(null)
+      const { data, error } = await supabase
+        .from('admin_mail_logs')
+        .select('id, subject, body, recipients, sent_count, created_at')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setMailLogs(data || [])
+    } catch (e: any) {
+      setError('Failed to fetch mail logs: ' + e.message)
+    }
+  }
+
   const checkUserAndFetchData = async () => {
     try {
       setLoading(true)
@@ -196,7 +216,7 @@ export default function AdminPage() {
       setLoading(false)
       
       // Data'ları background'da fetch et
-      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets()]).catch((e) => {
+      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs()]).catch((e) => {
         setError('Failed to load data: ' + e.message)
       })
     } catch (e: any) {
@@ -211,7 +231,7 @@ export default function AdminPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets()])
+    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs()])
     setRefreshing(false)
   }
 
@@ -476,7 +496,7 @@ export default function AdminPage() {
     })
   }
 
-  const formatUserName = (user: AuthUserFromAdmin) => {
+  const formatUserName = (user: any) => {
     if (user.display_name) {
       return user.display_name
     }
@@ -500,8 +520,6 @@ export default function AdminPage() {
     switch (provider) {
       case 'google':
         return 'bg-red-100 text-red-800'
-      case 'github':
-        return 'bg-gray-100 text-gray-800'
       case 'email':
         return 'bg-blue-100 text-blue-800'
       default:
@@ -580,7 +598,7 @@ export default function AdminPage() {
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
-            {activeTab === 'users' && (
+            {activeTab === 'mail' && (
               <button
                 onClick={openMailModal}
                 className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700 transition"
@@ -656,287 +674,47 @@ export default function AdminPage() {
             <Headset size={20} />
             Support Tickets ({supportTickets.length})
           </button>
+          <button
+            onClick={() => setActiveTab('mail')}
+            className={`flex items-center gap-2 px-6 py-3 font-medium ${
+              activeTab === 'mail' 
+                ? 'text-blue-600 border-b-2 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Mail size={20} />
+            Mail ({mailLogs.length})
+          </button>
         </div>
 
         {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b bg-gray-50">
-              <p className="text-sm text-gray-600">Total Users: <span className="font-semibold">{users.length}</span></p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-600">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">User</th>
-                    <th scope="col" className="px-6 py-3">Email</th>
-                    <th scope="col" className="px-6 py-3">Registration Date</th>
-                    <th scope="col" className="px-6 py-3">Last Sign-in</th>
-                    <th scope="col" className="px-6 py-3">Provider</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                        No users found
-                      </td>
-                    </tr>
-                  ) : (
-                    users.map((u) => {
-                      const displayName = formatUserName(u)
-                      return (
-                        <tr key={u.id} className="bg-white border-b hover:bg-gray-50">
-                          <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                <User size={20} />
-                              </div>
-                              <div>
-                                <div>
-                                  {displayName ? (
-                                    <span className="text-gray-900">{displayName}</span>
-                                  ) : (
-                                    <span className="text-gray-500 italic">Name not set</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div>{u.email}</div>
-                          </td>
-                          <td className="px-6 py-4">{new Date(u.created_at).toLocaleDateString()}</td>
-                          <td className="px-6 py-4">
-                            {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 
-                              <span className="text-gray-500 italic">Never</span>
-                            }
-                          </td>
-                          <td className="px-6 py-4">
-                            {renderProviders(u)}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <UsersTab users={users as any} renderProviders={(u:any)=>renderProviders(u as any)} formatUserName={(u:any)=>formatUserName(u as any)} />
         )}
 
         {/* Programs Tab */}
         {activeTab === 'programs' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b bg-gray-50">
-              <p className="text-sm text-gray-600">Total Programs: <span className="font-semibold">{programs.length}</span></p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-600">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">Program</th>
-                    <th scope="col" className="px-6 py-3">User</th>
-                    <th scope="col" className="px-6 py-3">Difficulty</th>
-                    <th scope="col" className="px-6 py-3">Duration</th>
-                    <th scope="col" className="px-6 py-3">Created</th>
-                    <th scope="col" className="px-6 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {programs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                        No programs found
-                      </td>
-                    </tr>
-                  ) : (
-                    programs.map((program) => {
-                      const user = users.find(u => u.id === program.user_id)
-                      const userName = user ? formatUserName(user) : 'Unknown User'
-                      return (
-                        <tr key={program.id} className="bg-white border-b hover:bg-gray-50">
-                          <td className="px-6 py-4 font-medium text-gray-900">
-                            <div>
-                              <div className="font-semibold">{program.title}</div>
-                              {program.description && (
-                                <div className="text-sm text-gray-500 mt-1">{program.description}</div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div>{userName}</div>
-                            <div className="text-sm text-gray-500">{user?.email}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              program.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' :
-                              program.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {program.difficulty_level}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">{program.duration_weeks} weeks</td>
-                          <td className="px-6 py-4">{new Date(program.created_at).toLocaleDateString()}</td>
-                          <td className="px-6 py-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => openProgramModal(program)}
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProgram(program.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ProgramsTab programs={programs} users={users} formatUserName={formatUserName} onEdit={openProgramModal} onDelete={handleDeleteProgram} />
         )}
 
         {/* Purchases Tab */}
         {activeTab === 'purchases' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b bg-gray-50">
-              <p className="text-sm text-gray-600">Total Purchases: <span className="font-semibold">{purchases.length}</span></p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-600">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">ID</th>
-                    <th scope="col" className="px-6 py-3">User Email</th>
-                    <th scope="col" className="px-6 py-3">User Name</th>
-                    <th scope="col" className="px-6 py-3">Package</th>
-                    <th scope="col" className="px-6 py-3">Amount</th>
-                    <th scope="col" className="px-6 py-3">Currency</th>
-                    <th scope="col" className="px-6 py-3">Status</th>
-                    <th scope="col" className="px-6 py-3">Created At</th>
-                    <th scope="col" className="px-6 py-3">Stripe Session ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchases.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
-                        No purchases found
-                      </td>
-                    </tr>
-                  ) : (
-                    purchases.map((purchase) => (
-                      <tr key={purchase.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{purchase.id}</td>
-                        <td className="px-6 py-4">{purchase.user_email}</td>
-                        <td className="px-6 py-4">{purchase.user_name || 'N/A'}</td>
-                        <td className="px-6 py-4">{purchase.package_name}</td>
-                        <td className="px-6 py-4">{purchase.amount}</td>
-                        <td className="px-6 py-4">{purchase.currency}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            purchase.status === 'succeeded' ? 'bg-green-100 text-green-800' :
-                            purchase.status === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {purchase.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">{new Date(purchase.created_at).toLocaleDateString()}</td>
-                        <td className="px-6 py-4">{purchase.stripe_session_id}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <PurchasesTab purchases={purchases} />
         )}
 
         {/* Support Tickets Tab */}
         {activeTab === 'tickets' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b bg-gray-50">
-              <p className="text-sm text-gray-600">Total Support Tickets: <span className="font-semibold">{supportTickets.length}</span></p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-600">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                  <tr>
-                    <th scope="col" className="px-6 py-3">ID</th>
-                    <th scope="col" className="px-6 py-3">User</th>
-                    <th scope="col" className="px-6 py-3">Subject</th>
-                    <th scope="col" className="px-6 py-3">Priority</th>
-                    <th scope="col" className="px-6 py-3">Status</th>
-                    <th scope="col" className="px-6 py-3">Created</th>
-                    <th scope="col" className="px-6 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {supportTickets.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                        No support tickets found
-                      </td>
-                    </tr>
-                  ) : (
-                    supportTickets.map((ticket) => (
-                      <tr key={ticket.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">#{ticket.id}</td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{ticket.user?.email || (users.find(u => u.id === ticket.user_id)?.email) || 'Unknown'}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="max-w-xs truncate" title={ticket.subject}>
-                            {ticket.subject}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            ticket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                            ticket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                            ticket.priority === 'normal' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {ticket.priority}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            ticket.status === 'open' ? 'bg-red-100 text-red-800' :
-                            ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                            ticket.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {ticket.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">{new Date(ticket.created_at).toLocaleDateString()}</td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => openTicketModal(ticket)}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="View and respond to ticket"
-                          >
-                            <Headset size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <TicketsTab
+            tickets={supportTickets as any}
+            getPriorityClass={(p) => p === 'urgent' ? 'bg-red-100 text-red-800' : p === 'high' ? 'bg-orange-100 text-orange-800' : p === 'normal' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}
+            getStatusClass={(s) => s === 'open' ? 'bg-red-100 text-red-800' : s === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : s === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+            onOpen={openTicketModal as any}
+          />
+        )}
+
+        {/* Mail Tab */}
+        {activeTab === 'mail' && (
+          <MailTab logs={mailLogs} />
         )}
       </div>
 

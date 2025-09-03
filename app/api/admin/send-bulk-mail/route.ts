@@ -50,6 +50,24 @@ export async function POST(request: Request) {
       totalSent += batch.length
     }
 
+    // Save log to Supabase (optional; ignore if env missing)
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const adminClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+        await adminClient.from('admin_mail_logs').insert({
+          subject,
+          body: html,
+          recipients: emails,
+          sent_count: totalSent
+        })
+      }
+    } catch (err) {
+      console.error('mail log save failed:', err)
+    }
+
     return NextResponse.json({ ok: true, sent: totalSent })
   } catch (e: any) {
     console.error('send-bulk-mail error:', e)
