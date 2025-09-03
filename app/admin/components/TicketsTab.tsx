@@ -12,8 +12,14 @@ interface SupportTicket {
   created_at: string
 }
 
-export default function TicketsTab({ tickets, getPriorityClass, getStatusClass, onOpen }: {
+interface User {
+  id: string
+  email: string
+}
+
+export default function TicketsTab({ tickets, users, getPriorityClass, getStatusClass, onOpen }: {
   tickets: SupportTicket[]
+  users: User[]
   getPriorityClass: (p: string) => string
   getStatusClass: (s: string) => string
   onOpen: (ticket: SupportTicket) => void
@@ -45,7 +51,14 @@ export default function TicketsTab({ tickets, getPriorityClass, getStatusClass, 
               tickets.map((ticket) => (
                 <tr key={ticket.id} className="bg-white border-b hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">#{ticket.id}</td>
-                  <td className="px-6 py-4"><div className="text-sm text-gray-900">{ticket.user_id}</div></td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {(() => {
+                        const user = users.find(u => u.id === ticket.user_id)
+                        return user ? user.email : ticket.user_id
+                      })()}
+                    </div>
+                  </td>
                   <td className="px-6 py-4"><div className="max-w-xs truncate" title={ticket.subject}>{ticket.subject}</div></td>
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityClass(ticket.priority)}`}>{ticket.priority}</span></td>
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(ticket.status)}`}>{ticket.status}</span></td>

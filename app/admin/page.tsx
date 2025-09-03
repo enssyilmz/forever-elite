@@ -616,15 +616,7 @@ export default function AdminPage() {
                 Create Custom Program
               </button>
             )}
-            {activeTab === 'tickets' && (
-              <button
-                onClick={() => fetchSupportTickets()}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition"
-              >
-                <Headset size={18} />
-                Refresh Support Tickets
-              </button>
-            )}
+
           </div>
         </div>
 
@@ -706,6 +698,7 @@ export default function AdminPage() {
         {activeTab === 'tickets' && (
           <TicketsTab
             tickets={supportTickets as any}
+            users={users as any}
             getPriorityClass={(p) => p === 'urgent' ? 'bg-red-100 text-red-800' : p === 'high' ? 'bg-orange-100 text-orange-800' : p === 'normal' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}
             getStatusClass={(s) => s === 'open' ? 'bg-red-100 text-red-800' : s === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : s === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
             onOpen={openTicketModal as any}
