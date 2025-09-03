@@ -20,10 +20,11 @@ export default function Navbar() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
+  const [supportTickets, setSupportTickets] = useState<any[]>([])
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const { getCartItemCount, isNavbarOpen, toggleNavbar, user } = useApp()
+  const { getCartItemCount, isNavbarOpen, toggleNavbar, user, lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
   const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
@@ -135,6 +136,29 @@ export default function Navbar() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isNavbarOpen, toggleNavbar])
+
+  // Fetch support tickets when user is logged in
+  useEffect(() => {
+    if (user) {
+      const fetchSupportTickets = async () => {
+        try {
+          const response = await fetch('/api/support-tickets')
+          if (response.ok) {
+            const data = await response.json()
+            setSupportTickets(data.tickets || [])
+          }
+        } catch (error) {
+          console.error('Error fetching support tickets:', error)
+        }
+      }
+      
+      fetchSupportTickets()
+    }
+  }, [user])
+
+  const hasUnreadSupport = supportTickets.some(
+    (t) => t.admin_response_at && new Date(t.admin_response_at).getTime() > lastViewedSupportAt
+  )
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -444,13 +468,25 @@ export default function Navbar() {
                 
                 <Link 
                   href="/dashboard?section=support" 
-                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
+                  className={`flex items-center w-full p-3 text-left rounded transition ${
+                    hasUnreadSupport 
+                      ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => {
+                    // Mark support tickets as read when clicked
+                    if (hasUnreadSupport) {
+                      const now = Date.now()
+                      updateLastViewedSupportAt(now)
+                    }
                     setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
                   <Headset className='w-5 h-5 mr-3 text-gray-600' />
-                  Support
+                  <span className="flex-1">Support</span>
+                  {hasUnreadSupport && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                  )}
                 </Link>
                 
                                  <button 

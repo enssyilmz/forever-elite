@@ -11,6 +11,7 @@ import { programs as allPrograms } from '@/lib/packagesData'
 import { Purchase } from '@/lib/database.types'
 import Link from 'next/link'
 import dayjs from 'dayjs'
+import { useApp } from '@/contexts/AppContext'
 
 interface Product {
   id: number;
@@ -33,6 +34,7 @@ interface SupportTicket {
 
 function DashboardContent() {
   const searchParams = useSearchParams()
+  const { lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
   const [user, setUser] = useState<User | null>(null)
   const [activeSection, setActiveSection] = useState('profile')
   const [formData, setFormData] = useState({
@@ -77,11 +79,7 @@ function DashboardContent() {
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
-  const [lastViewedSupportAt, setLastViewedSupportAt] = useState<number>(() => {
-    if (typeof window === 'undefined') return 0
-    const raw = window.localStorage.getItem('ozcanfit.support.lastViewedAt')
-    return raw ? parseInt(raw, 10) : 0
-  })
+
 
   const hasUnreadSupport = supportTickets.some(
     (t) => t.admin_response_at && new Date(t.admin_response_at).getTime() > lastViewedSupportAt
@@ -305,10 +303,7 @@ function DashboardContent() {
     setActiveSection(id)
     if (id === 'support') {
       const now = Date.now()
-      setLastViewedSupportAt(now)
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('ozcanfit.support.lastViewedAt', String(now))
-      }
+      updateLastViewedSupportAt(now)
     }
   }
 
@@ -882,10 +877,7 @@ function DashboardContent() {
                   onClick={() => {
                     setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))
                     const now = Date.now()
-                    setLastViewedSupportAt(now)
-                    if (typeof window !== 'undefined') {
-                      window.localStorage.setItem('ozcanfit.support.lastViewedAt', String(now))
-                    }
+                    updateLastViewedSupportAt(now)
                   }}
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                 >
@@ -912,13 +904,13 @@ function DashboardContent() {
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Total: {supportTickets.length} tickets</span>
-                          <button
-                            onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
-                            className="inline-flex items-center px-3 py-1 text-sm bg-sky-500 text-white rounded hover:bg-sky-600 transition-colors"
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            New Ticket
-                          </button>
+                                                     <button
+                             onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
+                             className="btn-primary inline-flex items-center px-3 py-1 text-sm"
+                           >
+                             <Plus className="w-3 h-3 mr-1" />
+                             New Ticket
+                           </button>
                         </div>
                         
                         {supportTickets.map((ticket) => (
@@ -1018,13 +1010,13 @@ function DashboardContent() {
                         )}
                       </div>
                       
-                      <button
-                        type="submit"
-                        disabled={isSubmittingTicket || !recaptchaVerified}
-                        className="w-full bg-sky-500 text-white py-3 px-4 rounded-lg hover:bg-sky-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {isSubmittingTicket ? 'Submitting...' : 'Submit Support Ticket'}
-                      </button>
+                                             <button
+                         type="submit"
+                         disabled={isSubmittingTicket || !recaptchaVerified}
+                         className="btn-secondary w-full py-3 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
+                         {isSubmittingTicket ? 'Submitting...' : 'Submit Support Ticket'}
+                       </button>
                     </form>
                   </div>
                 )}

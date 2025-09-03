@@ -593,7 +593,7 @@ export default function AdminPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 transition disabled:opacity-50"
+              className="btn-fourth flex items-center gap-2 px-4 py-2 disabled:opacity-50"
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -601,7 +601,7 @@ export default function AdminPage() {
             {activeTab === 'mail' && (
               <button
                 onClick={openMailModal}
-                className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700 transition"
+                className="btn-primary flex items-center gap-2 px-4 py-2"
               >
                 <Mail size={18} />
                 Send Mail to All Users
@@ -610,7 +610,7 @@ export default function AdminPage() {
             {activeTab === 'programs' && (
               <button
                 onClick={() => openProgramModal()}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg shadow hover:bg-violet-700 transition"
+                className="btn-tertiary flex items-center gap-2 px-4 py-2"
               >
                 <Plus size={18} />
                 Create Custom Program
@@ -632,6 +632,17 @@ export default function AdminPage() {
           >
             <Users size={20} />
             Users ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('mail')}
+            className={`flex items-center gap-2 px-6 py-3 font-medium ${
+              activeTab === 'mail' 
+                ? 'text-blue-600 border-b-2 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Mail size={20} />
+            Mail ({mailLogs.length})
           </button>
           <button
             onClick={() => setActiveTab('programs')}
@@ -666,22 +677,16 @@ export default function AdminPage() {
             <Headset size={20} />
             Support Tickets ({supportTickets.length})
           </button>
-          <button
-            onClick={() => setActiveTab('mail')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'mail' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Mail size={20} />
-            Mail ({mailLogs.length})
-          </button>
         </div>
 
         {/* Users Tab */}
         {activeTab === 'users' && (
           <UsersTab users={users as any} renderProviders={(u:any)=>renderProviders(u as any)} formatUserName={(u:any)=>formatUserName(u as any)} />
+        )}
+
+        {/* Mail Tab */}
+        {activeTab === 'mail' && (
+          <MailTab logs={mailLogs} />
         )}
 
         {/* Programs Tab */}
@@ -704,16 +709,14 @@ export default function AdminPage() {
             onOpen={openTicketModal as any}
           />
         )}
-
-        {/* Mail Tab */}
-        {activeTab === 'mail' && (
-          <MailTab logs={mailLogs} />
-        )}
       </div>
 
       {/* Send Mail Modal */}
       {isMailModalOpen && (
-        <div className="fixed inset-0 bg-transparent backdrop-blur bg-opacity-60 flex justify-center items-center z-50" onClick={() => setMailModalOpen(false)}>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50" 
+          onClick={() => setMailModalOpen(false)}
+        >
           <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-6xl relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setMailModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
@@ -724,7 +727,7 @@ export default function AdminPage() {
                 {/* Recipients - moved to top */}
                 <div className="flex flex-col gap-4">
                   {showRecipientPicker && (
-                    <div className="mt-3 border rounded-md p-3">
+                    <div className="mt-3 border border-black rounded-md p-3">
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-sm font-medium text-gray-700">Search emails</label>
                         <button type="button" className="btn-secondary px-3 py-2" onClick={() => setShowRecipientPicker(false)}>Close</button>
@@ -734,7 +737,7 @@ export default function AdminPage() {
                         value={recipientSearch}
                         onChange={(e) => setRecipientSearch(e.target.value)}
                         placeholder="Search emails..."
-                        className="mt-1 mb-2 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                        className="mt-1 mb-2 block w-full text-black rounded-md shadow-md p-2"
                       />
                       <div className="max-h-48 overflow-auto">
                         {allUserEmails
@@ -759,7 +762,7 @@ export default function AdminPage() {
                   {loadingEmails ? (
                     <div className="text-sm text-gray-500">Loading emails...</div>
                   ) : (
-                    <div className="flex flex-wrap gap-2 border rounded-md p-2 max-h-40 overflow-auto md:max-h-[50vh] md:overflow-auto">
+                    <div className="flex flex-wrap gap-2 border-black rounded-md p-2 max-h-40 overflow-auto md:max-h-[50vh] md:overflow-auto">
                       {selectedEmails.map((email) => (
                         <span key={email} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-full text-sm text-black">
                           {email}
@@ -784,7 +787,7 @@ export default function AdminPage() {
                     id="subject"
                     value={mailContent.subject}
                     onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full border border-black text-black rounded-md shadow-sm p-2"
                     required
                   />
                 </div>
@@ -795,7 +798,7 @@ export default function AdminPage() {
                       rows={16}
                     value={mailContent.body}
                     onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
-                      className="mt-1 block w-full h-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      className="mt-1 block w-full h-full border border-black text-black rounded-md shadow-sm p-2"
                     required
                   />
                   </div>
@@ -805,7 +808,7 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="px-6 py-2 bg-green-600 text-white btn-primary"
+                  className="btn-fourth px-6 py-2 disabled:opacity-50"
                 >
                   {isSending ? 'Sending...' : 'Send Email'}
                 </button>
@@ -825,8 +828,14 @@ export default function AdminPage() {
 
       {/* Create/Edit Program Modal */}
       {isProgramModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl mx-4 my-8 relative max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 overflow-y-auto"
+          onClick={() => setProgramModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl mx-4 my-8 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button onClick={() => setProgramModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
             </button>
@@ -921,7 +930,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={addWorkoutDay}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="btn-tertiary flex items-center gap-2 px-4 py-2"
                     >
                       <Plus size={16} />
                       Add Workout Day
@@ -991,7 +1000,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => addExercise(workoutIndex)}
-                            className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                            className="btn-fourth flex items-center gap-1 px-3 py-1 text-sm"
                           >
                             <Plus size={14} />
                             Add Exercise
@@ -1084,13 +1093,13 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setProgramModalOpen(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="btn-secondary px-6 py-2"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700"
+                  className="btn-primary px-6 py-2"
                 >
                   {editingProgram ? 'Update Program' : 'Create Program'}
                 </button>
@@ -1102,8 +1111,14 @@ export default function AdminPage() {
 
       {/* Support Ticket Modal */}
       {isTicketModalOpen && selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setTicketModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="px-6 py-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">
                 Support Ticket #{selectedTicket.id}
@@ -1182,7 +1197,7 @@ export default function AdminPage() {
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button
                   onClick={() => setTicketModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="btn-secondary px-4 py-2 text-sm font-medium"
                 >
                   Cancel
                 </button>
@@ -1190,7 +1205,7 @@ export default function AdminPage() {
                   onClick={handleTicketResponse}
                   type="button"
                   disabled={isResponding || !adminResponse.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isResponding ? 'Responding...' : 'Send Response'}
                 </button>

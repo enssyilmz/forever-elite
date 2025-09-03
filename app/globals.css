@@ -24,12 +24,17 @@ body {
   padding-top: 64px; /* navbar height */
 }
 .btn-primary {
-  @apply bg-sky-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-sky-500 transition;
+  @apply bg-sky-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-sky-500 transition;
 }
 .btn-secondary {
-  @apply bg-gray-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-gray-500 transition;
+  @apply bg-gray-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-gray-500 transition;
 }
-
+.btn-tertiary {
+  @apply bg-purple-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-purple-500 transition;
+}
+.btn-fourth {
+  @apply bg-green-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-green-500 transition;
+}
 /* Line clamp utility for text truncation */
 .line-clamp-2 {
   display: -webkit-box;
