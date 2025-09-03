@@ -77,6 +77,15 @@ function DashboardContent() {
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
+  const [lastViewedSupportAt, setLastViewedSupportAt] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    const raw = window.localStorage.getItem('ozcanfit.support.lastViewedAt')
+    return raw ? parseInt(raw, 10) : 0
+  })
+
+  const hasUnreadSupport = supportTickets.some(
+    (t) => t.admin_response_at && new Date(t.admin_response_at).getTime() > lastViewedSupportAt
+  )
   
   // Paylaşılan Supabase client kullan
 
@@ -285,6 +294,21 @@ function DashboardContent() {
       console.error('Dashboard logout failed:', error)
       // Hata olsa bile ana sayfaya yönlendir
       window.location.href = '/'
+    }
+  }
+
+  const handleSelectSection = (id: string) => {
+    if (id === 'logout') {
+      handleLogout()
+      return
+    }
+    setActiveSection(id)
+    if (id === 'support') {
+      const now = Date.now()
+      setLastViewedSupportAt(now)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('ozcanfit.support.lastViewedAt', String(now))
+      }
     }
   }
 
@@ -855,7 +879,14 @@ function DashboardContent() {
               {/* My Support Tickets Section */}
               <div className="border rounded-lg">
                 <button
-                  onClick={() => setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))}
+                  onClick={() => {
+                    setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))
+                    const now = Date.now()
+                    setLastViewedSupportAt(now)
+                    if (typeof window !== 'undefined') {
+                      window.localStorage.setItem('ozcanfit.support.lastViewedAt', String(now))
+                    }
+                  }}
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                 >
                   <span className="font-semibold text-gray-800">My Support Tickets</span>
@@ -893,7 +924,7 @@ function DashboardContent() {
                         {supportTickets.map((ticket) => (
                           <div key={ticket.id} className="border rounded-lg p-4 bg-gray-50">
                             <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-semibold text-gray-800">#{ticket.id} - {ticket.subject}</h4>
+                              <h4 className="font-semibold text-gray-800">{ticket.subject}</h4>
                               <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
                                 {ticket.status.replace('_', ' ').toUpperCase()}
                               </span>
@@ -1042,15 +1073,20 @@ function DashboardContent() {
               {menuItems.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => item.id === 'logout' ? handleLogout() : setActiveSection(item.id)}
+                  onClick={() => handleSelectSection(item.id)}
                   className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition ${
                     activeSection === item.id 
                       ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
-                      : 'hover:bg-gray-50 text-gray-700'
+                      : item.id === 'support' && hasUnreadSupport
+                        ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
+                        : 'hover:bg-gray-50 text-gray-700'
                   } ${item.id === 'logout' ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                 >
                   <item.icon className="mr-3 w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
+                  {item.id === 'support' && hasUnreadSupport && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                  )}
                 </button>
               ))}
             </nav>

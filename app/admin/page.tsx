@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
-import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard } from 'lucide-react'
+import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard, Headset } from 'lucide-react'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
 
@@ -33,6 +33,23 @@ interface Purchase {
   stripe_session_id: string
 }
 
+interface SupportTicket {
+  id: number
+  user_id: string
+  subject: string
+  content: string
+  status: string
+  priority: string
+  created_at: string
+  updated_at: string
+  admin_response?: string
+  admin_response_at?: string
+  user?: {
+    id: string
+    email: string
+  }
+}
+
 interface WorkoutDay {
   day_number: number
   week_number: number
@@ -58,7 +75,8 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AuthUserFromAdmin[]>([])
   const [programs, setPrograms] = useState<CustomProgram[]>([])
   const [purchases, setPurchases] = useState<Purchase[]>([])
-  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases'>('users')
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
+  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases' | 'tickets'>('users')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -75,6 +93,12 @@ export default function AdminPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  
+  // Support ticket modal states
+  const [isTicketModalOpen, setTicketModalOpen] = useState(false)
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
+  const [adminResponse, setAdminResponse] = useState('')
+  const [isResponding, setIsResponding] = useState(false)
   
   // Program modal states
   const [isProgramModalOpen, setProgramModalOpen] = useState(false)
@@ -135,6 +159,22 @@ export default function AdminPage() {
     }
   }
 
+  const fetchSupportTickets = async () => {
+    try {
+      setError(null)
+      const response = await fetch('/api/admin/support-tickets')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch support tickets')
+      }
+      const data = await response.json()
+      setSupportTickets(data.tickets || [])
+    } catch (e: any) {
+      console.error('Support tickets fetch error:', e)
+      setError('Failed to fetch support tickets: ' + e.message)
+    }
+  }
+
   const checkUserAndFetchData = async () => {
     try {
       setLoading(true)
@@ -156,7 +196,7 @@ export default function AdminPage() {
       setLoading(false)
       
       // Data'ları background'da fetch et
-      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases()]).catch((e) => {
+      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets()]).catch((e) => {
         setError('Failed to load data: ' + e.message)
       })
     } catch (e: any) {
@@ -171,7 +211,7 @@ export default function AdminPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases()])
+    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets()])
     setRefreshing(false)
   }
 
@@ -188,7 +228,7 @@ export default function AdminPage() {
       const result = await response.json()
       if (!response.ok || !result.ok) {
         const reason = result?.error || 'Please check your connection or configuration.'
-        setMailModalOpen(false)
+    setMailModalOpen(false)
         setModalTitle('Email sending failed')
         setModalMessage(`Emails could not be sent. Reason: ${reason}`)
         setShowSuccessModal(true)
@@ -225,6 +265,41 @@ export default function AdminPage() {
       setAllUserEmails([])
     } finally {
       setLoadingEmails(false)
+    }
+  }
+
+  const openTicketModal = (ticket: SupportTicket) => {
+    setSelectedTicket(ticket)
+    setAdminResponse(ticket.admin_response || '')
+    setIsResponding(false)
+    setTicketModalOpen(true)
+  }
+
+  const handleTicketResponse = async () => {
+    if (!selectedTicket || !adminResponse.trim()) return
+    
+    setIsResponding(true)
+    try {
+      const response = await fetch('/api/admin/support-tickets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: selectedTicket.id,
+          adminResponse: adminResponse.trim(),
+          status: 'resolved'
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to respond to ticket')
+      
+      await fetchSupportTickets()
+      setTicketModalOpen(false)
+      setSelectedTicket(null)
+      setAdminResponse('')
+    } catch (error) {
+      console.error('Error responding to ticket:', error)
+    } finally {
+      setIsResponding(false)
     }
   }
 
@@ -523,13 +598,13 @@ export default function AdminPage() {
                 Create Custom Program
               </button>
             )}
-            {activeTab === 'purchases' && (
+            {activeTab === 'tickets' && (
               <button
-                onClick={() => fetchPurchases()}
+                onClick={() => fetchSupportTickets()}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition"
               >
-                <CreditCard size={18} />
-                Refresh Purchases
+                <Headset size={18} />
+                Refresh Support Tickets
               </button>
             )}
           </div>
@@ -569,6 +644,17 @@ export default function AdminPage() {
           >
             <CreditCard size={20} />
             Purchases ({purchases.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('tickets')}
+            className={`flex items-center gap-2 px-6 py-3 font-medium ${
+              activeTab === 'tickets' 
+                ? 'text-blue-600 border-b-2 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Headset size={20} />
+            Support Tickets ({supportTickets.length})
           </button>
         </div>
 
@@ -775,6 +861,83 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Support Tickets Tab */}
+        {activeTab === 'tickets' && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <p className="text-sm text-gray-600">Total Support Tickets: <span className="font-semibold">{supportTickets.length}</span></p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left text-gray-600">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">ID</th>
+                    <th scope="col" className="px-6 py-3">User</th>
+                    <th scope="col" className="px-6 py-3">Subject</th>
+                    <th scope="col" className="px-6 py-3">Priority</th>
+                    <th scope="col" className="px-6 py-3">Status</th>
+                    <th scope="col" className="px-6 py-3">Created</th>
+                    <th scope="col" className="px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supportTickets.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        No support tickets found
+                      </td>
+                    </tr>
+                  ) : (
+                    supportTickets.map((ticket) => (
+                      <tr key={ticket.id} className="bg-white border-b hover:bg-gray-50">
+                        <td className="px-6 py-4 font-medium text-gray-900">#{ticket.id}</td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{ticket.user?.email || (users.find(u => u.id === ticket.user_id)?.email) || 'Unknown'}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="max-w-xs truncate" title={ticket.subject}>
+                            {ticket.subject}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            ticket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                            ticket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                            ticket.priority === 'normal' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ticket.priority}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            ticket.status === 'open' ? 'bg-red-100 text-red-800' :
+                            ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                            ticket.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ticket.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">{new Date(ticket.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => openTicketModal(ticket)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="View and respond to ticket"
+                          >
+                            <Headset size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Send Mail Modal */}
@@ -843,27 +1006,27 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-4">
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
-                    <input
-                      type="text"
-                      id="subject"
-                      value={mailContent.subject}
-                      onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
-                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
-                      required
-                    />
-                  </div>
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
+                  <input
+                    type="text"
+                    id="subject"
+                    value={mailContent.subject}
+                    onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
+                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                    required
+                  />
+                </div>
                   <div className="flex-1">
-                    <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
-                    <textarea
-                      id="body"
+                  <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
+                  <textarea
+                    id="body"
                       rows={16}
-                      value={mailContent.body}
-                      onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
+                    value={mailContent.body}
+                    onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
                       className="mt-1 block w-full h-full border-gray-300 text-black rounded-md shadow-sm p-2"
-                      required
-                    />
+                    required
+                  />
                   </div>
                 </div>
               </div>
@@ -1162,6 +1325,106 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Support Ticket Modal */}
+      {isTicketModalOpen && selectedTicket && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Support Ticket #{selectedTicket.id}
+              </h3>
+              <button
+                onClick={() => setTicketModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Ticket Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Ticket Details</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Subject:</span>
+                      <p className="text-sm text-gray-900">{selectedTicket.subject}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Priority:</span>
+                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedTicket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                        selectedTicket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                        selectedTicket.priority === 'normal' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicket.priority}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Status:</span>
+                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedTicket.status === 'open' ? 'bg-red-100 text-red-800' :
+                        selectedTicket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedTicket.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicket.status}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Created:</span>
+                      <p className="text-sm text-gray-900">{new Date(selectedTicket.created_at).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">User:</span>
+                      <p className="text-sm text-gray-900">{selectedTicket.user?.email || (users.find(u => u.id === selectedTicket.user_id)?.email) || 'Unknown'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">User Message</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.content}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Response */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Admin Response</h4>
+                <textarea
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  placeholder="Type your response here..."
+                  className="text-black w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setTicketModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTicketResponse}
+                  type="button"
+                  disabled={isResponding || !adminResponse.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResponding ? 'Responding...' : 'Send Response'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

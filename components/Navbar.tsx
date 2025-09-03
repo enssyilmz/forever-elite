@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff } from 'lucide-react'
+import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff, Headset } from 'lucide-react'
 import ShoppingCart from './ShoppingCart'
 import { useApp } from '@/contexts/AppContext'
 import { programs } from '@/lib/packagesData'
@@ -440,6 +440,17 @@ export default function Navbar() {
                 >
                   <Star className='w-5 h-5 mr-3 text-gray-600' />
                   My Favorites
+                </Link>
+                
+                <Link 
+                  href="/dashboard?section=support" 
+                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
+                  onClick={() => {
+                    setTimeout(() => toggleNavbar(), 100)
+                  }}
+                >
+                  <Headset className='w-5 h-5 mr-3 text-gray-600' />
+                  Support
                 </Link>
                 
                                  <button 
