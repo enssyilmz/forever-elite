@@ -46,8 +46,8 @@ export async function POST(request: Request) {
           const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
           
           for (const item of lineItems.data) {
-            // Extract package name from description or use a default
-            const packageName = item.description || 'Unknown Package'
+            // Extract package name from name (Stripe sends name, not description)
+            const packageName = item.price_data?.product_data?.name || item.description || 'Unknown Package'
             
             // Insert purchase record into database
             const { error } = await supabase
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
                 package_name: packageName,
                 amount: item.amount_total || 0,
                 currency: session.currency || 'gbp',
-                status: 'completed',
+                status: 'succeeded', // Changed from 'completed' to match admin display
                 stripe_session_id: session.id,
                 stripe_payment_intent_id: session.payment_intent as string
               })

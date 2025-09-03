@@ -7,6 +7,7 @@ import { User as AuthUser } from '@supabase/supabase-js'
 import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard } from 'lucide-react'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
+import { programs } from '@/lib/packagesData'
 
 // RPC fonksiyonundan gelen JSON dönüş tipini temsil eden interface
 interface AuthUserFromAdmin {
@@ -286,6 +287,43 @@ export default function AdminPage() {
       await fetchPrograms()
     } catch (error) {
       console.error('Error deleting program:', error)
+    }
+  }
+
+  const createProgramFromPurchase = async (purchase: Purchase) => {
+    try {
+      // Find the corresponding program details from packagesData
+      const programDetails = programs.find(p => p.title === purchase.package_name)
+      
+      const programData = {
+        title: purchase.package_name,
+        description: programDetails?.description || 'Program created from purchase',
+        user_id: users.find(u => u.email === purchase.user_email)?.id || '',
+        difficulty_level: 'beginner' as const,
+        duration_weeks: 12,
+        notes: `Created from purchase: ${purchase.stripe_session_id}`,
+        workouts: []
+      }
+
+      const response = await fetch('/api/custom-programs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(programData),
+      })
+
+      if (!response.ok) throw new Error('Failed to create program from purchase')
+
+      await fetchPrograms()
+      setModalTitle('Program Created')
+      setModalMessage(`Successfully created custom program for ${purchase.user_email}`)
+      setShowSuccessModal(true)
+    } catch (error) {
+      console.error('Error creating program from purchase:', error)
+      setModalTitle('Error')
+      setModalMessage(`Failed to create program: ${error}`)
+      setShowSuccessModal(true)
     }
   }
 
@@ -738,14 +776,15 @@ export default function AdminPage() {
                     <th scope="col" className="px-6 py-3">Status</th>
                     <th scope="col" className="px-6 py-3">Created At</th>
                     <th scope="col" className="px-6 py-3">Stripe Session ID</th>
+                    <th scope="col" className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {purchases.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-8 text-center text-gray-500">
-                        No purchases found
-                      </td>
+                                              <td colSpan={11} className="px-6 py-8 text-center text-gray-500">
+                          No purchases found
+                        </td>
                     </tr>
                   ) : (
                     purchases.map((purchase) => (
@@ -767,6 +806,17 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4">{new Date(purchase.created_at).toLocaleDateString()}</td>
                         <td className="px-6 py-4">{purchase.stripe_session_id}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => createProgramFromPurchase(purchase)}
+                              className="btn-primary px-3 py-1 text-xs"
+                              title="Create custom program from this purchase"
+                            >
+                              Create Program
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
