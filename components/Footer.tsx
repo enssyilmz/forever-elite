@@ -52,6 +52,15 @@ export default function Footer() {
             </ul>
 
             <div className="mt-6">
+              <h3 className="text-white font-bold text-xl mb-4">Support</h3>
+              <ul className="space-y-2 mb-4">
+                <li>
+                  <Link href="/support" className="hover:text-white transition">
+                    Get Help
+                  </Link>
+                </li>
+              </ul>
+              
               <h3 className="text-white font-bold text-xl mb-4">Follow Us</h3>
               <div className="flex gap-4">
                 <a
