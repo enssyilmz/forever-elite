@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
 import { Mail, Shield, User, X, RefreshCw, Plus, Edit, Trash2, Users, Dumbbell, CreditCard } from 'lucide-react'
 import { CustomProgram } from '@/lib/database.types'
+import SuccessModal from '@/components/SuccessModal'
 
 // RPC fonksiyonundan gelen JSON dönüş tipini temsil eden interface
 interface AuthUserFromAdmin {
@@ -66,6 +67,14 @@ export default function AdminPage() {
   const [isMailModalOpen, setMailModalOpen] = useState(false)
   const [mailContent, setMailContent] = useState({ subject: '', body: '' })
   const [isSending, setIsSending] = useState(false)
+  const [allUserEmails, setAllUserEmails] = useState<string[]>([])
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([])
+  const [loadingEmails, setLoadingEmails] = useState(false)
+  const [showRecipientPicker, setShowRecipientPicker] = useState(false)
+  const [recipientSearch, setRecipientSearch] = useState('')
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState('')
+  const [modalMessage, setModalMessage] = useState('')
   
   // Program modal states
   const [isProgramModalOpen, setProgramModalOpen] = useState(false)
@@ -169,10 +178,54 @@ export default function AdminPage() {
   const handleSendMail = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSending(true)
-    // TODO: Implement mail sending logic
-    console.log('Sending mail:', mailContent)
-    setIsSending(false)
-    setMailModalOpen(false)
+    try {
+      const recipients = selectedEmails.length > 0 ? selectedEmails : allUserEmails
+      const response = await fetch('/api/admin/send-bulk-mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: mailContent.subject, html: mailContent.body, recipients })
+      })
+      const result = await response.json()
+      if (!response.ok || !result.ok) {
+        const reason = result?.error || 'Please check your connection or configuration.'
+        setMailModalOpen(false)
+        setModalTitle('Email sending failed')
+        setModalMessage(`Emails could not be sent. Reason: ${reason}`)
+        setShowSuccessModal(true)
+      } else {
+        setMailModalOpen(false)
+        setMailContent({ subject: '', body: '' })
+        setSelectedEmails([])
+        setModalTitle('Emails sent')
+        setModalMessage(`Successfully sent email to ${result.sent ?? recipients.length} recipient(s).`)
+        setShowSuccessModal(true)
+      }
+    } catch (err) {
+      console.error('bulk mail error', err)
+      setMailModalOpen(false)
+      setModalTitle('Email sending failed')
+      setModalMessage(`Emails could not be sent. Reason: ${(err as any)?.message || 'Unknown error'}`)
+      setShowSuccessModal(true)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const openMailModal = async () => {
+    setMailModalOpen(true)
+    setLoadingEmails(true)
+    try {
+      const { data, error } = await supabase.rpc('get_all_users')
+      if (error) throw error
+      const emails = (data || []).map((u: any) => u.email).filter(Boolean)
+      setAllUserEmails(emails)
+      setSelectedEmails(emails) // varsayılan: hepsi seçili
+    } catch (e) {
+      console.error('load emails error', e)
+      setAllUserEmails([])
+    } finally {
+      setLoadingEmails(false)
+    }
   }
 
   const handleCreateProgram = async (e: React.FormEvent) => {
@@ -454,7 +507,7 @@ export default function AdminPage() {
             </button>
             {activeTab === 'users' && (
               <button
-                onClick={() => setMailModalOpen(true)}
+                onClick={openMailModal}
                 className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg shadow hover:bg-sky-700 transition"
               >
                 <Mail size={18} />
@@ -726,42 +779,99 @@ export default function AdminPage() {
 
       {/* Send Mail Modal */}
       {isMailModalOpen && (
-        <div className="fixed inset-0 bg-transparent backdrop-blur bg-opacity-60 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl relative">
+        <div className="fixed inset-0 bg-transparent backdrop-blur bg-opacity-60 flex justify-center items-center z-50" onClick={() => setMailModalOpen(false)}>
+          <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-6xl relative" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setMailModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
             </button>
             <h2 className="text-2xl font-bold mb-6 text-black">Send Bulk Email</h2>
             <form onSubmit={handleSendMail}>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
-                  <input
-                    type="text"
-                    id="subject"
-                    value={mailContent.subject}
-                    onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
-                    required
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Recipients - moved to top */}
+                <div className="flex flex-col gap-4">
+                  {showRecipientPicker && (
+                    <div className="mt-3 border rounded-md p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Search emails</label>
+                        <button type="button" className="btn-secondary px-3 py-2" onClick={() => setShowRecipientPicker(false)}>Close</button>
+                      </div>
+                      <input
+                        type="text"
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        placeholder="Search emails..."
+                        className="mt-1 mb-2 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      />
+                      <div className="max-h-48 overflow-auto">
+                        {allUserEmails
+                          .filter(e => !selectedEmails.includes(e))
+                          .filter(e => e.toLowerCase().includes(recipientSearch.toLowerCase()))
+                          .map((email) => (
+                            <div key={email} className="flex justify-between items-center py-1">
+                              <span className="text-sm text-black">{email}</span>
+                              <button type="button" className="btn-primary px-2 py-1 text-xs" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
+                                Add
+                              </button>
+                            </div>
+                          ))}
+                        {allUserEmails.filter(e => !selectedEmails.includes(e)).length === 0 && (
+                          <div className="text-sm text-gray-500">No emails to add</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Recipients ({selectedEmails.length})</label>
+                  {loadingEmails ? (
+                    <div className="text-sm text-gray-500">Loading emails...</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 border rounded-md p-2 max-h-40 overflow-auto md:max-h-[50vh] md:overflow-auto">
+                      {selectedEmails.map((email) => (
+                        <span key={email} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-full text-sm text-black">
+                          {email}
+                          <button type="button" className="text-red-600" onClick={() => setSelectedEmails(selectedEmails.filter(e => e !== email))}>×</button>
+                        </span>
+                      ))}
+                      {selectedEmails.length === 0 && (
+                        <span className="text-sm text-gray-500">No recipients selected</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="px-3 py-1 text-sm btn-secondary" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
+                    <button type="button" className="px-3 py-1 text-sm btn-primary" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
-                  <textarea
-                    id="body"
-                    rows={10}
-                    value={mailContent.body}
-                    onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
-                    required
-                  />
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
+                    <input
+                      type="text"
+                      id="subject"
+                      value={mailContent.subject}
+                      onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
+                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      required
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
+                    <textarea
+                      id="body"
+                      rows={16}
+                      value={mailContent.body}
+                      onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
+                      className="mt-1 block w-full h-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
               <div className="mt-6 flex justify-end">
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg shadow btn-primary"
+                  className="px-6 py-2 bg-green-600 text-white btn-primary"
                 >
                   {isSending ? 'Sending...' : 'Send Email'}
                 </button>
@@ -770,6 +880,14 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+      />
 
       {/* Create/Edit Program Modal */}
       {isProgramModalOpen && (
