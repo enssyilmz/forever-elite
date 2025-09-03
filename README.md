@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Forever Elite
+A Next.js app for selling training programs with Stripe payments, Supabase auth/data, and an admin dashboard. Includes a purchase flow, “My Orders”, favorites, and bulk email via Resend.
+www.foreverelite.co.uk
 
-## Getting Started
+### Tech Stack
+- Next.js 15, React 19, TypeScript
+- Tailwind CSS
+- Stripe (Checkout + Webhooks)
+- Supabase (Auth, Postgres, RLS)
+- Resend (Transactional emails)
+- Lucide Icons, Day.js
 
-First, run the development server:
+### Features
+- Checkout and confirmation pages with Stripe
+- Stripe webhook to persist purchases into `purchases` table
+- Dashboard with Favorites and My Orders
+- Admin panel:
+  - Users list (via RPC)
+  - Custom Programs CRUD
+  - Purchases list
+  - Send bulk emails to all users (Resend), with recipient picker and success/error popup
 
+### Getting Started
+
+1) Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Environment variables
+Create `.env.local` and add:
+```bash
+# App
+NEXT_PUBLIC_SITE_URL="...supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"   # server only
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Stripe
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."                   # test or live depending on env
 
-## Learn More
+# Resend
+RESEND_API_KEY="re_..."
+RESEND_FROM="noreply@yourdomain.com"              # verified domain/sender in Resend
+```
 
-To learn more about Next.js, take a look at the following resources:
+3) Database
+- Apply migrations from `supabase/migrations` to your Supabase project (contains `purchases`, custom programs, etc.).
+- Ensure RLS policies are in place as provided by the migrations.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4) Run the app
+```bash
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Payments & Webhooks
 
-## Deploy on Vercel
+- Create Checkout Sessions at `POST /api/create-checkout-session`.
+- Confirmation page reads session details via `GET /api/get-checkout-session`.
+- Webhook: `POST /api/stripe-webhook`
+  - Uses Stripe signature verification and Supabase service-role to insert rows into `purchases`.
+  - Make sure `STRIPE_WEBHOOK_SECRET` matches the endpoint.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Local testing (Stripe CLI):
+```bash
+stripe login
+stripe listen --forward-to http://localhost:3000/api/stripe-webhook
+# copy Signing secret into STRIPE_WEBHOOK_SECRET
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Production:
+- Add a Webhook endpoint in Stripe Dashboard → Developers → Webhooks → `https://yourdomain.com/api/stripe-webhook`
+- Use the provided Signing secret in your production environment.
+
+### Bulk Email (Resend)
+
+- API route: `app/api/admin/send-bulk-mail/route.ts`
+- Requires `RESEND_API_KEY` and `RESEND_FROM`.
+- Domain must be verified on Resend (SPF/DKIM). Add DMARC for better deliverability.
+- Admin modal allows selecting/removing recipients, searching, and sending. Shows success/error popup.
+
+### Admin Access
+
+- Admin panel at `/admin`
+- Only the email in `ADMIN_EMAIL` (in `app/admin/page.tsx`) can view the page. Update as needed.
+
+### Scripts
+```bash
+npm run dev     # start development server
+npm run build   # build for production
+npm run start   # start production server
+npm run lint    # run linting
+```
+
+### Troubleshooting
+
+- Webhook 400/500:
+  - Check `STRIPE_WEBHOOK_SECRET` and event log in Stripe Dashboard → Events.
+  - Ensure `SUPABASE_SERVICE_ROLE_KEY` is set for server handlers.
+- Orders not visible:
+  - `purchases` filters by `user_email` == `currentUser.email`. The checkout email must match the signed-in email.
+- Emails not received:
+  - Check Resend logs (bounces/suppressions).
+  - Verify SPF/DKIM/DMARC. Look in Spam/Promotions.
+  - Use verified domain and a simple body while warming up.
+
+### Project Structure (key paths)
+- `app/checkout/` - checkout flow and confirmation
+- `app/api/` - server routes (Stripe, Resend, custom programs)
+- `app/dashboard/` - user dashboard (favorites, orders)
+- `app/admin/` - admin panel
+- `supabase/migrations/` - SQL migrations
+- `utils/` - Supabase client
+- `lib/` - data types and static data
+
+### Security
+- Keep all secrets in environment variables. Do not commit keys to the repo.
+- Use service-role keys only on the server (never expose in the client).
+
+### Screenshots
+<img width="1833" height="869" alt="image" src="https://github.com/user-attachments/assets/5ee7d7a9-9b9e-438b-b069-501760434515" />
+<img width="1825" height="866" alt="image" src="https://github.com/user-attachments/assets/37a7a5ce-1206-45e4-9103-98d851aa6c43" />
+<img width="1828" height="866" alt="image" src="https://github.com/user-attachments/assets/9282c54a-07a1-4c7a-a5a6-7989d05f7bbf" />
+<img width="1820" height="862" alt="image" src="https://github.com/user-attachments/assets/7067343d-fe99-430e-8575-9101805f39a0" />
+<img width="1822" height="864" alt="image" src="https://github.com/user-attachments/assets/c8a32411-c62d-4505-8df1-f5572c649487" />
+<img width="1832" height="865" alt="image" src="https://github.com/user-attachments/assets/f5404390-4018-46d4-adc8-7857f32ce415" />
+<img width="1822" height="789" alt="image" src="https://github.com/user-attachments/assets/f44ceefe-3afc-4e79-96b9-dbf682054214" />
+
