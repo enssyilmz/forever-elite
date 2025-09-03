@@ -65,6 +65,11 @@ interface AppContextType {
   // Navbar
   isNavbarOpen: boolean
   toggleNavbar: () => void
+  
+  // Support Tickets
+  lastViewedSupportAt: number
+  setLastViewedSupportAt: (timestamp: number) => void
+  updateLastViewedSupportAt: (timestamp: number) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -76,6 +81,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [customPrograms, setCustomPrograms] = useState<CustomProgram[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isNavbarOpen, setIsNavbarOpen] = useState(false)
+  const [lastViewedSupportAt, setLastViewedSupportAt] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    const raw = window.localStorage.getItem('ozcanfit.support.lastViewedAt')
+    return raw ? parseInt(raw, 10) : 0
+  })
 
   // Get user, favorites, reviews, and custom programs on mount
   useEffect(() => {
@@ -382,6 +392,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsNavbarOpen(!isNavbarOpen)
   }
 
+  // Update lastViewedSupportAt and localStorage
+  const updateLastViewedSupportAt = (timestamp: number) => {
+    setLastViewedSupportAt(timestamp)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('ozcanfit.support.lastViewedAt', timestamp.toString())
+    }
+  }
+
   return (
     <AppContext.Provider value={{
       user,
@@ -402,7 +420,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetchCustomPrograms,
       refreshCustomPrograms,
       isNavbarOpen,
-      toggleNavbar
+      toggleNavbar,
+      lastViewedSupportAt,
+      setLastViewedSupportAt,
+      updateLastViewedSupportAt
     }}>
       {children}
     </AppContext.Provider>
