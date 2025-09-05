@@ -89,7 +89,7 @@ export default function PaymentPage() {
     <>
       <div className="min-h-screen py-12">
         <div className="max-w-md mx-auto px-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Payment</h1>
+          <h1 className="text-responsive-2xl font-bold text-gray-900 mb-8 text-center">Payment</h1>
           
           <div className="bg-white rounded-lg shadow-sm p-8">
             <div className="mb-6">
@@ -164,7 +164,7 @@ export default function PaymentPage() {
               
               <button
                 type="submit"
-                className="w-full btn-primary py-3 mt-4"
+                className="w-full btn-primary mt-4"
                 disabled={isProcessing}
               >
                 {isProcessing ? 'Processing...' : `Pay`}
@@ -197,7 +197,7 @@ export default function PaymentPage() {
                 />
               </div>
               {smsError && <p className="text-red-500 text-sm mt-2">{smsError}</p>}
-              <button type="submit" className="w-full btn-primary py-3 mt-6">Confirm Payment</button>
+              <button type="submit" className="w-full btn-primary mt-6">Confirm Payment</button>
             </form>
           </div>
         </div>

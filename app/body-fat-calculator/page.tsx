@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabaseClient'
@@ -29,6 +29,7 @@ export default function BodyFatCalculator() {
   const [modalMessage, setModalMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [hasCalculated, setHasCalculated] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
@@ -123,68 +124,7 @@ export default function BodyFatCalculator() {
     const bfRounded = parseFloat(bodyFat.toFixed(1))
     setResult(bfRounded)
     setCategory(getCategory(bfRounded, gender))
-
-    // If user is not logged in, we are done. The result is displayed.
-    if (!user) {
-      return
-    }
-
-    // If user is logged in, proceed to save the result automatically.
-    setIsSaving(true)
-    try {
-      // 1. Log the calculation to the body_fat_logs table
-      const { error: logError } = await supabase
-        .from('body_fat_logs')
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
-          body_fat_percentage: bfRounded,
-        })
-
-      if (logError) {
-        throw new Error(`Failed to log result: ${logError.message}`)
-      }
-
-      // 2. Update the user's main profile in user_registrations
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('user_registrations')
-        .select('id')
-        .eq('email', user.email)
-        .single()
-
-      // Ignore 'not found' error (PGRST116), but throw others
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError
-      }
-
-      if (existingUser) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('user_registrations')
-          .update({ body_fat: bfRounded.toString(), updated_at: new Date().toISOString() })
-          .eq('email', user.email)
-
-        if (updateError) throw updateError
-      } else {
-        // Create a new record if one doesn't exist
-        const { error: insertError } = await supabase
-          .from('user_registrations')
-          .insert({ 
-            email: user.email, 
-            body_fat: bfRounded.toString(),
-            updated_at: new Date().toISOString()
-          })
-        
-        if (insertError) throw insertError
-      }
-
-    } catch (error) {
-      const err = error as { message?: string }
-      console.error('Error auto-saving to profile:', err)
-      showPopup('Calculation Complete, Save Failed', err.message || 'Result calculated, but failed to save to your profile.')
-    } finally {
-      setIsSaving(false)
-    }
+    setHasCalculated(true)
   }
 
   const clear = () => {
@@ -204,17 +144,124 @@ export default function BodyFatCalculator() {
     setHipInches('')
     setResult(null)
     setCategory('')
+    setHasCalculated(false)
+  }
+
+  const saveToProfile = async () => {
+    if (result === null) return
+    if (!user) {
+      showPopup('Login Required', 'Please log in to save your result to your profile.')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const bfRounded = result
+
+      const { error: logError } = await supabase
+        .from('body_fat_logs')
+        .insert({
+          user_id: user.id,
+          user_email: user.email,
+          body_fat_percentage: bfRounded,
+        })
+
+      if (logError) {
+        throw new Error(`Failed to log result: ${logError.message}`)
+      }
+
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('user_registrations')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError
+      }
+
+      if (existingUser) {
+        const { error: updateError } = await supabase
+          .from('user_registrations')
+          .update({ body_fat: bfRounded.toString(), updated_at: new Date().toISOString() })
+          .eq('email', user.email)
+        if (updateError) throw updateError
+      } else {
+        const { error: insertError } = await supabase
+          .from('user_registrations')
+          .insert({ 
+            email: user.email, 
+            body_fat: bfRounded.toString(),
+            updated_at: new Date().toISOString()
+          })
+        if (insertError) throw insertError
+      }
+
+      showPopup('Saved', 'Your body fat has been saved successfully.')
+      setHasCalculated(false)
+    } catch (error) {
+      const err = error as { message?: string }
+      console.error('Error saving to profile:', err)
+      showPopup('Save Failed', err.message || 'Could not save to your profile.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <>
-        <div className="min-h-screen py-6 px-4">
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-4 md:p-6 text-black">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-center text-gray-800">Body Fat Calculator</h2>
+        <div className="min-h-screen py-4 px-2">
+          <div className="max-w-8xl mx-auto">
+            <h2 className="text-responsive-2xl font-bold mb-4 md:mb-6 text-center text-gray-800">Body Fat Calculator</h2>
 
-          <div className="flex justify-center gap-3 mb-4 md:mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+              <div className="order-2 lg:order-1 lg:col-span-2 bg-white rounded-2xl shadow-lg p-2 md:p-4 text-black">
+                <h3 className="text-responsive-lg font-bold text-gray-800 mb-3">Reference</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border rounded-lg">
+                    <thead className="bg-sky-500 text-white">
+                      <tr>
+                        <th className="px-3 py-2">Description</th>
+                        <th className="px-3 py-2">Women</th>
+                        <th className="px-3 py-2">Men</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="odd:bg-white even:bg-sky-50">
+                        <td className="px-3 py-2">Essential fat</td>
+                        <td className="px-3 py-2">10-13%</td>
+                        <td className="px-3 py-2">2-5%</td>
+                      </tr>
+                      <tr className="odd:bg-white even:bg-sky-50">
+                        <td className="px-3 py-2">Athletes</td>
+                        <td className="px-3 py-2">14-20%</td>
+                        <td className="px-3 py-2">6-13%</td>
+                      </tr>
+                      <tr className="odd:bg-white even:bg-sky-50">
+                        <td className="px-3 py-2">Fitness</td>
+                        <td className="px-3 py-2">21-24%</td>
+                        <td className="px-3 py-2">14-17%</td>
+                      </tr>
+                      <tr className="odd:bg-white even:bg-sky-50">
+                        <td className="px-3 py-2">Average</td>
+                        <td className="px-3 py-2">25-31%</td>
+                        <td className="px-3 py-2">18-24%</td>
+                      </tr>
+                      <tr className="odd:bg-white even:bg-sky-50">
+                        <td className="px-3 py-2">Obese</td>
+                        <td className="px-3 py-2">32%+</td>
+                        <td className="px-3 py-2">25%+</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="order-1 lg:order-2 lg:col-span-2 bg-white rounded-2xl shadow-lg p-4 md:p-5 text-black">
+
+          <div className="flex justify-center gap-4 mb-3 md:mb-4">
             <button
-              className={`px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition text-sm md:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition text-responsive-sm ${
                 unit === 'metric' 
                   ? 'bg-sky-500 text-white shadow-md' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -224,7 +271,7 @@ export default function BodyFatCalculator() {
               Metric Units
             </button>
             <button
-              className={`px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition text-sm md:text-base ${
+              className={`px-3 py-2 rounded-lg font-medium transition text-responsive-sm ${
                 unit === 'us' 
                   ? 'bg-sky-500 text-white shadow-md' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -235,7 +282,7 @@ export default function BodyFatCalculator() {
             </button>
           </div>
 
-          <div className="flex gap-4 md:gap-6 justify-center mb-4 md:mb-6">
+          <div className="flex gap-4 md:gap-6 justify-center mb-3 md:mb-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input 
                 type="radio" 
@@ -260,12 +307,12 @@ export default function BodyFatCalculator() {
             </label>
           </div>
 
-          <div className="space-y-4 md:space-y-6">
+          <div className="space-y-1 md:space-y-1">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Age (years)</label>
               <input 
                 type="number"
-                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                 value={age} 
                 onChange={(e) => setAge(e.target.value)}
                 min="1"
@@ -279,7 +326,7 @@ export default function BodyFatCalculator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
                   <input 
                     type="number"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                     value={weight} 
                     onChange={(e) => setWeight(e.target.value)}
                     min="1"
@@ -291,7 +338,7 @@ export default function BodyFatCalculator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
                   <input 
                     type="number"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                     value={height} 
                     onChange={(e) => setHeight(e.target.value)}
                     min="1"
@@ -303,7 +350,7 @@ export default function BodyFatCalculator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Neck Circumference (cm)</label>
                   <input 
                     type="number"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                     value={neck} 
                     onChange={(e) => setNeck(e.target.value)}
                     min="1"
@@ -315,7 +362,7 @@ export default function BodyFatCalculator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Waist Circumference (cm)</label>
                   <input 
                     type="number"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                     value={waist} 
                     onChange={(e) => setWaist(e.target.value)}
                     min="1"
@@ -328,7 +375,7 @@ export default function BodyFatCalculator() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Hip Circumference (cm)</label>
                     <input 
                       type="number"
-                      className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                      className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                       value={hip} 
                       onChange={(e) => setHip(e.target.value)}
                       min="1"
@@ -343,7 +390,7 @@ export default function BodyFatCalculator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Weight (pounds)</label>
                   <input 
                     type="number"
-                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                    className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                     value={weight} 
                     onChange={(e) => setWeight(e.target.value)}
                     min="1"
@@ -358,7 +405,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Feet</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={heightFeet} 
                         onChange={(e) => setHeightFeet(e.target.value)}
                         min="1"
@@ -369,7 +416,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Inches</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={heightInches} 
                         onChange={(e) => setHeightInches(e.target.value)}
                         min="0"
@@ -387,7 +434,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Feet</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={neckFeet} 
                         onChange={(e) => setNeckFeet(e.target.value)}
                         min="0"
@@ -398,7 +445,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Inches</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={neckInches} 
                         onChange={(e) => setNeckInches(e.target.value)}
                         min="0"
@@ -416,7 +463,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Feet</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={waistFeet} 
                         onChange={(e) => setWaistFeet(e.target.value)}
                         min="0"
@@ -427,7 +474,7 @@ export default function BodyFatCalculator() {
                       <label className="block text-xs text-gray-500 mb-1">Inches</label>
                       <input 
                         type="number"
-                        className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                         value={waistInches} 
                         onChange={(e) => setWaistInches(e.target.value)}
                         min="0"
@@ -446,7 +493,7 @@ export default function BodyFatCalculator() {
                         <label className="block text-xs text-gray-500 mb-1">Feet</label>
                         <input 
                           type="number"
-                          className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                          className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                           value={hipFeet} 
                           onChange={(e) => setHipFeet(e.target.value)}
                           min="0"
@@ -457,7 +504,7 @@ export default function BodyFatCalculator() {
                         <label className="block text-xs text-gray-500 mb-1">Inches</label>
                         <input 
                           type="number"
-                          className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                          className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
                           value={hipInches} 
                           onChange={(e) => setHipInches(e.target.value)}
                           min="0"
@@ -472,17 +519,27 @@ export default function BodyFatCalculator() {
             )}
           </div>
 
-          <div className="mt-6 md:mt-8">
+          <div className="mt-2 md:mt-3">
             <div className="flex flex-col sm:flex-row gap-3">
+              {!hasCalculated ? (
+                                 <button 
+                   className="btn-primary w-full"
+                   onClick={calculate}
+                   disabled={isSaving}
+                 >
+                   {isSaving ? 'Please wait...' : 'Calculate Body Fat'}
+                 </button>
+              ) : (
+                <button 
+                  className="btn-primary w-full"
+                  onClick={saveToProfile}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save to Profile'}
+                </button>
+              )}
               <button 
-                className="btn-primary w-full px-6 py-3 text-base"
-                onClick={calculate}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Calculating & Saving...' : 'Calculate Body Fat'}
-              </button>
-              <button 
-                className="btn-secondary w-full px-6 py-3 text-base"
+                className="btn-secondary w-full"
                 onClick={clear}
                 disabled={isSaving}
               >
@@ -492,15 +549,42 @@ export default function BodyFatCalculator() {
           </div>
 
           {result !== null && (
-            <div className="mt-6 md:mt-8 p-4 md:p-6 bg-sky-50 rounded-lg text-center">
-              <h3 className="text-xl md:text-2xl font-bold text-gray-800">Your Result</h3>
-              <p className="text-4xl md:text-5xl font-extrabold text-sky-600 my-2">
+            <div className="mt-4 md:mt-5 p-3 md:p-4 bg-sky-50 rounded-lg text-center">
+              <h3 className="text-responsive-xl font-bold text-gray-800">Your Result</h3>
+              <p className="text-responsive-2xl font-extrabold text-sky-600 my-2">
                 {result}%
               </p>
-              <p className="font-semibold text-lg text-gray-700">{category}</p>
+              <p className="font-semibold text-responsive-lg text-gray-700">{category}</p>
             </div>
           )}
         </div>
+
+              <div className="order-3 lg:order-3 lg:col-span-2 bg-white rounded-2xl shadow-lg p-2 md:p-4 text-black">
+                <h3 className="text-responsive-lg font-bold text-gray-800 mb-3">Jackson & Pollock Ideal Body Fat</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border rounded-lg">
+                    <thead className="bg-sky-500 text-white">
+                      <tr>
+                        <th className="px-3 py-2">Age</th>
+                        <th className="px-3 py-2">Women</th>
+                        <th className="px-3 py-2">Men</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">20</td><td className="px-3 py-2">17.7%</td><td className="px-3 py-2">8.5%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">25</td><td className="px-3 py-2">18.4%</td><td className="px-3 py-2">10.5%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">30</td><td className="px-3 py-2">19.3%</td><td className="px-3 py-2">12.7%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">35</td><td className="px-3 py-2">21.5%</td><td className="px-3 py-2">13.7%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">40</td><td className="px-3 py-2">22.2%</td><td className="px-3 py-2">15.3%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">45</td><td className="px-3 py-2">22.9%</td><td className="px-3 py-2">16.4%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">50</td><td className="px-3 py-2">25.2%</td><td className="px-3 py-2">18.9%</td></tr>
+                      <tr className="odd:bg-white even:bg-sky-50"><td className="px-3 py-2">55</td><td className="px-3 py-2">26.3%</td><td className="px-3 py-2">20.9%</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
 
       <SuccessModal 
@@ -512,3 +596,5 @@ export default function BodyFatCalculator() {
     </>
   )
 }
+
+

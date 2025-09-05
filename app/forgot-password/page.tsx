@@ -78,7 +78,7 @@ export default function ForgotPasswordPage() {
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded" 
+          className="input-responsive w-full" 
           required 
         />
 

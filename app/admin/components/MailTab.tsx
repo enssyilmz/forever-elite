@@ -4,11 +4,11 @@ export default function MailTab({ logs }: { logs: Array<{ id: string, subject: s
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b bg-gray-50">
-        <p className="text-sm text-gray-600">Total Sent: <span className="font-semibold">{logs.length}</span></p>
+        <p className="text-responsive-sm text-gray-600">Total Sent: <span className="font-semibold">{logs.length}</span></p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+        <table className="w-full text-responsive-sm text-left text-gray-600">
+          <thead className="text-responsive-sm text-gray-700 uppercase bg-gray-100">
             <tr>
               <th className="px-6 py-3">Date</th>
               <th className="px-6 py-3">Subject</th>

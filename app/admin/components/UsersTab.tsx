@@ -11,11 +11,11 @@ export default function UsersTab({ users, renderProviders, formatUserName }: {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b bg-gray-50">
-        <p className="text-sm text-gray-600">Total Users: <span className="font-semibold">{users.length}</span></p>
+        <p className="text-responsive-sm text-gray-600">Total Users: <span className="font-semibold">{users.length}</span></p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+        <table className="w-full text-responsive-sm text-left text-gray-600">
+          <thead className="text-responsive-sm text-gray-700 uppercase bg-gray-100">
             <tr>
               <th scope="col" className="px-6 py-3">User</th>
               <th scope="col" className="px-6 py-3">Email</th>
@@ -27,7 +27,7 @@ export default function UsersTab({ users, renderProviders, formatUserName }: {
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-responsive-sm text-gray-500">
                   No users found
                 </td>
               </tr>
@@ -36,7 +36,7 @@ export default function UsersTab({ users, renderProviders, formatUserName }: {
                 const displayName = formatUserName(u)
                 return (
                   <tr key={u.id} className="bg-white border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                    <td className="px-6 py-4 font-medium text-responsive-sm text-gray-900 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                           <UserIcon size={20} />
@@ -44,21 +44,21 @@ export default function UsersTab({ users, renderProviders, formatUserName }: {
                         <div>
                           <div>
                             {displayName ? (
-                              <span className="text-gray-900">{displayName}</span>
+                              <span className="text-responsive-sm text-gray-900">{displayName}</span>
                             ) : (
-                              <span className="text-gray-500 italic">Name not set</span>
+                              <span className="text-responsive-sm text-gray-500 italic">Name not set</span>
                             )}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div>{u.email}</div>
+                      <div className="text-responsive-sm">{u.email}</div>
                     </td>
-                    <td className="px-6 py-4">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-responsive-sm">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="px-6 py-4">
-                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : 
-                        <span className="text-gray-500 italic">Never</span>
+                      {u.last_sign_in_at ? <span className="text-responsive-sm">{new Date(u.last_sign_in_at).toLocaleString()}</span> : 
+                        <span className="text-responsive-sm text-gray-500 italic">Never</span>
                       }
                     </td>
                     <td className="px-6 py-4">

@@ -23,18 +23,127 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   padding-top: 64px; /* navbar height */
 }
+/* Responsive Button Styles */
 .btn-primary {
-  @apply bg-sky-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-sky-500 transition;
+  @apply bg-sky-500 text-white rounded mt-2 hover:bg-transparent hover:text-sky-500 transition;
+  @apply px-3 py-2 text-sm;
+  @apply md:px-4 md:py-2.5 md:text-base;
+  @apply lg:px-6 lg:py-3 lg:text-base;
 }
 .btn-secondary {
-  @apply bg-gray-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-gray-500 transition;
+  @apply bg-gray-500 text-white rounded mt-2 hover:bg-transparent hover:text-gray-500 transition;
+  @apply px-3 py-2 text-sm;
+  @apply md:px-4 md:py-2.5 md:text-base;
+  @apply lg:px-6 lg:py-3 lg:text-base;
 }
 .btn-tertiary {
-  @apply bg-purple-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-purple-500 transition;
+  @apply bg-purple-500 text-white rounded mt-2 hover:bg-transparent hover:text-purple-500 transition;
+  @apply px-3 py-2 text-sm;
+  @apply md:px-4 md:py-2.5 md:text-base;
+  @apply lg:px-6 lg:py-3 lg:text-base;
 }
 .btn-fourth {
-  @apply bg-green-500 text-white py-2 rounded mt-2 hover:bg-transparent hover:text-green-500 transition;
+  @apply bg-green-500 text-white rounded mt-2 hover:bg-transparent hover:text-green-500 transition;
+  @apply px-3 py-2 text-sm;
+  @apply md:px-4 md:py-2.5 md:text-base;
+  @apply lg:px-6 lg:py-3 lg:text-base;
 }
+
+/* Extra Small Button Styles for Mobile */
+.btn-primary-sm {
+  @apply bg-sky-500 text-white rounded mt-2 hover:bg-transparent hover:text-sky-500 transition;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-3 md:py-1.5 md:text-sm;
+  @apply lg:px-4 lg:py-2 lg:text-base;
+}
+
+.btn-secondary-sm {
+  @apply bg-gray-500 text-white rounded mt-2 hover:bg-transparent hover:text-gray-500 transition;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-3 md:py-1.5 md:text-sm;
+  @apply lg:px-4 lg:py-2 lg:text-base;
+}
+
+.btn-tertiary-sm {
+  @apply bg-purple-500 text-white rounded mt-2 hover:bg-transparent hover:text-purple-500 transition;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-3 md:py-1.5 md:text-sm;
+  @apply lg:px-4 lg:py-2 lg:text-base;
+}
+
+.btn-fourth-sm {
+  @apply bg-green-500 text-white rounded mt-2 hover:bg-transparent hover:text-green-500 transition;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-3 md:py-1.5 md:text-sm;
+  @apply lg:px-4 lg:py-2 lg:text-base;
+}
+/* Responsive Text Styles */
+.text-responsive-sm {
+  @apply text-xs;
+  @apply md:text-sm;
+  @apply lg:text-base;
+}
+
+.text-responsive-base {
+  @apply text-sm;
+  @apply md:text-base;
+  @apply lg:text-lg;
+}
+
+.text-responsive-lg {
+  @apply text-base;
+  @apply md:text-lg;
+  @apply lg:text-xl;
+}
+
+.text-responsive-xl {
+  @apply text-lg;
+  @apply md:text-xl;
+  @apply lg:text-2xl;
+}
+
+.text-responsive-2xl {
+  @apply text-xl;
+  @apply md:text-2xl;
+  @apply lg:text-3xl;
+}
+
+/* Responsive Input Styles */
+.input-responsive {
+  @apply border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-500;
+  @apply px-2 py-1.5 text-sm;
+  @apply md:px-3 md:py-2 md:text-base;
+  @apply lg:px-4 lg:py-2.5 lg:text-base;
+}
+
+.input-responsive-sm {
+  @apply border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-sky-500;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-2.5 md:py-1.5 md:text-sm;
+  @apply lg:px-3 lg:py-2 lg:text-base;
+}
+
+/* Specific hover styles for admin buttons */
+.bg-sky-500:hover {
+  background-color: transparent !important;
+  color: #0ea5e9 !important;
+}
+
+.bg-gray-500:hover {
+  background-color: transparent !important;
+  color: #6b7280 !important;
+}
+
+.bg-purple-500:hover {
+  background-color: transparent !important;
+  color: #8b5cf6 !important;
+}
+
+.bg-green-500:hover {
+  background-color: transparent !important;
+  color: #10b981 !important;
+}
+
 /* Line clamp utility for text truncation */
 .line-clamp-2 {
   display: -webkit-box;
