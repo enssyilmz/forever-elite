@@ -127,13 +127,13 @@ export default function Home() {
 
         {/* Content */}
         <div className="flex flex-col items-center justify-center h-full bg-black/50">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl mb-6 text-center text-white">Discover your power!</h1>
+          <h1 className="text-responsive-2xl mb-6 text-center text-white">Discover your power!</h1>
           <button 
             onClick={() => {
               const programsSection = document.getElementById('programs-section');
               programsSection?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="bg-transparent text-white border px-6 py-3 rounded-xl hover:bg-gray-200 hover:text-black transition"
+            className="bg-transparent text-white border rounded-xl hover:bg-gray-200 hover:text-black transition text-responsive-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
           >
             CHECK OUT THE PACKAGES
           </button>
@@ -143,10 +143,10 @@ export default function Home() {
       {/* Programs Section */}
       <div id="programs-section" className="py-16 px-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-gray-800">
+          <h2 className="text-responsive-2xl font-bold text-center mb-4 text-gray-800">
             Body Fat Specific Packages
           </h2>
-          <p className="text-base md:text-lg text-gray-600 text-center mb-12">
+          <p className="text-responsive-base text-gray-600 text-center mb-12">
             Choose the perfect program based on your current body fat percentage
           </p>
           
@@ -180,7 +180,7 @@ export default function Home() {
           <div
             className="h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
           >
-            <div className="text-4xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
+            <div className="text-responsive-xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
               {program.logo}
             </div>
 
@@ -190,13 +190,13 @@ export default function Home() {
               </span>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-3">{program.title}</h3>
+            <h3 className="text-responsive-lg font-bold text-gray-800 mb-3">{program.title}</h3>
 
-            <p className="text-gray-600 text-sm flex-1 mb-4">{program.description}</p>
+            <p className="text-gray-600 text-responsive-sm flex-1 mb-4">{program.description}</p>
 
             <div className="mt-auto">
               <Link href="/packages">
-                <button className="w-full bg-sky-500 hover:bg-sky-600 text-white py-3 rounded-lg shadow-md transition">
+                <button className="btn-primary w-full">
                   View All Packages
                 </button>
               </Link>

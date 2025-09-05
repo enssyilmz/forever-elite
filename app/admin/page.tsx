@@ -574,7 +574,7 @@ export default function AdminPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-red-50 text-red-700">
         <Shield size={64} className="mb-4" />
-        <h1 className="text-2xl font-bold">Error</h1>
+        <h1 className="text-responsive-xl font-bold">Error</h1>
         <p>{error}</p>
         <div className="flex gap-4 mt-4">
           <button onClick={() => router.push('/')} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Go Home</button>
@@ -588,12 +588,12 @@ export default function AdminPage() {
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Admin Panel</h1>
+          <h1 className="text-responsive-2xl font-bold text-gray-800">Admin Panel</h1>
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="btn-fourth flex items-center gap-2 px-4 py-2 disabled:opacity-50"
+              className="bg-green-500 text-white rounded transition flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-50"
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -601,7 +601,7 @@ export default function AdminPage() {
             {activeTab === 'mail' && (
               <button
                 onClick={openMailModal}
-                className="btn-primary flex items-center gap-2 px-4 py-2"
+                className="bg-sky-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
               >
                 <Mail size={18} />
                 Send Mail to All Users
@@ -610,7 +610,7 @@ export default function AdminPage() {
             {activeTab === 'programs' && (
               <button
                 onClick={() => openProgramModal()}
-                className="btn-tertiary flex items-center gap-2 px-4 py-2"
+                className="bg-purple-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
               >
                 <Plus size={18} />
                 Create Custom Program
@@ -620,63 +620,125 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'users' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Users size={20} />
-            Users ({users.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('mail')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'mail' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Mail size={20} />
-            Mail ({mailLogs.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('programs')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'programs' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Dumbbell size={20} />
-            Custom Programs ({programs.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('purchases')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'purchases' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <CreditCard size={20} />
-            Purchases ({purchases.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('tickets')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium ${
-              activeTab === 'tickets' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Headset size={20} />
-            Support Tickets ({supportTickets.length})
-          </button>
+        {/* Tab Navigation - Responsive */}
+        <div className="mb-6 border-b border-gray-200">
+          {/* Desktop: Horizontal tabs */}
+          <div className="hidden md:flex">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium ${
+                activeTab === 'users' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Users size={20} />
+              Users ({users.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('mail')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium ${
+                activeTab === 'mail' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Mail size={20} />
+              Mail ({mailLogs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('programs')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium ${
+                activeTab === 'programs' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Dumbbell size={20} />
+              Custom Programs ({programs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('purchases')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium ${
+                activeTab === 'purchases' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <CreditCard size={20} />
+              Purchases ({purchases.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('tickets')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium ${
+                activeTab === 'tickets' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Headset size={20} />
+              Support Tickets ({supportTickets.length})
+            </button>
+          </div>
+
+          {/* Mobile: Vertical tabs */}
+          <div className="md:hidden space-y-1">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
+                activeTab === 'users' 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Users size={14} />
+              Users ({users.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('mail')}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
+                activeTab === 'mail' 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Mail size={14} />
+              Mail ({mailLogs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('programs')}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
+                activeTab === 'programs' 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Dumbbell size={14} />
+              Custom Programs ({programs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('purchases')}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
+                activeTab === 'purchases' 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <CreditCard size={14} />
+              Purchases ({purchases.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('tickets')}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
+                activeTab === 'tickets' 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Headset size={14} />
+              Support Tickets ({supportTickets.length})
+            </button>
+          </div>
         </div>
 
         {/* Users Tab */}
@@ -721,7 +783,7 @@ export default function AdminPage() {
             <button onClick={() => setMailModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
             </button>
-            <h2 className="text-2xl font-bold mb-6 text-black">Send Bulk Email</h2>
+            <h2 className="text-responsive-xl font-bold mb-6 text-black">Send Bulk Email</h2>
             <form onSubmit={handleSendMail}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Recipients - moved to top */}
@@ -730,7 +792,7 @@ export default function AdminPage() {
                     <div className="mt-3 border border-black rounded-md p-3">
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-sm font-medium text-gray-700">Search emails</label>
-                        <button type="button" className="btn-secondary px-3 py-2" onClick={() => setShowRecipientPicker(false)}>Close</button>
+                        <button type="button" className="bg-gray-500 text-white rounded transition px-3 py-2 text-sm" onClick={() => setShowRecipientPicker(false)}>Close</button>
                       </div>
                       <input
                         type="text"
@@ -746,7 +808,7 @@ export default function AdminPage() {
                           .map((email) => (
                             <div key={email} className="flex justify-between items-center py-1">
                               <span className="text-sm text-black">{email}</span>
-                              <button type="button" className="btn-primary px-2 py-1 text-xs" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
+                              <button type="button" className="bg-sky-500 text-white rounded transition px-2 py-1 text-xs" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
                                 Add
                               </button>
                             </div>
@@ -775,8 +837,8 @@ export default function AdminPage() {
                     </div>
                   )}
                   <div className="mt-2 flex gap-2">
-                    <button type="button" className="px-3 py-1 text-sm btn-secondary" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
-                    <button type="button" className="px-3 py-1 text-sm btn-primary" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
+                    <button type="button" className="bg-gray-500 text-white rounded transition px-3 py-1 text-sm" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
+                    <button type="button" className="bg-sky-500 text-white rounded transition px-3 py-1 text-sm" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-4">
@@ -808,7 +870,7 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="btn-fourth px-6 py-2 disabled:opacity-50"
+                  className="bg-green-500 text-white rounded transition px-6 py-2 text-sm disabled:opacity-50"
                 >
                   {isSending ? 'Sending...' : 'Send Email'}
                 </button>
@@ -839,7 +901,7 @@ export default function AdminPage() {
             <button onClick={() => setProgramModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
               <X size={24} />
             </button>
-            <h2 className="text-2xl font-bold mb-6 text-black">
+            <h2 className="text-responsive-xl font-bold mb-6 text-black">
               {editingProgram ? 'Edit Program' : 'Create New Program'}
             </h2>
             <form onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram}>
@@ -930,7 +992,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={addWorkoutDay}
-                      className="btn-tertiary flex items-center gap-2 px-4 py-2"
+                      className="bg-purple-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
                     >
                       <Plus size={16} />
                       Add Workout Day
@@ -1000,7 +1062,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => addExercise(workoutIndex)}
-                            className="btn-fourth flex items-center gap-1 px-3 py-1 text-sm"
+                            className="bg-green-500 text-white rounded transition flex items-center gap-1 px-3 py-1 text-sm"
                           >
                             <Plus size={14} />
                             Add Exercise
@@ -1093,13 +1155,13 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setProgramModalOpen(false)}
-                  className="btn-secondary px-6 py-2"
+                  className="bg-gray-500 text-white rounded transition px-6 py-2 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary px-6 py-2"
+                  className="bg-sky-500 text-white rounded transition px-6 py-2 text-sm"
                 >
                   {editingProgram ? 'Update Program' : 'Create Program'}
                 </button>
@@ -1197,7 +1259,7 @@ export default function AdminPage() {
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button
                   onClick={() => setTicketModalOpen(false)}
-                  className="btn-secondary px-4 py-2 text-sm font-medium"
+                  className="bg-gray-500 text-white rounded transition px-6 py-2 text-sm"
                 >
                   Cancel
                 </button>
@@ -1205,7 +1267,7 @@ export default function AdminPage() {
                   onClick={handleTicketResponse}
                   type="button"
                   disabled={isResponding || !adminResponse.trim()}
-                  className="btn-primary px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-sky-500 text-white rounded transition px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isResponding ? 'Responding...' : 'Send Response'}
                 </button>

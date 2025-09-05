@@ -8,17 +8,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div className="col-span-2">
-            <h3 className="text-white font-bold text-2xl mb-6">Ozcan Fit</h3>
+            <h3 className="text-white font-bold text-responsive-xl mb-6">Ozcan Fit</h3>
             <div className="space-y-4">
-              <p className="flex items-center gap-3 text-lg">
+              <p className="flex items-center gap-3 text-responsive-base">
                 <MapPin className="w-6 h-6 flex-shrink-0" />
                 123 Oxford Street, London W1D 2LG, United Kingdom
               </p>
-              <p className="flex items-center gap-3 text-lg">
+              <p className="flex items-center gap-3 text-responsive-base">
                 <Phone className="w-6 h-6 flex-shrink-0" />
                 +44 20 1234 5678
               </p>
-              <p className="flex items-center gap-3 text-lg">
+              <p className="flex items-center gap-3 text-responsive-base">
                 <Mail className="w-6 h-6 flex-shrink-0" />
                 contact@ozcanfit.com
               </p>
@@ -27,7 +27,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-white font-bold text-xl mb-4">Legal</h3>
+            <h3 className="text-white font-bold text-responsive-lg mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/privacy" className="hover:text-white transition">
@@ -52,7 +52,7 @@ export default function Footer() {
             </ul>
 
             <div className="mt-6">
-              <h3 className="text-white font-bold text-xl mb-4">Support</h3>
+              <h3 className="text-white font-bold text-responsive-lg mb-4">Support</h3>
               <ul className="space-y-2 mb-4">
                 <li>
                   <Link href="/support" className="hover:text-white transition">
@@ -61,7 +61,7 @@ export default function Footer() {
                 </li>
               </ul>
               
-              <h3 className="text-white font-bold text-xl mb-4">Follow Us</h3>
+              <h3 className="text-white font-bold text-responsive-lg mb-4">Follow Us</h3>
               <div className="flex gap-4">
                 <a
                   href="https://instagram.com/ozcanfit"

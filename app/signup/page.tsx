@@ -117,7 +117,7 @@ export default function SignUpPage() {
   return (
     <>
       <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow-md mt-10 text-black">
-        <h1 className="text-2xl font-bold mb-4 text-center">Sign Up</h1>
+        <h1 className="text-responsive-xl font-bold mb-4 text-center">Sign Up</h1>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input 
@@ -125,7 +125,7 @@ export default function SignUpPage() {
             placeholder="First Name" 
             value={formData.firstName}
             onChange={handleChange} 
-            className="w-full border p-2 rounded" 
+            className="input-responsive w-full" 
             required 
           />
           <input 
@@ -133,7 +133,7 @@ export default function SignUpPage() {
             placeholder="Last Name" 
             value={formData.lastName}
             onChange={handleChange} 
-            className="w-full border p-2 rounded" 
+            className="input-responsive w-full" 
             required 
           />
           <input 
@@ -142,7 +142,7 @@ export default function SignUpPage() {
             type="email" 
             value={formData.email}
             onChange={handleChange} 
-            className="w-full border p-2 rounded" 
+            className="input-responsive w-full" 
             required 
           />
           <div className="relative">
@@ -152,7 +152,7 @@ export default function SignUpPage() {
               type={showPassword ? 'text' : 'password'} 
               value={formData.password}
               onChange={handleChange} 
-              className="w-full border p-2 rounded" 
+              className="input-responsive w-full" 
               required 
             />
             <button
@@ -190,7 +190,7 @@ export default function SignUpPage() {
             type="date" 
             value={formData.birthdate}
             onChange={handleChange} 
-            className="w-full border p-2 rounded" 
+            className="input-responsive w-full" 
           />
 
           <div className="space-y-4">
@@ -274,11 +274,11 @@ export default function SignUpPage() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <button type="button" className="btn-secondary px-4">Cancel</button>
+            <button type="button" className="btn-secondary">Cancel</button>
             <button 
               type="submit" 
               disabled={loading}
-              className="btn-primary px-4 disabled:opacity-50"
+              className="btn-primary disabled:opacity-50"
             >
               {loading ? 'Saving...' : 'Save'}
             </button>

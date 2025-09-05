@@ -21,11 +21,11 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b bg-gray-50">
-        <p className="text-sm text-gray-600">Total Programs: <span className="font-semibold">{programs.length}</span></p>
+        <p className="text-responsive-sm text-gray-600">Total Programs: <span className="font-semibold">{programs.length}</span></p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-600">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-100">
+        <table className="w-full text-responsive-sm text-left text-gray-600">
+          <thead className="text-responsive-sm text-gray-700 uppercase bg-gray-100">
             <tr>
               <th className="px-6 py-3">Program</th>
               <th className="px-6 py-3">User</th>
@@ -38,7 +38,7 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
           <tbody>
             {programs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No programs found</td>
+                <td colSpan={6} className="px-6 py-8 text-center text-responsive-sm text-gray-500">No programs found</td>
               </tr>
             ) : (
               programs.map((program) => {
@@ -46,17 +46,17 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
                 const userName = user ? formatUserName(user) : 'Unknown User'
                 return (
                   <tr key={program.id} className="bg-white border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">
+                    <td className="px-6 py-4 font-medium text-responsive-sm text-gray-900">
                       <div>
-                        <div className="font-semibold">{program.title}</div>
+                        <div className="font-semibold text-responsive-sm">{program.title}</div>
                         {program.description && (
-                          <div className="text-sm text-gray-500 mt-1">{program.description}</div>
+                          <div className="text-responsive-sm text-gray-500 mt-1">{program.description}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div>{userName}</div>
-                      <div className="text-sm text-gray-500">{user?.email}</div>
+                      <div className="text-responsive-sm">{userName}</div>
+                      <div className="text-responsive-sm text-gray-500">{user?.email}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -67,8 +67,8 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
                         {program.difficulty_level}
                       </span>
                     </td>
-                    <td className="px-6 py-4">{program.duration_weeks} weeks</td>
-                    <td className="px-6 py-4">{new Date(program.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-responsive-sm">{program.duration_weeks} weeks</td>
+                    <td className="px-6 py-4 text-responsive-sm">{new Date(program.created_at).toLocaleDateString()}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <button onClick={() => onEdit(program)} className="text-blue-600 hover:text-blue-800">

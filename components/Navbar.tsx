@@ -224,25 +224,32 @@ export default function Navbar() {
       <nav className="fixed top-0 left-0 right-0 w-full bg-white shadow-md z-50">
         {/* Mobile Layout (md breakpoint altı) */}
         <div className="md:hidden h-14 px-4 flex items-center justify-between">
-          {/* Mobile Left: Logo */}
-          <Link href="/" className="flex items-center">
-            <div className="w-8 h-8 relative overflow-hidden rounded-full border-2 border-gray-200">
-              <Image
-                src="/logo.jpg"
-                alt="Logo"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          </Link>
+          {/* Mobile Left: Logo and Admin Button */}
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center">
+              <div className="w-8 h-8 relative overflow-hidden rounded-full border-2 border-gray-200">
+                <Image
+                  src="/logo.jpg"
+                  alt="Logo"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </Link>
+            {user && user.email === ADMIN_EMAIL && (
+              <Link href="/admin" className="text-xs font-semibold text-white bg-red-600 px-2 py-1 rounded-md hover:bg-red-700">
+                Admin
+              </Link>
+            )}
+          </div>
           
           {/* Mobile Center: Compact Navigation */}
           <div className="flex items-center gap-1">
-            <Link href="/packages" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
+            <Link href="/packages" className="text-responsive-sm font-medium text-gray-800 px-2 py-1 rounded">
               Packages
             </Link>
-            <Link href="/bodyfc" className="text-xs font-medium text-gray-800 px-2 py-1 rounded hover:bg-sky-50">
+            <Link href="/body-fat-calculator" className="text-responsive-sm font-medium text-gray-800 px-2 py-1 rounded">
               Calculator
             </Link>
           </div>
@@ -300,10 +307,10 @@ export default function Navbar() {
           </div>
           
           <div className="flex gap-6">
-            <Link href="/packages" className="font-bold text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
+            <Link href="/packages" className="font-bold text-responsive-base text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
               Packages
             </Link>
-            <Link href="/bodyfc" className="font-bold text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
+            <Link href="/body-fat-calculator" className="font-bold text-responsive-base text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
               Body fat calculator
             </Link>
           </div>
@@ -350,7 +357,7 @@ export default function Navbar() {
           <div className="absolute right-2 top-16 w-80 md:w-96 bg-white rounded-lg shadow-xl border z-60" onClick={(e) => e.stopPropagation()}>
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Search Packages</h3>
+                <h3 className="text-responsive-lg font-semibold text-gray-800">Search Packages</h3>
                 <X 
                   className="w-5 h-5 text-gray-600 cursor-pointer" 
                   onClick={() => setIsSearchOpen(false)}
@@ -425,50 +432,50 @@ export default function Navbar() {
             /* Logged In User Menu */
             <>
               <div className="mb-6">
-                <h2 className="text-lg font-bold text-gray-700">
+                <h2 className="text-responsive-base font-bold text-gray-700">
                   Welcome, {user.user_metadata?.first_name || user.user_metadata?.name?.split(' ')[0] || 'User'}!
                 </h2>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <p className="text-responsive-sm text-gray-500">{user.email}</p>
                 <hr className="mt-3" />
               </div>
 
               <div className="space-y-3">
                 <Link 
                   href="/dashboard?section=profile" 
-                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
+                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
                   onClick={() => {
                     setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
-                  <User className="w-5 h-5 mr-3 text-gray-600" />
+                  <User className="w-4 h-4 mr-3 text-gray-600" />
                   Edit Profile
                 </Link>
                 
                 <Link 
                   href="/dashboard?section=orders" 
-                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
+                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
                   onClick={() => {
                     setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
-                  <CreditCard className="w-5 h-5 mr-3 text-gray-600" />
+                  <CreditCard className="w-4 h-4 mr-3 text-gray-600" />
                   View Orders
                 </Link>
                 
                 <Link 
                   href="/dashboard?section=favorites" 
-                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded"
+                  className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
                   onClick={() => {
                     setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
-                  <Star className='w-5 h-5 mr-3 text-gray-600' />
+                  <Star className='w-4 h-4 mr-3 text-gray-600' />
                   My Favorites
                 </Link>
                 
                 <Link 
                   href="/dashboard?section=support" 
-                  className={`flex items-center w-full p-3 text-left rounded transition ${
+                  className={`flex items-center w-full p-3 text-left rounded transition text-responsive-sm ${
                     hasUnreadSupport 
                       ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400' 
                       : 'hover:bg-gray-50'
@@ -482,7 +489,7 @@ export default function Navbar() {
                     setTimeout(() => toggleNavbar(), 100)
                   }}
                 >
-                  <Headset className='w-5 h-5 mr-3 text-gray-600' />
+                  <Headset className='w-4 h-4 mr-3 text-gray-600' />
                   <span className="flex-1">Support</span>
                   {hasUnreadSupport && (
                     <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
@@ -510,9 +517,9 @@ export default function Navbar() {
                        }
                      }
                    }}
-                   className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50"
+                   className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50 text-responsive-sm"
                  >
-                   <Check className="w-5 h-5 mr-3" />
+                   <Check className="w-4 h-4 mr-3" />
                    Logout
                  </button>
               </div>
@@ -520,26 +527,26 @@ export default function Navbar() {
           ) : (
             /* Login Form */
             <>
-              <h2 className="text-lg text-gray-600">Welcome!</h2>
-              <h5 className="text-lg text-gray-500">Log in for fast and secure shopping!</h5>
+              <h2 className="text-responsive-base text-gray-600">Welcome!</h2>
+              <h5 className="text-responsive-sm text-gray-500">Log in for fast and secure shopping!</h5>
 
               <div className="py-6">
                 <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-                  <input
-                    type="email"
-                    placeholder="E-mail"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border p-2 rounded"
-                  />
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="border p-2 rounded w-full pr-10"
-                    />
+                                     <input
+                     type="email"
+                     placeholder="E-mail"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     className="input-responsive w-full"
+                   />
+                   <div className="relative">
+                     <input
+                       type={showPassword ? 'text' : 'password'}
+                       placeholder="Password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       className="input-responsive w-full pr-10"
+                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -574,7 +581,7 @@ export default function Navbar() {
 
                   <button
                     type="submit"
-                    className="bg-sky-500 text-white py-2 rounded mt-2 hover:bg-white hover:text-sky-500"
+                    className="btn-primary mt-2"
                   >
                     Login
                   </button>
@@ -582,25 +589,25 @@ export default function Navbar() {
                 </form>
               </div>
 
-              <h2 className="text-lg text-gray-600">NOT A MEMBER YET?</h2>
-              <h5 className="text-lg text-gray-500">You can easily become a member.</h5>
+              <h2 className="text-responsive-base text-gray-600">NOT A MEMBER YET?</h2>
+              <h5 className="text-responsive-sm text-gray-500">You can easily become a member.</h5>
 
               <div className="mt-4 flex flex-col gap-3">
                 <Link href="/signup"
                 onClick={() => toggleNavbar()}
-                className="bg-black text-white py-2 rounded mt-2 text-center hover:bg-white hover:text-black">
+                className="btn-secondary mt-2 text-center">
                   Sign Up
                 </Link>
 
                 <button 
                   onClick={handleFacebookLogin}
-                  className="w-full bg-[#3b5998] text-white py-2 rounded hover:bg-[#2d4373] transition"
+                  className="w-full bg-[#3b5998] text-white rounded hover:bg-[#2d4373] transition text-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
                 >
                   Continue with Facebook
                 </button>
                 <button 
                   onClick={handleGoogleLogin}
-                  className="w-full bg-[#4285F4] text-white py-2 rounded hover:bg-[#3367D6] transition"
+                  className="w-full bg-[#4285F4] text-white rounded hover:bg-[#3367D6] transition text-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
                 >
                   Continue with Google
                 </button>

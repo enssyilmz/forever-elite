@@ -496,7 +496,7 @@ function DashboardContent() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4 text-gray-600">Access Denied</h1>
+          <h1 className="text-responsive-xl font-bold mb-4 text-gray-600">Access Denied</h1>
           <p className="text-gray-600 mb-4">Please log in to access the dashboard.</p>
           <a href="/" className="btn-primary px-4 py-2 rounded">Go Home</a>
         </div>

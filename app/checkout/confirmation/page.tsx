@@ -79,7 +79,7 @@ function ConfirmationContent() {
           {/* Header */}
           <div className="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center">
             <CheckCircle className="w-20 h-20 text-white mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-white mb-2">Payment Successful!</h1>
+            <h1 className="text-responsive-2xl font-bold text-white mb-2">Payment Successful!</h1>
           </div>
 
           {/* Payment Details */}
@@ -147,12 +147,12 @@ function ConfirmationContent() {
                 href="https://gmail.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="btn-primary px-6 py-3 text-center flex items-center justify-center gap-2 w-full sm:w-auto"
+                className="btn-primary text-center flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Mail className="w-5 h-5" />
                 View My Email
               </a>
-              <Link href="/dashboard?section=orders" className="btn-secondary px-6 py-3 text-center flex items-center justify-center gap-2 w-full sm:w-auto">
+              <Link href="/dashboard?section=orders" className="btn-secondary text-center flex items-center justify-center gap-2 w-full sm:w-auto">
                 <Package className="w-5 h-5" />
                 My Orders
               </Link>
