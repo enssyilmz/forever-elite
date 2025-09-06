@@ -126,72 +126,6 @@ export interface Database {
           created_at?: string
         }
       }
-      // Packages table
-      packages: {
-        Row: {
-          id: number
-          title: string
-          body_fat_range: string
-          description: string
-          long_description: string | null
-          features: string[]
-          image_url: string | null
-          price_usd: number
-          price_gbp: number
-          discounted_price_gbp: number | null
-          discount_percentage: number
-          emoji: string
-          specifications: string[]
-          recommendations: string[]
-          duration_weeks: number | null
-          is_active: boolean
-          sort_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: number
-          title: string
-          body_fat_range: string
-          description: string
-          long_description?: string | null
-          features?: string[]
-          image_url?: string | null
-          price_usd: number
-          price_gbp: number
-          discounted_price_gbp?: number | null
-          discount_percentage?: number
-          emoji: string
-          specifications?: string[]
-          recommendations?: string[]
-          duration_weeks?: number | null
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: number
-          title?: string
-          body_fat_range?: string
-          description?: string
-          long_description?: string | null
-          features?: string[]
-          image_url?: string | null
-          price_usd?: number
-          price_gbp?: number
-          discounted_price_gbp?: number | null
-          discount_percentage?: number
-          emoji?: string
-          specifications?: string[]
-          recommendations?: string[]
-          duration_weeks?: number | null
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
       // Purchases table
       purchases: {
         Row: {
@@ -266,7 +200,7 @@ export interface Database {
       }
     }
   }
-}
+} 
 
 // Custom types for frontend usage
 export interface CustomProgram {
@@ -310,28 +244,6 @@ export interface CustomExercise {
   created_at: string
 }
 
-export interface Package {
-  id: number
-  title: string
-  body_fat_range: string
-  description: string
-  long_description: string | null
-  features: string[]
-  image_url: string | null
-  price_usd: number
-  price_gbp: number
-  discounted_price_gbp: number | null
-  discount_percentage: number
-  emoji: string
-  specifications: string[]
-  recommendations: string[]
-  duration_weeks: number | null
-  is_active: boolean
-  sort_order: number
-  created_at: string
-  updated_at: string
-}
-
 export interface Purchase {
   id: string
   user_email: string
@@ -344,4 +256,4 @@ export interface Purchase {
   stripe_payment_intent_id: string | null
   created_at: string
   updated_at: string
-}
+} 
