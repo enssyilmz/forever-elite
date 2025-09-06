@@ -4,7 +4,7 @@ import { checkAdminAuth } from '@/lib/adminAuth'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await checkAdminAuth()
@@ -20,7 +20,7 @@ export async function PUT(
     )
 
     const body = await request.json()
-    const { id } = await params
+    const { id } = params
 
     const { data, error } = await adminSupabase
       .from('packages')
@@ -60,7 +60,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await checkAdminAuth()
@@ -75,7 +75,7 @@ export async function DELETE(
       process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
-    const { id } = await params
+    const { id } = params
 
     const { error } = await adminSupabase
       .from('packages')
