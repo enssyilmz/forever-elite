@@ -577,8 +577,8 @@ export default function AdminPage() {
         <h1 className="text-responsive-xl font-bold">Error</h1>
         <p>{error}</p>
         <div className="flex gap-4 mt-4">
-          <button onClick={() => router.push('/')} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Go Home</button>
-          <button onClick={handleRefresh} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Retry</button>
+          <button onClick={() => router.push('/')} className="btn-secondary-sm">Go Home</button>
+          <button onClick={handleRefresh} className="btn-primary-sm">Retry</button>
         </div>
       </div>
     )
@@ -593,7 +593,7 @@ export default function AdminPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="bg-green-500 text-white rounded transition flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-50"
+              className="btn-fourth-sm flex items-center gap-2 disabled:opacity-50"
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -601,7 +601,7 @@ export default function AdminPage() {
             {activeTab === 'mail' && (
               <button
                 onClick={openMailModal}
-                className="bg-sky-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
+                className="btn-primary-sm flex items-center gap-2"
               >
                 <Mail size={18} />
                 Send Mail to All Users
@@ -610,7 +610,7 @@ export default function AdminPage() {
             {activeTab === 'programs' && (
               <button
                 onClick={() => openProgramModal()}
-                className="bg-purple-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
+                className="btn-tertiary-sm flex items-center gap-2"
               >
                 <Plus size={18} />
                 Create Custom Program
@@ -792,7 +792,7 @@ export default function AdminPage() {
                     <div className="mt-3 border border-black rounded-md p-3">
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-sm font-medium text-gray-700">Search emails</label>
-                        <button type="button" className="bg-gray-500 text-white rounded transition px-3 py-2 text-sm" onClick={() => setShowRecipientPicker(false)}>Close</button>
+                        <button type="button" className="btn-secondary-sm" onClick={() => setShowRecipientPicker(false)}>Close</button>
                       </div>
                       <input
                         type="text"
@@ -808,7 +808,7 @@ export default function AdminPage() {
                           .map((email) => (
                             <div key={email} className="flex justify-between items-center py-1">
                               <span className="text-sm text-black">{email}</span>
-                              <button type="button" className="bg-sky-500 text-white rounded transition px-2 py-1 text-xs" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
+                              <button type="button" className="btn-primary-sm" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
                                 Add
                               </button>
                             </div>
@@ -837,8 +837,8 @@ export default function AdminPage() {
                     </div>
                   )}
                   <div className="mt-2 flex gap-2">
-                    <button type="button" className="bg-gray-500 text-white rounded transition px-3 py-1 text-sm" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
-                    <button type="button" className="bg-sky-500 text-white rounded transition px-3 py-1 text-sm" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
+                    <button type="button" className="btn-secondary-sm" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
+                    <button type="button" className="btn-primary-sm" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-4">
@@ -870,7 +870,7 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="bg-green-500 text-white rounded transition px-6 py-2 text-sm disabled:opacity-50"
+                  className="btn-fourth-sm disabled:opacity-50"
                 >
                   {isSending ? 'Sending...' : 'Send Email'}
                 </button>
@@ -992,7 +992,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={addWorkoutDay}
-                      className="bg-purple-500 text-white rounded transition flex items-center gap-2 px-4 py-2 text-sm"
+                      className="btn-tertiary-sm flex items-center gap-2"
                     >
                       <Plus size={16} />
                       Add Workout Day
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => addExercise(workoutIndex)}
-                            className="bg-green-500 text-white rounded transition flex items-center gap-1 px-3 py-1 text-sm"
+                            className="btn-fourth-sm flex items-center gap-1"
                           >
                             <Plus size={14} />
                             Add Exercise
@@ -1155,13 +1155,13 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setProgramModalOpen(false)}
-                  className="bg-gray-500 text-white rounded transition px-6 py-2 text-sm"
+                  className="btn-secondary-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-sky-500 text-white rounded transition px-6 py-2 text-sm"
+                  className="btn-primary-sm"
                 >
                   {editingProgram ? 'Update Program' : 'Create Program'}
                 </button>
@@ -1259,7 +1259,7 @@ export default function AdminPage() {
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button
                   onClick={() => setTicketModalOpen(false)}
-                  className="bg-gray-500 text-white rounded transition px-6 py-2 text-sm"
+                  className="btn-secondary-sm"
                 >
                   Cancel
                 </button>
@@ -1267,7 +1267,7 @@ export default function AdminPage() {
                   onClick={handleTicketResponse}
                   type="button"
                   disabled={isResponding || !adminResponse.trim()}
-                  className="bg-sky-500 text-white rounded transition px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isResponding ? 'Responding...' : 'Send Response'}
                 </button>

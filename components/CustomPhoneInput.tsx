@@ -154,19 +154,19 @@ export default function CustomPhoneInput({
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center px-3 py-3 border border-r-0 border-gray-300 rounded-l-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex items-center px-2 md:px-3 py-2 md:py-3 border border-r-0 border-gray-300 rounded-l-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             {selectedCountry && (
               <>
-                <span className="text-lg mr-2">
+                <span className="text-sm md:text-lg mr-1 md:mr-2">
                   {getFlagEmoji(selectedCountry.code)}
                 </span>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-xs md:text-sm font-medium text-gray-700">
                   +{selectedCountry.phone}
                 </span>
               </>
             )}
-            <ChevronDown className="w-4 h-4 ml-2 text-gray-500" />
+            <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 text-gray-500" />
           </button>
 
           {/* Dropdown */}
@@ -226,7 +226,7 @@ export default function CustomPhoneInput({
           placeholder={selectedCountry ? `${getPhoneLength(selectedCountry).max} digits` : placeholder}
           required={required}
           disabled={disabled}
-          className="flex-1 px-3 py-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="flex-1 px-2 md:px-3 py-2 md:py-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-responsive-sm"
         />
       </div>
     </div>

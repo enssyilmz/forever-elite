@@ -354,12 +354,12 @@ export default function Navbar() {
       {/* Search Dropdown - Mobile Responsive */}
       {isSearchOpen && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40" onClick={() => setIsSearchOpen(false)}>
-          <div className="absolute right-2 top-16 w-80 md:w-96 bg-white rounded-lg shadow-xl border z-60" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-responsive-lg font-semibold text-gray-800">Search Packages</h3>
+          <div className="absolute right-2 top-16 w-72 sm:w-80 md:w-96 bg-white rounded-lg shadow-xl border z-60" onClick={(e) => e.stopPropagation()}>
+            <div className="p-3 md:p-4">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">Search Packages</h3>
                 <X 
-                  className="w-5 h-5 text-gray-600 cursor-pointer" 
+                  className="w-4 h-4 md:w-5 md:h-5 text-gray-600 cursor-pointer" 
                   onClick={() => setIsSearchOpen(false)}
                 />
               </div>
@@ -369,43 +369,45 @@ export default function Navbar() {
                 placeholder="Search for packages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black"
+                className="w-full p-2 md:p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black text-responsive-sm"
                 autoFocus
               />
               
-              <div className="mt-4 max-h-64 overflow-y-auto">
+              <div className="mt-3 md:mt-4 max-h-48 md:max-h-64 overflow-y-auto">
                 {searchResults.length > 0 ? (
                   searchResults.map((program) => (
                     <Link
                       key={program.id}
                       href={`/packages/${program.id}`}
-                      onClick={() => setIsSearchOpen(false)}
-                      className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        setIsSearchOpen(false)
+                      }}
+                      className="flex items-center p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                     >
-                      <div className="text-2xl mr-3">{program.emoji}</div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800">{program.title}</h4>
-                        <p className="text-sm text-gray-600">{program.bodyFatRange}</p>
+                      <div className="text-lg md:text-2xl mr-2 md:mr-3">{program.emoji}</div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base truncate">{program.title}</h4>
+                        <p className="text-xs md:text-sm text-gray-600">{program.bodyFatRange}</p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
-                        <div className="font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</div>
+                      <div className="text-right ml-2">
+                        <div className="text-xs md:text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
+                        <div className="font-bold text-sky-600 text-responsive-sm md:text-responsive-base">£{convertToGBP(program.discountedPrice)}</div>
                       </div>
                     </Link>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-gray-500">
+                  <div className="p-3 md:p-4 text-center text-gray-500 text-responsive-sm">
                     No packages found for "{searchQuery}"
                   </div>
                 )}
               </div>
               
               {searchResults.length > 0 && (
-                <div className="mt-4 pt-4 border-t">
+                <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t">
                   <Link
                     href="/packages"
                     onClick={() => setIsSearchOpen(false)}
-                    className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold"
+                    className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold text-responsive-sm md:text-responsive-base"
                   >
                     View All Packages →
                   </Link>
