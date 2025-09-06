@@ -112,7 +112,7 @@ export default function Home() {
 
   return (
     <main>
-      <div className="relative h-screen w-full overflow-hidden -mt-16">
+      <div className="relative h-[70vh] md:h-[85vh] lg:h-screen w-full overflow-hidden -mt-16">
         {/* Video background */}
         <video
           autoPlay

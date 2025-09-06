@@ -17,9 +17,7 @@ export default function SignUpPage() {
     gender: '',
     phone: '+44',
     birthdate: '',
-    agreeMarketing: false,
-    agreeMembership: false,
-    agreePrivacy: false,
+    agreeAllPolicies: false,
   })
 
   const [loading, setLoading] = useState(false)
@@ -67,9 +65,9 @@ export default function SignUpPage() {
             gender: formData.gender,
             phone: formData.phone,
             birthdate: formData.birthdate,
-            agree_marketing: formData.agreeMarketing,
-            agree_membership: formData.agreeMembership,
-            agree_privacy: formData.agreePrivacy,
+            agree_marketing: formData.agreeAllPolicies,
+            agree_membership: formData.agreeAllPolicies,
+            agree_privacy: formData.agreeAllPolicies,
           }
         }
       });
@@ -100,9 +98,7 @@ export default function SignUpPage() {
         gender: '',
         phone: '+44',
         birthdate: '',
-        agreeMarketing: false,
-        agreeMembership: false,
-        agreePrivacy: false,
+        agreeAllPolicies: false,
       })
       setCaptchaVerified(false)
       
@@ -167,10 +163,19 @@ export default function SignUpPage() {
             </button>
           </div>
           
-          <div className="flex gap-4 items-center">
-            <label><input type="radio" name="gender" value="male" checked={formData.gender === 'male'} onChange={handleChange} /> Male</label>
-            <label><input type="radio" name="gender" value="female" checked={formData.gender === 'female'} onChange={handleChange} /> Female</label>
-            <label><input type="radio" name="gender" value="none" checked={formData.gender === 'none'} onChange={handleChange} /> Prefer not to say</label>
+          <div className="flex flex-wrap gap-3 md:gap-4 items-center">
+            <label className="flex items-center text-responsive-sm">
+              <input type="radio" name="gender" value="male" checked={formData.gender === 'male'} onChange={handleChange} className="mr-2" /> 
+              Male
+            </label>
+            <label className="flex items-center text-responsive-sm">
+              <input type="radio" name="gender" value="female" checked={formData.gender === 'female'} onChange={handleChange} className="mr-2" /> 
+              Female
+            </label>
+            <label className="flex items-center text-responsive-sm">
+              <input type="radio" name="gender" value="none" checked={formData.gender === 'none'} onChange={handleChange} className="mr-2" /> 
+              Prefer not to say
+            </label>
           </div>
 
           <CustomPhoneInput
@@ -195,47 +200,14 @@ export default function SignUpPage() {
 
           <div className="space-y-4">
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 text-sm">
-                I agree to the <Link href="/marketing-policy" className="text-blue-600 hover:underline">Marketing Policy</Link>.
+              <span className="text-gray-700 text-responsive-sm">
+                I agree to the <Link href="/marketing-policy" className="text-blue-600 hover:underline">Marketing Policy</Link>, <Link href="/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link>, and <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
               </span>
               <div className="relative">
                 <input
                   type="checkbox"
-                  name="agreeMarketing"
-                  checked={formData.agreeMarketing}
-                  onChange={handleChange}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </div>
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 text-sm">
-                I accept the <Link href="/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link>.
-              </span>
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  name="agreeMembership"
-                  checked={formData.agreeMembership}
-                  onChange={handleChange}
-                  className="sr-only peer"
-                  required
-                />
-                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </div>
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-gray-700 text-sm">
-                I have read and accept the <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
-              </span>
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  name="agreePrivacy"
-                  checked={formData.agreePrivacy}
+                  name="agreeAllPolicies"
+                  checked={formData.agreeAllPolicies}
                   onChange={handleChange}
                   className="sr-only peer"
                   required
@@ -247,25 +219,27 @@ export default function SignUpPage() {
 
           <div className="flex justify-center pt-4">
             {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
-              <ReCAPTCHA
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                hl="en"
-                onChange={(value) => {
-                  setCaptchaVerified(!!value)
-                }}
-                onExpired={() => {
-                  setCaptchaVerified(false)
-                }}
-              />
+              <div className="transform scale-75 md:scale-100 origin-center">
+                <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                  hl="en"
+                  onChange={(value) => {
+                    setCaptchaVerified(!!value)
+                  }}
+                  onExpired={() => {
+                    setCaptchaVerified(false)
+                  }}
+                />
+              </div>
             ) : (
-              <div className="text-center p-4 bg-yellow-100 border border-yellow-400 rounded">
-                <p className="text-yellow-800 text-sm">
+              <div className="text-center p-3 md:p-4 bg-yellow-100 border border-yellow-400 rounded">
+                <p className="text-yellow-800 text-responsive-sm">
                   ⚠️ reCAPTCHA not configured. Please add NEXT_PUBLIC_RECAPTCHA_SITE_KEY to .env.local
                 </p>
                 <button 
                   type="button"
                   onClick={() => setCaptchaVerified(true)}
-                  className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded text-xs"
+                  className="mt-2 px-3 md:px-4 py-2 bg-yellow-600 text-white rounded text-responsive-sm"
                 >
                   Skip for Development
                 </button>

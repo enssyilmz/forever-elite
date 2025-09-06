@@ -181,9 +181,9 @@ export default function PaymentPage() {
       {/* SMS Modal */}
       {showSmsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">SMS Confirmation</h2>
-            <p className="text-gray-600 mb-6">A confirmation code has been sent to your phone. Please enter it below.</p>
+          <div className="bg-white rounded-lg p-4 md:p-8 shadow-xl max-w-xs md:max-w-sm w-full mx-4">
+            <h2 className="text-responsive-base md:text-responsive-lg font-bold mb-3 md:mb-4 text-gray-900">SMS Confirmation</h2>
+            <p className="text-gray-600 mb-4 md:mb-6 text-responsive-sm">A confirmation code has been sent to your phone. Please enter it below.</p>
             <form onSubmit={handleSmsConfirm}>
               <div className="relative">
                 <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
