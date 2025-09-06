@@ -1,27 +1,24 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+
+const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
 export async function checkAdminAuth() {
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return { error: NextResponse.json({ error: 'Service role key not configured' }, { status: 500 }) }
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-
-    // Get admin UID from environment or database
-    const adminUid = process.env.ADMIN_UID
+    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (!adminUid) {
-      return { error: NextResponse.json({ error: 'Admin UID not configured' }, { status: 500 }) }
+    if (authError || !user) {
+      return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
     }
-
-    return { success: true, adminUid }
-  } catch (error) {
-    console.error('Admin auth error:', error)
-    return { error: NextResponse.json({ error: 'Authentication failed' }, { status: 401 }) }
+    
+    if ((user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    }
+    
+    return { user, supabase }
+  } catch (error: any) {
+    return { error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) }
   }
 }
