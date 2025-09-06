@@ -10,11 +10,6 @@ import ProgramsTab from './components/ProgramsTab'
 import PurchasesTab from './components/PurchasesTab'
 import TicketsTab from './components/TicketsTab'
 import MailTab from './components/MailTab'
-import PackagesTab from './components/PackagesTab'
-import SendMailModal from './components/modals/SendMailModal'
-import SupportTicketModal from './components/modals/SupportTicketModal'
-import PackageModal from './components/modals/PackageModal'
-import DeleteModal from './components/modals/DeleteModal'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
 
@@ -86,16 +81,20 @@ export default function AdminPage() {
   const [programs, setPrograms] = useState<CustomProgram[]>([])
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
-  const [packages, setPackages] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases' | 'tickets' | 'mail' | 'packages'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'programs' | 'purchases' | 'tickets' | 'mail'>('users')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   // Mail modal states
   const [isMailModalOpen, setMailModalOpen] = useState(false)
+  const [mailContent, setMailContent] = useState({ subject: '', body: '' })
   const [isSending, setIsSending] = useState(false)
   const [allUserEmails, setAllUserEmails] = useState<string[]>([])
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([])
+  const [loadingEmails, setLoadingEmails] = useState(false)
+  const [showRecipientPicker, setShowRecipientPicker] = useState(false)
+  const [recipientSearch, setRecipientSearch] = useState('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
@@ -120,42 +119,20 @@ export default function AdminPage() {
     workouts: [] as WorkoutDay[]
   })
 
-  // Package modal states
-  const [isPackageModalOpen, setPackageModalOpen] = useState(false)
-  const [editingPackage, setEditingPackage] = useState<any | null>(null)
-  const [packageFormData, setPackageFormData] = useState({
-    title: '',
-    body_fat_range: '',
-    description: '',
-    long_description: '',
-    features: [] as string[],
-    image_url: '',
-    price_usd: 0,
-    price_gbp: 0,
-    discounted_price_gbp: 0,
-    discount_percentage: 0,
-    emoji: '',
-    specifications: [] as string[],
-    recommendations: [] as string[],
-    duration_weeks: 0,
-    is_active: true,
-    sort_order: 0
-  })
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [packageToDelete, setPackageToDelete] = useState<any | null>(null)
-
   const router = useRouter()
 
   const fetchUsers = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/users')
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch users')
+      // RPC fonksiyonunu çağır ve JSON dönüşünü parse et
+      const { data, error: rpcError } = await supabase.rpc('get_all_users')
+      if (rpcError) {
+        throw rpcError
       }
-      const data = await response.json()
-      setUsers(data.users || [])
+      
+      // JSON array'ini AuthUserFromAdmin tipine çevir
+      const parsedUsers: AuthUserFromAdmin[] = data || []
+      setUsers(parsedUsers)
     } catch (e: any) {
       setError('Failed to fetch users: ' + e.message)
     }
@@ -176,13 +153,13 @@ export default function AdminPage() {
   const fetchPurchases = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/purchases')
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch purchases')
-      }
-      const data = await response.json()
-      setPurchases(data.purchases || [])
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      setPurchases(data || [])
     } catch (e: any) {
       setError('Failed to fetch purchases: ' + e.message)
     }
@@ -207,30 +184,14 @@ export default function AdminPage() {
   const fetchMailLogs = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/mail-logs')
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch mail logs')
-      }
-      const data = await response.json()
-      setMailLogs(data.mailLogs || [])
+      const { data, error } = await supabase
+        .from('admin_mail_logs')
+        .select('id, subject, body, recipients, sent_count, created_at')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setMailLogs(data || [])
     } catch (e: any) {
       setError('Failed to fetch mail logs: ' + e.message)
-    }
-  }
-
-  const fetchPackages = async () => {
-    try {
-      setError(null)
-      const response = await fetch('/api/packages')
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch packages')
-      }
-      const data = await response.json()
-      setPackages(data.packages || [])
-    } catch (e: any) {
-      setError('Failed to fetch packages: ' + e.message)
     }
   }
 
@@ -255,7 +216,7 @@ export default function AdminPage() {
       setLoading(false)
       
       // Data'ları background'da fetch et
-      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()]).catch((e) => {
+      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs()]).catch((e) => {
         setError('Failed to load data: ' + e.message)
       })
     } catch (e: any) {
@@ -270,17 +231,19 @@ export default function AdminPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()])
+    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs()])
     setRefreshing(false)
   }
 
-  const handleSendMail = async (subject: string, body: string, recipients: string[]) => {
+  const handleSendMail = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsSending(true)
     try {
+      const recipients = selectedEmails.length > 0 ? selectedEmails : allUserEmails
       const response = await fetch('/api/admin/send-bulk-mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject, html: body, recipients })
+        body: JSON.stringify({ subject: mailContent.subject, html: mailContent.body, recipients })
       })
       const result = await response.json()
       if (!response.ok || !result.ok) {
@@ -291,10 +254,11 @@ export default function AdminPage() {
         setShowSuccessModal(true)
       } else {
         setMailModalOpen(false)
+        setMailContent({ subject: '', body: '' })
+        setSelectedEmails([])
         setModalTitle('Emails sent')
         setModalMessage(`Successfully sent email to ${result.sent ?? recipients.length} recipient(s).`)
         setShowSuccessModal(true)
-        fetchMailLogs()
       }
     } catch (err) {
       console.error('bulk mail error', err)
@@ -309,14 +273,18 @@ export default function AdminPage() {
 
   const openMailModal = async () => {
     setMailModalOpen(true)
+    setLoadingEmails(true)
     try {
-      const response = await fetch('/api/admin/users')
-      if (!response.ok) throw new Error('Failed to fetch users')
-      const data = await response.json()
-      setAllUserEmails(data.users.map((u: any) => u.email))
+      const { data, error } = await supabase.rpc('get_all_users')
+      if (error) throw error
+      const emails = (data || []).map((u: any) => u.email).filter(Boolean)
+      setAllUserEmails(emails)
+      setSelectedEmails(emails) // varsayılan: hepsi seçili
     } catch (e) {
-      console.error('Error fetching user emails:', e)
+      console.error('load emails error', e)
       setAllUserEmails([])
+    } finally {
+      setLoadingEmails(false)
     }
   }
 
@@ -327,33 +295,29 @@ export default function AdminPage() {
     setTicketModalOpen(true)
   }
 
-  const handleTicketResponse = async (ticketId: number, response: string, status: string) => {
+  const handleTicketResponse = async () => {
+    if (!selectedTicket || !adminResponse.trim()) return
+    
     setIsResponding(true)
     try {
-      const apiResponse = await fetch('/api/admin/support-tickets', {
+      const response = await fetch('/api/admin/support-tickets', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ticketId,
-          adminResponse: response.trim(),
-          status
+          ticketId: selectedTicket.id,
+          adminResponse: adminResponse.trim(),
+          status: 'resolved'
         })
       })
 
-      if (!apiResponse.ok) throw new Error('Failed to respond to ticket')
+      if (!response.ok) throw new Error('Failed to respond to ticket')
       
       await fetchSupportTickets()
       setTicketModalOpen(false)
       setSelectedTicket(null)
       setAdminResponse('')
-      setModalTitle('Response sent')
-      setModalMessage('Your response has been sent successfully.')
-      setShowSuccessModal(true)
     } catch (error) {
       console.error('Error responding to ticket:', error)
-      setModalTitle('Error')
-      setModalMessage('Failed to send response. Please try again.')
-      setShowSuccessModal(true)
     } finally {
       setIsResponding(false)
     }
@@ -418,99 +382,6 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error deleting program:', error)
     }
-  }
-
-  const openPackageModal = (packageData?: any) => {
-    if (packageData) {
-      setEditingPackage(packageData)
-      setPackageFormData({
-        title: packageData.title || '',
-        body_fat_range: packageData.body_fat_range || '',
-        description: packageData.description || '',
-        long_description: packageData.long_description || '',
-        features: packageData.features || [],
-        image_url: packageData.image_url || '',
-        price_usd: packageData.price_usd || 0,
-        price_gbp: packageData.price_gbp || 0,
-        discounted_price_gbp: packageData.discounted_price_gbp || 0,
-        discount_percentage: packageData.discount_percentage || 0,
-        emoji: packageData.emoji || '',
-        specifications: packageData.specifications || [],
-        recommendations: packageData.recommendations || [],
-        duration_weeks: packageData.duration_weeks || 0,
-        is_active: packageData.is_active ?? true,
-        sort_order: packageData.sort_order || 0
-      })
-    } else {
-      setEditingPackage(null)
-      setPackageFormData({
-        title: '',
-        body_fat_range: '',
-        description: '',
-        long_description: '',
-        features: [],
-        image_url: '',
-        price_usd: 0,
-        price_gbp: 0,
-        discounted_price_gbp: 0,
-        discount_percentage: 0,
-        emoji: '',
-        specifications: [],
-        recommendations: [],
-        duration_weeks: 0,
-        is_active: true,
-        sort_order: 0
-      })
-    }
-    setPackageModalOpen(true)
-  }
-
-  const handleUpdatePackage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const response = await fetch(`/api/admin/packages/${editingPackage?.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(packageFormData)
-      })
-      if (!response.ok) throw new Error('Failed to update package')
-      await fetchPackages()
-      setPackageModalOpen(false)
-      setModalTitle('Package updated')
-      setModalMessage('The package has been updated successfully.')
-      setShowSuccessModal(true)
-    } catch (error) {
-      console.error('Error updating package:', error)
-      setModalTitle('Error')
-      setModalMessage('Failed to update package.')
-      setShowSuccessModal(true)
-    }
-  }
-
-  const handleDeletePackage = async () => {
-    if (!packageToDelete) return
-    try {
-      const response = await fetch(`/api/admin/packages/${packageToDelete.id}`, {
-        method: 'DELETE'
-      })
-      if (!response.ok) throw new Error('Failed to delete package')
-      await fetchPackages()
-      setIsDeleteModalOpen(false)
-      setPackageToDelete(null)
-      setModalTitle('Package deleted')
-      setModalMessage('The package has been deleted successfully.')
-      setShowSuccessModal(true)
-    } catch (error) {
-      console.error('Error deleting package:', error)
-      setModalTitle('Error')
-      setModalMessage('Failed to delete package.')
-      setShowSuccessModal(true)
-    }
-  }
-
-  const openDeleteModal = (packageData: any) => {
-    setPackageToDelete(packageData)
-    setIsDeleteModalOpen(true)
   }
 
   const openProgramModal = (program?: CustomProgram) => {
@@ -808,17 +679,6 @@ export default function AdminPage() {
               <Headset size={20} />
               Support Tickets ({supportTickets.length})
             </button>
-            <button
-              onClick={() => setActiveTab('packages')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'packages' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Dumbbell size={20} />
-              Packages ({packages.length})
-            </button>
           </div>
 
           {/* Mobile: Vertical tabs */}
@@ -878,17 +738,6 @@ export default function AdminPage() {
               <Headset size={14} />
               Support Tickets ({supportTickets.length})
             </button>
-            <button
-              onClick={() => setActiveTab('packages')}
-              className={`flex items-center gap-2 px-4 py-2 text-responsive-sm font-medium transition-colors ${
-                activeTab === 'packages'
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Dumbbell size={14} />
-              Packages ({packages.length})
-            </button>
           </div>
         </div>
 
@@ -900,15 +749,6 @@ export default function AdminPage() {
         {/* Mail Tab */}
         {activeTab === 'mail' && (
           <MailTab logs={mailLogs} />
-        )}
-
-        {/* Packages Tab */}
-        {activeTab === 'packages' && (
-          <PackagesTab 
-            packages={packages} 
-            onEdit={openPackageModal} 
-            onDelete={openDeleteModal} 
-          />
         )}
 
         {/* Programs Tab */}
@@ -934,13 +774,111 @@ export default function AdminPage() {
       </div>
 
       {/* Send Mail Modal */}
-      <SendMailModal
-        isOpen={isMailModalOpen}
-        onClose={() => setMailModalOpen(false)}
-        onSubmit={handleSendMail}
-        allUserEmails={allUserEmails}
-        isSending={isSending}
-      />
+      {isMailModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50" 
+          onClick={() => setMailModalOpen(false)}
+        >
+          <div className="bg-white rounded-lg shadow-xl p-4 md:p-8 w-full max-w-4xl md:max-w-6xl mx-4 relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setMailModalOpen(false)} className="absolute top-2 md:top-4 right-2 md:right-4 text-gray-500 hover:text-gray-800">
+              <X size={20} className="md:w-6 md:h-6" />
+            </button>
+            <h2 className="text-responsive-lg md:text-responsive-xl font-bold mb-4 md:mb-6 text-black">Send Bulk Email</h2>
+            <form onSubmit={handleSendMail}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Recipients - moved to top */}
+                <div className="flex flex-col gap-4">
+                  {showRecipientPicker && (
+                    <div className="mt-3 border border-black rounded-md p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Search emails</label>
+                        <button type="button" className="btn-secondary-sm" onClick={() => setShowRecipientPicker(false)}>Close</button>
+                      </div>
+                      <input
+                        type="text"
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        placeholder="Search emails..."
+                        className="mt-1 mb-2 block w-full text-black rounded-md shadow-md p-2"
+                      />
+                      <div className="max-h-48 overflow-auto">
+                        {allUserEmails
+                          .filter(e => !selectedEmails.includes(e))
+                          .filter(e => e.toLowerCase().includes(recipientSearch.toLowerCase()))
+                          .map((email) => (
+                            <div key={email} className="flex justify-between items-center py-1">
+                              <span className="text-sm text-black">{email}</span>
+                              <button type="button" className="btn-primary-sm" onClick={() => setSelectedEmails(prev => Array.from(new Set([...prev, email])))}>
+                                Add
+                              </button>
+                            </div>
+                          ))}
+                        {allUserEmails.filter(e => !selectedEmails.includes(e)).length === 0 && (
+                          <div className="text-sm text-gray-500">No emails to add</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Recipients ({selectedEmails.length})</label>
+                  {loadingEmails ? (
+                    <div className="text-sm text-gray-500">Loading emails...</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 border-black rounded-md p-2 max-h-40 overflow-auto md:max-h-[50vh] md:overflow-auto">
+                      {selectedEmails.map((email) => (
+                        <span key={email} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-full text-sm text-black">
+                          {email}
+                          <button type="button" className="text-red-600" onClick={() => setSelectedEmails(selectedEmails.filter(e => e !== email))}>×</button>
+                        </span>
+                      ))}
+                      {selectedEmails.length === 0 && (
+                        <span className="text-sm text-gray-500">No recipients selected</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="btn-secondary-sm" onClick={() => setSelectedEmails(allUserEmails)}>Select All</button>
+                    <button type="button" className="btn-primary-sm" onClick={() => { setSelectedEmails([]); setShowRecipientPicker(true) }}>Clear</button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4">
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
+                  <input
+                    type="text"
+                    id="subject"
+                    value={mailContent.subject}
+                    onChange={(e) => setMailContent({ ...mailContent, subject: e.target.value })}
+                    className="mt-1 block w-full border border-black text-black rounded-md shadow-sm p-2"
+                    required
+                  />
+                </div>
+                  <div className="flex-1">
+                  <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
+                  <textarea
+                    id="body"
+                      rows={16}
+                    value={mailContent.body}
+                    onChange={(e) => setMailContent({ ...mailContent, body: e.target.value })}
+                      className="mt-1 block w-full h-full border border-black text-black rounded-md shadow-sm p-2"
+                    required
+                  />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSending}
+                  className="btn-fourth-sm disabled:opacity-50"
+                >
+                  {isSending ? 'Sending...' : 'Send Email'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Success Modal */}
       <SuccessModal
@@ -1234,32 +1172,110 @@ export default function AdminPage() {
       )}
 
       {/* Support Ticket Modal */}
-      <SupportTicketModal
-        isOpen={isTicketModalOpen}
-        onClose={() => setTicketModalOpen(false)}
-        ticket={selectedTicket}
-        onRespond={handleTicketResponse}
-        isResponding={isResponding}
-      />
+      {isTicketModalOpen && selectedTicket && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={() => setTicketModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-3xl md:max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto p-4 md:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-2 md:px-6 py-3 md:py-4 border-b flex justify-between items-center">
+              <h3 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-900">
+                Support Ticket #{selectedTicket.id}
+              </h3>
+              <button
+                onClick={() => setTicketModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} className="md:w-6 md:h-6" />
+              </button>
+            </div>
+            
+            <div className="p-3 md:p-6 space-y-4 md:space-y-6">
+              {/* Ticket Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Ticket Details</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Subject:</span>
+                      <p className="text-sm text-gray-900">{selectedTicket.subject}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Priority:</span>
+                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedTicket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                        selectedTicket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                        selectedTicket.priority === 'normal' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicket.priority}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Status:</span>
+                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        selectedTicket.status === 'open' ? 'bg-red-100 text-red-800' :
+                        selectedTicket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedTicket.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicket.status}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Created:</span>
+                      <p className="text-sm text-gray-900">{new Date(selectedTicket.created_at).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">User:</span>
+                      <p className="text-sm text-gray-900">{selectedTicket.user?.email || (users.find(u => u.id === selectedTicket.user_id)?.email) || 'Unknown'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">User Message</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.content}</p>
+                  </div>
+                </div>
+              </div>
 
-      <PackageModal
-        isOpen={isPackageModalOpen}
-        onClose={() => setPackageModalOpen(false)}
-        onSubmit={handleUpdatePackage}
-        formData={packageFormData}
-        setFormData={setPackageFormData}
-        isEditing={!!editingPackage}
-      />
+              {/* Admin Response */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Admin Response</h4>
+                <textarea
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  placeholder="Type your response here..."
+                  className="text-black w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
 
-      <DeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeletePackage}
-        title="Delete Package"
-        message="Are you sure you want to delete this package? This action cannot be undone."
-        itemName={packageToDelete?.title}
-      />
-      
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setTicketModalOpen(false)}
+                  className="btn-secondary-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTicketResponse}
+                  type="button"
+                  disabled={isResponding || !adminResponse.trim()}
+                  className="btn-primary-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResponding ? 'Responding...' : 'Send Response'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

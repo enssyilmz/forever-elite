@@ -48,9 +48,8 @@ RESEND_FROM="noreply@yourdomain.com"              # verified domain/sender in Re
 ```
 
 3) Database
-- Apply migrations from `supabase/migrations` to your Supabase project (contains `purchases`, custom programs, packages, etc.).
+- Apply migrations from `supabase/migrations` to your Supabase project (contains `purchases`, custom programs, etc.).
 - Ensure RLS policies are in place as provided by the migrations.
-- To setup packages database, run: `node scripts/setup-packages-db.js`
 
 4) Run the app
 ```bash

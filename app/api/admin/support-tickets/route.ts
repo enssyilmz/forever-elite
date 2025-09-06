@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import { checkAdminAuth } from '@/lib/adminAuth'
+
+const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
 export async function GET() {
   try {
-    const authResult = await checkAdminAuth()
-    if (authResult.error) return authResult.error
-    
     const supabase = createRouteHandlerClient({ cookies })
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if ((user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     // Try with join first
     const { data: ticketsWithUser, error: joinError } = await supabase
@@ -54,10 +60,15 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const authResult = await checkAdminAuth()
-    if (authResult.error) return authResult.error
-    
     const supabase = createRouteHandlerClient({ cookies })
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if ((user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const { ticketId, adminResponse, status } = await request.json()
     if (!ticketId || !adminResponse) {
