@@ -3,18 +3,17 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff, Headset } from 'lucide-react'
+import { Search, User, CreditCard, Check , Star, Eye, EyeOff, Headset } from 'lucide-react'
 import ShoppingCart from './ShoppingCart'
+import SearchPackages from './SearchPackages'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/packagesData'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/utils/supabaseClient'
 
 export default function Navbar() {
+  const router = useRouter()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -25,56 +24,15 @@ export default function Navbar() {
   const searchRef = useRef<HTMLDivElement>(null)
 
   const { getCartItemCount, isNavbarOpen, toggleNavbar, user, lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
-  const router = useRouter()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
-  const convertToGBP = (usdPrice: number) => {
-    // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
-    return Math.round(usdPrice * 0.79)
-  }
-
-  // Search functionality
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults(programs.slice(0, 3)) // Show first 3 programs when no search
-    } else {
-      const filtered = programs.filter(program => 
-        program.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setSearchResults(filtered)
-    }
-  }, [searchQuery])
-
-  // Handle click outside for search dropdown
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setIsSearchOpen(false)
-      }
-    }
-
-    if (isSearchOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isSearchOpen])
-
+  // GOOGLE OAUTH
   const handleGoogleLogin = async () => {
-    // Localhost'ta dinamik port kullan, production'da environment variable kullan
-    const baseUrl = process.env.NODE_ENV === 'development' 
-      ? window.location.origin 
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
-    
-    console.log('Google login redirect URL:', `${baseUrl}/api/auth/callback`)
-    
+    const baseUrl =
+      process.env.NODE_ENV === 'development'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -83,14 +41,13 @@ export default function Navbar() {
     })
   }
 
+  // FACEBOOK OAUTH
   const handleFacebookLogin = async () => {
-    // Localhost'ta dinamik port kullan, production'da environment variable kullan
-    const baseUrl = process.env.NODE_ENV === 'development' 
-      ? window.location.origin 
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
-    
-    console.log('Facebook login redirect URL:', `${baseUrl}/api/auth/callback`)
-    
+    const baseUrl =
+      process.env.NODE_ENV === 'development'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.foreverelite.co.uk')
+
     await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
@@ -99,7 +56,7 @@ export default function Navbar() {
     })
   }
 
-    // Get user on component mount
+  // Kullanıcıyı bir kere kontrol et (AppContext zaten dinliyor)
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -111,11 +68,10 @@ export default function Navbar() {
         console.error('Error getting user:', error)
       }
     }
-
     getUser()
-    // Navbar kendi auth listener'ını kurmuyor; AppContext dinliyor
   }, [])
 
+  // SADECE drawer (user menüsü) için dışarı tık kapatma — BUNU KORUDUK
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -137,7 +93,7 @@ export default function Navbar() {
     }
   }, [isNavbarOpen, toggleNavbar])
 
-  // Fetch support tickets when user is logged in
+  // Support ticketleri getir
   useEffect(() => {
     if (user) {
       const fetchSupportTickets = async () => {
@@ -151,7 +107,6 @@ export default function Navbar() {
           console.error('Error fetching support tickets:', error)
         }
       }
-      
       fetchSupportTickets()
     }
   }, [user])
@@ -184,33 +139,16 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       console.log('Logout attempt started...')
-      
-      // Supabase logout'u önce yap
       const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Supabase logout error:', error)
-        throw error
-      }
-      
-      console.log('Supabase logout successful')
-      
-      // Local state'i temizle
+      if (error) throw error
+
       setEmail('')
       setPassword('')
-      
-      // Navbar'ı kapat
       toggleNavbar()
-      
-      // Ana sayfaya yönlendir
       router.push('/')
-      
       console.log('Logout completed successfully')
-      
     } catch (error) {
       console.error('Logout exception:', error)
-      
-      // Even if there is an error, the user is logged out
       toggleNavbar()
       router.push('/')
     }
@@ -220,11 +158,10 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Mobile & Desktop Responsive Navbar */}
+      {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 w-full bg-white shadow-md z-50">
-        {/* Mobile Layout (md breakpoint altı) */}
+        {/* Mobile */}
         <div className="md:hidden h-14 px-4 flex items-center justify-between">
-          {/* Mobile Left: Logo and Admin Button */}
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center">
               <div className="w-8 h-8 relative overflow-hidden rounded-full border-2 border-gray-200">
@@ -243,8 +180,7 @@ export default function Navbar() {
               </Link>
             )}
           </div>
-          
-          {/* Mobile Center: Compact Navigation */}
+
           <div className="flex items-center gap-1">
             <Link href="/packages" className="text-responsive-sm font-medium text-gray-800 px-2 py-1 rounded">
               Packages
@@ -253,28 +189,25 @@ export default function Navbar() {
               Calculator
             </Link>
           </div>
-          
-          {/* Mobile Right: Icons */}
+
           <div className="flex items-center gap-3">
-            <Search 
-              className="w-4 h-4 text-gray-600 cursor-pointer" 
+            <Search
+              className="w-4 h-4 text-gray-600 cursor-pointer"
               onClick={() => setIsSearchOpen(true)}
             />
-            
             <div className="relative">
-              <User 
-                className="w-4 h-4 text-gray-600 cursor-pointer" 
-                onClick={toggleNavbar} 
+              <User
+                className="w-4 h-4 text-gray-600 cursor-pointer"
+                onClick={toggleNavbar}
               />
               {user && (
                 <Check className="w-2 h-2 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
               )}
             </div>
-            
             <div className="relative">
-              <CreditCard 
-                className="w-4 h-4 text-gray-600 cursor-pointer" 
-                onClick={() => setIsCartOpen(true)} 
+              <CreditCard
+                className="w-4 h-4 text-gray-600 cursor-pointer"
+                onClick={() => setIsCartOpen(true)}
               />
               {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
@@ -285,7 +218,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Desktop Layout (md breakpoint ve üstü) */}
+        {/* Desktop */}
         <div className="hidden md:flex h-16 px-6 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -305,7 +238,7 @@ export default function Navbar() {
               </Link>
             )}
           </div>
-          
+
           <div className="flex gap-6">
             <Link href="/packages" className="font-bold text-responsive-base text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
               Packages
@@ -314,32 +247,29 @@ export default function Navbar() {
               Body fat calculator
             </Link>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            {/* Search Component */}
             <div className="relative" ref={searchRef}>
-              <Search 
-                className="w-5 h-5 text-gray-600 cursor-pointer" 
+              <Search
+                className="w-5 h-5 text-gray-600 cursor-pointer"
                 onClick={() => setIsSearchOpen(true)}
               />
             </div>
-            
-            {/* User Icon with Login Status */}
+
             <div className="relative">
-              <User 
-                className="w-5 h-5 text-gray-600 cursor-pointer" 
-                onClick={toggleNavbar} 
+              <User
+                className="w-5 h-5 text-gray-600 cursor-pointer"
+                onClick={toggleNavbar}
               />
               {user && (
                 <Check className="w-3 h-3 text-green-500 absolute -top-1 -right-1 bg-white rounded-full" />
               )}
             </div>
-            
-            {/* Shopping Cart with Badge */}
+
             <div className="relative">
-              <CreditCard 
-                className="w-5 h-5 text-gray-600 cursor-pointer" 
-                onClick={() => setIsCartOpen(true)} 
+              <CreditCard
+                className="w-5 h-5 text-gray-600 cursor-pointer"
+                onClick={() => setIsCartOpen(true)}
               />
               {cartItemCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -351,87 +281,26 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Search Dropdown - Mobile Responsive */}
-      {isSearchOpen && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40" onClick={() => setIsSearchOpen(false)}>
-          <div className="absolute right-2 top-16 w-72 sm:w-80 md:w-96 bg-white rounded-lg shadow-xl border z-60" onClick={(e) => e.stopPropagation()}>
-            <div className="p-3 md:p-4">
-              <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">Search Packages</h3>
-                <X 
-                  className="w-4 h-4 md:w-5 md:h-5 text-gray-600 cursor-pointer" 
-                  onClick={() => setIsSearchOpen(false)}
-                />
-              </div>
-              
-              <input
-                type="text"
-                placeholder="Search for packages..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-2 md:p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-black text-responsive-sm"
-                autoFocus
-              />
-              
-              <div className="mt-3 md:mt-4 max-h-48 md:max-h-64 overflow-y-auto">
-                {searchResults.length > 0 ? (
-                  searchResults.map((program) => (
-                    <Link
-                      key={program.id}
-                      href={`/packages/${program.id}`}
-                      onClick={(e) => {
-                        setIsSearchOpen(false)
-                      }}
-                      className="flex items-center p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <div className="text-lg md:text-2xl mr-2 md:mr-3">{program.emoji}</div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base truncate">{program.title}</h4>
-                        <p className="text-xs md:text-sm text-gray-600">{program.bodyFatRange}</p>
-                      </div>
-                      <div className="text-right ml-2">
-                        <div className="text-xs md:text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
-                        <div className="font-bold text-sky-600 text-responsive-sm md:text-responsive-base">£{convertToGBP(program.discountedPrice)}</div>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="p-3 md:p-4 text-center text-gray-500 text-responsive-sm">
-                    No packages found for "{searchQuery}"
-                  </div>
-                )}
-              </div>
-              
-              {searchResults.length > 0 && (
-                <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t">
-                  <Link
-                    href="/packages"
-                    onClick={() => setIsSearchOpen(false)}
-                    className="block w-full text-center text-sky-600 hover:text-sky-700 font-semibold text-responsive-sm md:text-responsive-base"
-                  >
-                    View All Packages →
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* SEARCH PACKAGES */}
+      <SearchPackages
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
 
-      {/* Mobile & Desktop Sidebar with Responsive Width */}
+      {/* Overlay (user drawer açıkken) */}
       {isNavbarOpen && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.2)] backdrop-blur-sm z-40"></div>
       )}
 
+      {/* USER DRAWER */}
       <div
         ref={drawerRef}
         className={`fixed top-0 right-0 h-full bg-white shadow-lg text-black transform transition-transform duration-300 z-50 ${
           isNavbarOpen ? 'translate-x-0' : 'translate-x-full'
-        } w-72 sm:w-80 md:w-96`} // Mobile: 288px, SM: 320px, MD+: 384px
+        } w-72 sm:w-80 md:w-96`}
       >
         <div className="px-4 py-4 border-b overflow-y-auto h-full">
           {user ? (
-            /* Logged In User Menu */
             <>
               <div className="mb-6">
                 <h2 className="text-responsive-base font-bold text-gray-700">
@@ -442,48 +311,41 @@ export default function Navbar() {
               </div>
 
               <div className="space-y-3">
-                <Link 
-                  href="/dashboard?section=profile" 
+                <Link
+                  href="/dashboard?section=profile"
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={() => setTimeout(() => toggleNavbar(), 100)}
                 >
                   <User className="w-4 h-4 mr-3 text-gray-600" />
                   Edit Profile
                 </Link>
-                
-                <Link 
-                  href="/dashboard?section=orders" 
+
+                <Link
+                  href="/dashboard?section=orders"
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={() => setTimeout(() => toggleNavbar(), 100)}
                 >
                   <CreditCard className="w-4 h-4 mr-3 text-gray-600" />
                   View Orders
                 </Link>
-                
-                <Link 
-                  href="/dashboard?section=favorites" 
+
+                <Link
+                  href="/dashboard?section=favorites"
                   className="flex items-center w-full p-3 text-left hover:bg-gray-50 rounded text-responsive-sm"
-                  onClick={() => {
-                    setTimeout(() => toggleNavbar(), 100)
-                  }}
+                  onClick={() => setTimeout(() => toggleNavbar(), 100)}
                 >
                   <Star className='w-4 h-4 mr-3 text-gray-600' />
                   My Favorites
                 </Link>
-                
-                <Link 
-                  href="/dashboard?section=support" 
+
+                <Link
+                  href="/dashboard?section=support"
                   className={`flex items-center w-full p-3 text-left rounded transition text-responsive-sm ${
-                    hasUnreadSupport 
-                      ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400' 
+                    hasUnreadSupport
+                      ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
                       : 'hover:bg-gray-50'
                   }`}
                   onClick={() => {
-                    // Mark support tickets as read when clicked
                     if (hasUnreadSupport) {
                       const now = Date.now()
                       updateLastViewedSupportAt(now)
@@ -497,67 +359,63 @@ export default function Navbar() {
                     <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
                   )}
                 </Link>
-                
-                                 <button 
-                   onClick={async (event) => {
-                     console.log('Logout button clicked')
-                     // Disable button
-                     const button = event.target as HTMLButtonElement
-                     if (button) {
-                       button.disabled = true
-                       button.textContent = 'Signing out...'
-                     }
-                     
-                     try {
-                       await handleLogout()
-                     } catch (error) {
-                       console.error('Logout failed:', error)
-                       // Butonu tekrar aktif et
-                       if (button) {
-                         button.disabled = false
-                         button.textContent = 'Logout'
-                       }
-                     }
-                   }}
-                   className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50 text-responsive-sm"
-                 >
-                   <Check className="w-4 h-4 mr-3" />
-                   Logout
-                 </button>
+
+                <button
+                  onClick={async (event) => {
+                    console.log('Logout button clicked')
+                    const button = event.target as HTMLButtonElement
+                    if (button) {
+                      button.disabled = true
+                      button.textContent = 'Signing out...'
+                    }
+                    try {
+                      await handleLogout()
+                    } catch (error) {
+                      console.error('Logout failed:', error)
+                      if (button) {
+                        button.disabled = false
+                        button.textContent = 'Logout'
+                      }
+                    }
+                  }}
+                  className="btn-primary flex items-center w-full p-3 text-left transition disabled:opacity-50 text-responsive-sm"
+                >
+                  <Check className="w-4 h-4 mr-3" />
+                  Logout
+                </button>
               </div>
             </>
           ) : (
-            /* Login Form */
             <>
               <h2 className="text-responsive-base text-gray-600">Welcome!</h2>
               <h5 className="text-responsive-sm text-gray-500">Log in for fast and secure shopping!</h5>
 
               <div className="py-6">
                 <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-                                     <input
-                     type="email"
-                     placeholder="E-mail"
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     className="input-responsive w-full"
-                   />
-                   <div className="relative">
-                     <input
-                       type={showPassword ? 'text' : 'password'}
-                       placeholder="Password"
-                       value={password}
-                       onChange={(e) => setPassword(e.target.value)}
-                       className="input-responsive w-full pr-10"
-                     />
+                  <input
+                    type="email"
+                    placeholder="E-mail"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-responsive w-full"
+                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="input-responsive w-full pr-10"
+                    />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
                         <Eye className="h-5 w-5" />
+                      ) : (
+                        <EyeOff className="h-5 w-5" />
                       )}
                     </button>
                   </div>
@@ -572,8 +430,8 @@ export default function Navbar() {
                       />
                       Remember me
                     </label>
-                    <Link 
-                      href="/forgot-password" 
+                    <Link
+                      href="/forgot-password"
                       className="text-gray-600 underline"
                       onClick={() => toggleNavbar()}
                     >
@@ -581,10 +439,7 @@ export default function Navbar() {
                     </Link>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="btn-primary mt-2"
-                  >
+                  <button type="submit" className="btn-primary mt-2">
                     Login
                   </button>
                   {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -595,19 +450,21 @@ export default function Navbar() {
               <h5 className="text-responsive-sm text-gray-500">You can easily become a member.</h5>
 
               <div className="mt-4 flex flex-col gap-3">
-                <Link href="/signup"
-                onClick={() => toggleNavbar()}
-                className="btn-secondary mt-2 text-center">
+                <Link
+                  href="/signup"
+                  onClick={() => toggleNavbar()}
+                  className="btn-secondary mt-2 text-center"
+                >
                   Sign Up
                 </Link>
 
-                <button 
+                <button
                   onClick={handleFacebookLogin}
                   className="w-full bg-[#3b5998] text-white rounded hover:bg-[#2d4373] transition text-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
                 >
                   Continue with Facebook
                 </button>
-                <button 
+                <button
                   onClick={handleGoogleLogin}
                   className="w-full bg-[#4285F4] text-white rounded hover:bg-[#3367D6] transition text-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
                 >
@@ -619,7 +476,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Shopping Cart Component */}
+      {/* CART */}
       <ShoppingCart isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
     </>
   )
