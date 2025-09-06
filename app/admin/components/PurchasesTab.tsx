@@ -22,7 +22,6 @@ export default function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
         <table className="w-full text-responsive-sm text-left text-gray-600">
           <thead className="text-responsive-sm text-gray-700 uppercase bg-gray-100">
             <tr>
-              <th className="px-6 py-3">ID</th>
               <th className="px-6 py-3">User Email</th>
               <th className="px-6 py-3">User Name</th>
               <th className="px-6 py-3">Package</th>
@@ -36,12 +35,11 @@ export default function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
           <tbody>
             {purchases.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-8 text-center text-gray-500">No purchases found</td>
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">No purchases found</td>
               </tr>
             ) : (
               purchases.map((purchase) => (
                 <tr key={purchase.id} className="bg-white border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{purchase.id}</td>
                   <td className="px-6 py-4">{purchase.user_email}</td>
                   <td className="px-6 py-4">{purchase.user_name || 'N/A'}</td>
                   <td className="px-6 py-4">{purchase.package_name}</td>

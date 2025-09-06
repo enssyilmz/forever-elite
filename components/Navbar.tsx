@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star, X, Eye, EyeOff, Headset } from 'lucide-react'
+import { Search, User, CreditCard, Check, Star, X, Eye, EyeOff, Headset } from 'lucide-react'
 import ShoppingCart from './ShoppingCart'
+import LoginModal from './modals/LoginModal'
 import { useApp } from '@/contexts/AppContext'
 import { programs } from '@/lib/packagesData'
 import { useRouter } from 'next/navigation'
@@ -15,6 +16,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(programs.slice(0, 3)) // Show first 3 by default
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -178,6 +180,14 @@ export default function Navbar() {
       if (data.user?.email === ADMIN_EMAIL) {
         router.push('/admin')
       }
+    }
+  }
+
+  const handleLoginSuccess = () => {
+    toggleNavbar()
+    setIsLoginModalOpen(false)
+    if (user?.email === ADMIN_EMAIL) {
+      router.push('/admin')
     }
   }
 
@@ -621,6 +631,13 @@ export default function Navbar() {
 
       {/* Shopping Cart Component */}
       <ShoppingCart isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen} />
+
+      {/* LOGIN MODAL */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </>
   )
-}
+} 
