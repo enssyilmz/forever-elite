@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    
+    const supabase = await createSupabaseServerClient()
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -39,8 +38,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Subject and content are required' }, { status: 400 })
     }
 
-    const supabase = createRouteHandlerClient({ cookies })
-    
+    const supabase = await createSupabaseServerClient()
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
