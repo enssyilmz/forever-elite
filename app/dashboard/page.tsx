@@ -1,17 +1,20 @@
 'use client'
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { supabase } from '@/utils/supabaseClient'
-import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, ChevronDown, Plus, Menu, X } from 'lucide-react'
+import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, Menu, X } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
-import ReCAPTCHA from 'react-google-recaptcha'
-import CustomPhoneInput from '@/components/CustomPhoneInput'
 import SuccessModal from '@/components/SuccessModal'
 import { programs as allPrograms } from '@/lib/packagesData'
 import { Purchase } from '@/lib/database.types'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import { useApp } from '@/contexts/AppContext'
+import MemberInformation from './components/MemberInformation'
+import CommunicationPreferences from './components/CommunicationPreferences'
+import MyOrders from './components/MyOrders'
+import Favorites from './components/Favorites'
+import Support from './components/Support'
 
 interface Product {
   id: number;
@@ -78,7 +81,6 @@ function DashboardContent() {
   })
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
-  const recaptchaRef = useRef<ReCAPTCHA>(null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
 
@@ -458,10 +460,7 @@ function DashboardContent() {
       setNewTicketForm({ subject: '', content: '' })
       setRecaptchaVerified(false)
       
-      // Reset reCAPTCHA widget
-      if (recaptchaRef.current) {
-        recaptchaRef.current.reset()
-      }
+      // Reset reCAPTCHA widget (handled in Support component)
       
       // Refresh tickets
       const { data: tickets } = await supabase
@@ -520,512 +519,73 @@ function DashboardContent() {
     switch (activeSection) {
       case 'profile':
         return (
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-black">
-            <h3 className="text-responsive-lg font-bold mb-4 md:mb-6">Member Information</h3>
-            
-            {message && (
-              <div className={`mb-4 p-3 rounded ${message.includes('successfully') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {message}
-              </div>
-            )}
-            
-            <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="input-responsive w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="input-responsive w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="input-responsive w-full bg-gray-100"
-                  disabled
-                />
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Phone</label>
-                <CustomPhoneInput
-                  value={formData.phone}
-                  onChange={(phone, countryCode) => {
-                    setFormData(prev => ({ ...prev, phone }));
-                  }}
-                  placeholder="Enter phone number"
-                  className="w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Birth Date</label>
-                <input
-                  type="date"
-                  name="birthdate"
-                  value={formData.birthdate}
-                  onChange={handleInputChange}
-                  className="input-responsive w-full"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Gender</label>
-                <div className="flex flex-wrap gap-3 md:gap-4 items-center">
-                  <label className="flex items-center text-responsive-sm">
-                    <input 
-                      type="radio" 
-                      name="gender" 
-                      value="male" 
-                      checked={formData.gender === 'male'} 
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    /> 
-                    Male
-                  </label>
-                  <label className="flex items-center text-responsive-sm">
-                    <input 
-                      type="radio" 
-                      name="gender" 
-                      value="female" 
-                      checked={formData.gender === 'female'} 
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    /> 
-                    Female
-                  </label>
-                  <label className="flex items-center text-responsive-sm">
-                    <input 
-                      type="radio" 
-                      name="gender" 
-                      value="none" 
-                      checked={formData.gender === 'none'} 
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    /> 
-                    Prefer not to say
-                  </label>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-responsive-sm font-medium text-gray-700 mb-1">Body Fat Percentage</label>
-                <input
-                  type="text"
-                  name="bodyFat"
-                  value={formData.bodyFat}
-                  onChange={handleInputChange}
-                  className="input-responsive w-full bg-gray-100"
-                  placeholder="Calculate from Body Fat Calculator"
-                  readOnly
-                />
-                <p className="text-responsive-sm text-gray-500 mt-1">
-                  Use our Body Fat Calculator to update this value automatically
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancel}
-                className="btn-secondary-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                disabled={isUpdating}
-                className="btn-primary-sm disabled:opacity-50"
-              >
-                {isUpdating ? 'Updating...' : 'Update'}
-              </button>
-            </div>
-          </div>
+          <MemberInformation
+            user={user}
+            formData={formData}
+            message={message}
+            isUpdating={isUpdating}
+            onInputChange={handleInputChange}
+            onPhoneChange={(phone: string, countryCode: string) => {
+              setFormData(prev => ({ ...prev, phone }));
+            }}
+            onUpdate={handleUpdate}
+            onCancel={handleCancel}
+          />
         )
       
       case 'communication':
         return (
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-black">
-            <h3 className="text-responsive-lg font-bold mb-4 md:mb-6">Communication Preferences</h3>
-            
-            {message && !message.includes('successfully') && (
-              <div className={`mb-4 p-3 rounded bg-red-100 text-red-700`}>
-                {message}
-              </div>
-            )}
-
-            <div className="space-y-4 md:space-y-6">
-              <div className="border-b pb-3 md:pb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">Phone Notifications</h4>
-                    <p className="text-responsive-sm text-gray-600">Receive calls and voice messages on your phone number</p>
-                  </div>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={communicationPrefs.phone}
-                      onChange={(e) => setCommunicationPrefs(prev => ({...prev, phone: e.target.checked}))}
-                      className="w-4 h-4 md:w-5 md:h-5 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                </div>
-              </div>
-              
-              <div className="border-b pb-3 md:pb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">Email Notifications</h4>
-                    <p className="text-responsive-sm text-gray-600">Receive updates and notifications via email</p>
-                  </div>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={communicationPrefs.email}
-                      onChange={(e) => setCommunicationPrefs(prev => ({...prev, email: e.target.checked}))}
-                      className="w-4 h-4 md:w-5 md:h-5 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                </div>
-              </div>
-              
-              <div className="border-b pb-3 md:pb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">SMS Notifications</h4>
-                    <p className="text-responsive-sm text-gray-600">Receive text messages on your mobile phone</p>
-                  </div>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={communicationPrefs.sms}
-                      onChange={(e) => setCommunicationPrefs(prev => ({...prev, sms: e.target.checked}))}
-                      className="w-4 h-4 md:w-5 md:h-5 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-6 md:mt-8">
-                <button
-                  onClick={() => setCommunicationPrefs({phone: false, email: false, sms: false})}
-                  className="btn-secondary-sm"
-                  disabled={isSavingPrefs}
-                >
-                  Reset
-                </button>
-                <button
-                  className="btn-primary-sm"
-                  onClick={handleSavePreferences}
-                  disabled={isSavingPrefs}
-                >
-                  {isSavingPrefs ? 'Saving...' : 'Save Preferences'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <CommunicationPreferences
+            message={message}
+            communicationPrefs={communicationPrefs}
+            isSavingPrefs={isSavingPrefs}
+            onPrefsChange={setCommunicationPrefs}
+            onSavePreferences={handleSavePreferences}
+          />
         )
       
       case 'favorites':
         return (
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
-            <h2 className="text-responsive-lg font-bold mb-4 md:mb-6 text-gray-900">My Favorites</h2>
-            {favoritesLoading ? (
-              <p className="text-responsive-sm text-gray-500">Loading favorites...</p>
-            ) : favoriteProducts.length === 0 ? (
-              <p className="text-responsive-sm text-gray-500">You have no favorite products yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {favoriteProducts.map((product) => (
-                  <Link href={`/packages/${product.id}`} key={product.id}>
-                    <div className="border rounded-lg overflow-hidden shadow-sm group transform hover:-translate-y-1 transition-transform duration-300 h-full flex flex-col cursor-pointer">
-                      {/* Program Emoji */}
-                      <div className="w-full h-32 md:h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center">
-                         <span className="text-4xl md:text-7xl opacity-90">{product.emoji}</span>
-                      </div>
-                      <div className="p-3 md:p-4 flex-grow">
-                        <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800 group-hover:text-sky-600 transition-colors">{product.name}</h3>
-                        <p className="text-gray-600 mt-2 text-responsive-sm">{product.description}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+          <Favorites
+            favoriteProducts={favoriteProducts}
+            favoritesLoading={favoritesLoading}
+          />
         )
 
       case 'orders':
         return (
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
-            <h2 className="text-responsive-lg font-bold mb-4 md:mb-6 text-gray-900">My Orders</h2>
-            {purchasesLoading ? (
-              <p className="text-responsive-sm text-gray-500">Loading orders...</p>
-            ) : purchases.length === 0 ? (
-              <div className="text-center py-6 md:py-8">
-                <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-responsive-sm text-gray-500 mb-4">You have no orders yet.</p>
-                <Link href="/packages" className="btn-primary-sm">
-                  Browse Packages
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3 md:space-y-4">
-                {purchases.map((purchase) => {
-                  // Find the corresponding program details
-                  const programDetails = allPrograms.find(p => p.title === purchase.package_name)
-                  const formatAmount = (amount: number, currency: string) => {
-                    const formatted = (amount / 100).toFixed(2)
-                    const symbol = currency.toUpperCase() === 'GBP' ? '£' : '$'
-                    return `${symbol}${formatted}`
-                  }
-                  
-                  return (
-                    <div key={purchase.id} className="border rounded-lg p-4 md:p-6 bg-gray-50">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3 md:mb-4 gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 md:gap-3 mb-2">
-                            {programDetails && (
-                              <span className="text-xl md:text-2xl">{programDetails.emoji}</span>
-                            )}
-                            <div>
-                              <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">{purchase.package_name}</h3>
-                              <p className="text-responsive-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
-                            </div>
-                          </div>
-                          
-                          {programDetails && (
-                            <p className="text-gray-600 text-responsive-sm mb-2">{programDetails.bodyFatRange}</p>
-                          )}
-                          
-                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-responsive-sm text-gray-600">
-                            <span>
-                              <strong>Amount:</strong> {formatAmount(purchase.amount, purchase.currency)}
-                            </span>
-                            <span>
-                              <strong>Date:</strong> {dayjs(purchase.created_at).format('DD/MM/YYYY')}
-                            </span>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              purchase.status === 'completed' || purchase.status === 'paid' 
-                                ? 'bg-green-100 text-green-800' 
-                                : purchase.status === 'pending' 
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {purchase.status.toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-2">
-                          {programDetails && (
-                            <Link 
-                              href={`/packages/${programDetails.id}`}
-                              className="btn-secondary-sm"
-                            >
-                              View Details
-                            </Link>
-                          )}
-                          <a 
-                            href="https://gmail.com" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="btn-primary-sm"
-                          >
-                            View Receipt
-                          </a>
-                        </div>
-                      </div>
-                      
-                      {programDetails && (
-                        <div className="border-t pt-3 md:pt-4 mt-3 md:mt-4">
-                          <p className="text-responsive-sm text-gray-600">{programDetails.description}</p>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <MyOrders
+            purchases={purchases}
+            purchasesLoading={purchasesLoading}
+          />
         )
       
       case 'support':
         return (
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-black">
-            <h3 className="text-responsive-lg font-bold mb-4 md:mb-6 text-gray-900">Support</h3>
-            
-            <div className="space-y-3 md:space-y-4">
-              {/* My Support Tickets Section */}
-              <div className="border rounded-lg">
-                <button
-                  onClick={() => {
-                    setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))
-                    const now = Date.now()
-                    updateLastViewedSupportAt(now)
-                  }}
-                  className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">My Support Tickets</span>
-                  <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${supportSectionExpanded.myTickets ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {supportSectionExpanded.myTickets && (
-                  <div className="border-t p-3 md:p-4">
-                    {supportLoading ? (
-                      <p className="text-responsive-sm text-gray-500">Loading tickets...</p>
-                    ) : supportTickets.length === 0 ? (
-                      <div className="text-center py-6 md:py-8">
-                        <p className="text-responsive-sm text-gray-500 mb-4">No support tickets found.</p>
-                        <button
-                          onClick={() => setSupportSectionExpanded({ myTickets: true, newTicket: true })}
-                          className="btn-primary-sm inline-flex items-center"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create New Support Ticket
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 md:space-y-4">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-                          <span className="text-responsive-sm text-gray-600">Total: {supportTickets.length} tickets</span>
-                          <button
-                             onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
-                             className="btn-primary-sm inline-flex items-center"
-                           >
-                             <Plus className="w-3 h-3 mr-1" />
-                             New Ticket
-                           </button>
-                        </div>
-                        
-                        {supportTickets.map((ticket) => (
-                          <div key={ticket.id} className="border rounded-lg p-3 md:p-4 bg-gray-50">
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-2 gap-2">
-                              <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">{ticket.subject}</h4>
-                              <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                                {ticket.status.replace('_', ' ').toUpperCase()}
-                              </span>
-                            </div>
-                            <p className="text-gray-600 text-responsive-sm mb-2 line-clamp-2">{ticket.content}</p>
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 md:gap-0 text-xs text-gray-500">
-                              <span>Created: {dayjs(ticket.created_at).format('DD/MM/YYYY HH:mm')}</span>
-                              <span>Updated: {dayjs(ticket.updated_at).format('DD/MM/YYYY HH:mm')}</span>
-                            </div>
-                            {ticket.admin_response && (
-                              <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-                                <p className="text-responsive-sm text-blue-800 font-medium">Admin Response:</p>
-                                <p className="text-responsive-sm text-blue-700 mt-1">{ticket.admin_response}</p>
-                                <p className="text-xs text-blue-600 mt-2">
-                                  Responded: {dayjs(ticket.admin_response_at).format('DD/MM/YYYY HH:mm')}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* New Support Ticket Section */}
-              <div className="border rounded-lg">
-                <button
-                  onClick={() => setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))}
-                  className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">Create New Support Ticket</span>
-                  <ChevronDown className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${supportSectionExpanded.newTicket ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {supportSectionExpanded.newTicket && (
-                  <div className="border-t p-3 md:p-4">
-                    <form onSubmit={handleNewTicketSubmit} className="space-y-3 md:space-y-4">
-                      <div>
-                        <label className="block text-responsive-sm font-medium text-gray-700 mb-2">Subject</label>
-                        <input
-                          type="text"
-                          value={newTicketForm.subject}
-                          onChange={(e) => setNewTicketForm(prev => ({ ...prev, subject: e.target.value }))}
-                          className="input-responsive w-full"
-                          placeholder="Brief description of your issue"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-responsive-sm font-medium text-gray-700 mb-2">Content</label>
-                        <textarea
-                          value={newTicketForm.content}
-                          onChange={(e) => setNewTicketForm(prev => ({ ...prev, content: e.target.value }))}
-                          rows={4}
-                          className="input-responsive w-full"
-                          placeholder="Please provide detailed information about your issue..."
-                          required
-                        />
-                      </div>
-                      
-                      {/* reCAPTCHA */}
-                      <div className="flex justify-center">
-                        {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ? (
-                          <ReCAPTCHA
-                            ref={recaptchaRef}
-                            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                            hl="en"
-                            onChange={(value) => {
-                              setRecaptchaVerified(!!value)
-                            }}
-                            onExpired={() => {
-                              setRecaptchaVerified(false)
-                            }}
-                          />
-                        ) : (
-                          <div className="text-center p-4 bg-yellow-100 border border-yellow-400 rounded">
-                            <p className="text-yellow-800 text-sm">
-                              ⚠️ reCAPTCHA not configured. Please add NEXT_PUBLIC_RECAPTCHA_SITE_KEY to .env.local
-                            </p>
-                            <button 
-                              type="button"
-                              onClick={() => setRecaptchaVerified(true)}
-                              className="mt-2 px-4 py-2 bg-yellow-600 text-white rounded text-xs"
-                            >
-                              Skip for Development
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                                             <button
-                         type="submit"
-                         disabled={isSubmittingTicket || !recaptchaVerified}
-                         className="btn-secondary-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                         {isSubmittingTicket ? 'Submitting...' : 'Submit Support Ticket'}
-                       </button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <Support
+            supportTickets={supportTickets}
+            supportLoading={supportLoading}
+            supportSectionExpanded={supportSectionExpanded}
+            newTicketForm={newTicketForm}
+            isSubmittingTicket={isSubmittingTicket}
+            recaptchaVerified={recaptchaVerified}
+            onSupportSectionToggle={(section: 'myTickets' | 'newTicket') => {
+              if (section === 'myTickets') {
+                setSupportSectionExpanded(prev => ({ ...prev, myTickets: !prev.myTickets }))
+                const now = Date.now()
+                updateLastViewedSupportAt(now)
+              } else {
+                setSupportSectionExpanded(prev => ({ ...prev, newTicket: !prev.newTicket }))
+              }
+            }}
+            onNewTicketFormChange={(field: string, value: string) => {
+              setNewTicketForm(prev => ({ ...prev, [field]: value }))
+            }}
+            onNewTicketSubmit={handleNewTicketSubmit}
+            onRecaptchaChange={(value: string | null) => setRecaptchaVerified(!!value)}
+            onRecaptchaExpired={() => setRecaptchaVerified(false)}
+            onRecaptchaSkip={() => setRecaptchaVerified(true)}
+          />
         )
       
       default:
@@ -1088,8 +648,8 @@ function DashboardContent() {
                           : 'hover:bg-gray-50 text-gray-700'
                     } ${item.id === 'logout' ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                   >
-                    <item.icon className="mr-3 w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <item.icon className="mr-3 w-4 h-4 md:w-5 md:h-5" />
+                    <span className="font-medium text-responsive-sm">{item.label}</span>
                     {item.id === 'support' && hasUnreadSupport && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
                     )}
@@ -1117,19 +677,19 @@ function DashboardContent() {
             {/* Sidebar */}
             <div className="relative flex flex-col w-80 h-full bg-white shadow-xl">
               {/* Sidebar Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-lg font-bold text-gray-800">My Account</h2>
+              <div className="flex items-center justify-between p-3 md:p-4 border-b">
+                <h2 className="text-responsive-base md:text-responsive-lg font-bold text-gray-800">My Account</h2>
                 <button
                   onClick={() => setIsMobileSidebarOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-600" />
+                  <X className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
                 </button>
               </div>
 
               {/* User Information */}
-              <div className="p-4 border-b bg-gray-50">
-                <h3 className="text-responsive-sm font-semibold mb-3 text-gray-700">User Information</h3>
+              <div className="p-3 md:p-4 border-b bg-gray-50">
+                <h3 className="text-responsive-sm font-semibold mb-2 md:mb-3 text-gray-700">User Information</h3>
                 <div className="space-y-1 text-responsive-sm text-gray-600">
                   <p><strong>Email:</strong> {user.email}</p>
                   <p><strong>Name:</strong> {user.user_metadata?.full_name || user.user_metadata?.first_name || 'Not provided'}</p>
@@ -1146,13 +706,13 @@ function DashboardContent() {
               </div>
 
               {/* Navigation Menu */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-3 md:p-4">
                 <nav className="space-y-1">
                   {menuItems.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => handleSelectSection(item.id)}
-                      className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition ${
+                      className={`w-full flex items-center px-2 md:px-3 py-2 md:py-3 text-left rounded-lg transition ${
                         activeSection === item.id 
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
                           : item.id === 'support' && hasUnreadSupport
@@ -1160,8 +720,8 @@ function DashboardContent() {
                             : 'hover:bg-gray-50 text-gray-700'
                       } ${item.id === 'logout' ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                     >
-                      <item.icon className="mr-3 w-5 h-5" />
-                      <span className="font-medium text-sm">{item.label}</span>
+                      <item.icon className="mr-3 w-4 h-4 md:w-5 md:h-5" />
+                      <span className="font-medium text-responsive-sm">{item.label}</span>
                       {item.id === 'support' && hasUnreadSupport && (
                         <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
                       )}
@@ -1198,4 +758,4 @@ export default function Dashboard() {
       <DashboardContent />
     </Suspense>
   )
-} 
+}

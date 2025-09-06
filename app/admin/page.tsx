@@ -779,11 +779,11 @@ export default function AdminPage() {
           className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50" 
           onClick={() => setMailModalOpen(false)}
         >
-          <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-6xl relative" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setMailModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
-              <X size={24} />
+          <div className="bg-white rounded-lg shadow-xl p-4 md:p-8 w-full max-w-4xl md:max-w-6xl mx-4 relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setMailModalOpen(false)} className="absolute top-2 md:top-4 right-2 md:right-4 text-gray-500 hover:text-gray-800">
+              <X size={20} className="md:w-6 md:h-6" />
             </button>
-            <h2 className="text-responsive-xl font-bold mb-6 text-black">Send Bulk Email</h2>
+            <h2 className="text-responsive-lg md:text-responsive-xl font-bold mb-4 md:mb-6 text-black">Send Bulk Email</h2>
             <form onSubmit={handleSendMail}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Recipients - moved to top */}
@@ -895,13 +895,13 @@ export default function AdminPage() {
           onClick={() => setProgramModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl mx-4 my-8 relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl p-4 md:p-8 w-full max-w-3xl md:max-w-4xl mx-4 my-4 md:my-8 relative max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setProgramModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
-              <X size={24} />
+            <button onClick={() => setProgramModalOpen(false)} className="absolute top-2 md:top-4 right-2 md:right-4 text-gray-500 hover:text-gray-800">
+              <X size={20} className="md:w-6 md:h-6" />
             </button>
-            <h2 className="text-responsive-xl font-bold mb-6 text-black">
+            <h2 className="text-responsive-lg md:text-responsive-xl font-bold mb-4 md:mb-6 text-black">
               {editingProgram ? 'Edit Program' : 'Create New Program'}
             </h2>
             <form onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram}>
@@ -1178,22 +1178,22 @@ export default function AdminPage() {
           onClick={() => setTicketModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl max-w-3xl md:max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto p-4 md:p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="px-2 md:px-6 py-3 md:py-4 border-b flex justify-between items-center">
+              <h3 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-900">
                 Support Ticket #{selectedTicket.id}
               </h3>
               <button
                 onClick={() => setTicketModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <X size={24} />
+                <X size={20} className="md:w-6 md:h-6" />
               </button>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-3 md:p-6 space-y-4 md:space-y-6">
               {/* Ticket Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

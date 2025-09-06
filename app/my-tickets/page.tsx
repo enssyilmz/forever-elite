@@ -216,12 +216,12 @@ export default function MyTicketsPage() {
       {/* Create Ticket Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">Create Support Ticket</h3>
+          <div className="bg-white rounded-lg shadow-xl max-w-xl md:max-w-2xl w-full mx-4">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b">
+              <h3 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-900">Create Support Ticket</h3>
             </div>
             
-            <form onSubmit={handleCreateTicket} className="p-6 space-y-4">
+            <form onSubmit={handleCreateTicket} className="p-4 md:p-6 space-y-3 md:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Subject *
