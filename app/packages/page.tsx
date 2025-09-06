@@ -43,10 +43,10 @@ export default function PackagesPage() {
   }
 
   return (
-    <div className="min-h-screen py-16 px-6">
+    <div className="min-h-screen py-8 md:py-16 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-8 md:mb-16">
           <h1 className="text-responsive-2xl font-bold text-gray-800 mb-6">
             Choose Your Perfect Package
           </h1>
@@ -57,11 +57,11 @@ export default function PackagesPage() {
         </div>
 
         {/* Packages Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {programs.map((program) => (
-            <div key={program.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            <div key={program.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
               {/* Package Image */}
-              <div className="relative h-48 bg-gradient-to-br from-sky-400 to-sky-600">
+              <div className="relative h-48 bg-gradient-to-br from-sky-400 to-sky-600 flex-shrink-0">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-responsive-2xl text-white opacity-80">
                     {program.emoji}
@@ -76,7 +76,7 @@ export default function PackagesPage() {
               </div>
 
               {/* Package Content */}
-              <div className="p-6 flex flex-col h-[calc(100%-12rem)]">
+              <div className="p-4 md:p-6 flex flex-col flex-1">
                 <h3 className="text-responsive-lg font-bold text-gray-800 mb-3">
                   {program.title}
                 </h3>
@@ -97,7 +97,7 @@ export default function PackagesPage() {
                   ))}
                 </ul>
 
-                {/* Pricing */}
+                {/* Pricing and CTA */}
                 <div className="mt-auto">
                   <div className="flex items-center justify-between mb-4">
                     {/* Discount */}
@@ -116,14 +116,12 @@ export default function PackagesPage() {
                     </div>
                   </div>
 
-                  {/* CTA Buttons */}
-                  <div className="space-y-2">
+                  {/* CTA Button */}
                   <Link href={`/packages/${program.id}`}>
                     <button className="btn-primary w-full">
-                        View Details
+                      View Details
                     </button>
                   </Link>
-                  </div>
                 </div>
               </div>
             </div>
@@ -131,8 +129,8 @@ export default function PackagesPage() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-2xl mx-auto">
+        <div className="text-center mt-8 md:mt-16">
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-lg max-w-2xl mx-auto">
             <h2 className="text-responsive-xl font-bold text-gray-800 mb-4">
               Not Sure Which Package is Right for You?
             </h2>
