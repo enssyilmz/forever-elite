@@ -52,7 +52,7 @@ export default function TermsOfService() {
             <p className="text-responsive-sm">If you have any questions about these Terms of Service, please contact us at:</p>
             <p className="mt-2 text-responsive-sm">
               Email: runner4ever1@gmail.com<br />
-              Address: 123 79 Old Church Road E1 0QB, United Kingdom<br />
+              Address: 79 Old Church Road E1 0QB, United Kingdom<br />
               Phone: +44 7718 624609
             </p>
           </section>

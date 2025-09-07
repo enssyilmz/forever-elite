@@ -201,7 +201,7 @@ export default function SignUpPage() {
           <div className="space-y-4">
             <label className="flex items-center justify-between cursor-pointer">
               <span className="text-gray-700 text-responsive-sm">
-                I agree to the <Link href="/marketing-policy" className="text-blue-600 hover:underline">Marketing Policy</Link>, <Link href="/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link>, and <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+                I agree to the <Link href="/policies/marketing-policy" className="text-blue-600 hover:underline">Marketing Policy</Link>, <Link href="/policies/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link>, and <Link href="/policies/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
               </span>
               <div className="relative">
                 <input

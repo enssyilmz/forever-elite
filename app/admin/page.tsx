@@ -1238,6 +1238,7 @@ export default function AdminPage() {
         isOpen={isTicketModalOpen}
         onClose={() => setTicketModalOpen(false)}
         ticket={selectedTicket}
+        users={users}
         onRespond={handleTicketResponse}
         isResponding={isResponding}
       />
