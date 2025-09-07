@@ -12,7 +12,7 @@ export default function Footer() {
             <div className="space-y-3 md:space-y-4">
               <p className="flex items-start gap-2 md:gap-3 text-responsive-sm md:text-responsive-base">
                 <MapPin className="w-4 h-4 md:w-6 md:h-6 flex-shrink-0 mt-0.5" />
-                <span>123 79 Old Church Road E1 0QB, United Kingdom</span>
+                <span>79 Old Church Road E1 0QB, United Kingdom</span>
               </p>
               <p className="flex items-center gap-2 md:gap-3 text-responsive-sm md:text-responsive-base">
                 <Phone className="w-4 h-4 md:w-6 md:h-6 flex-shrink-0" />

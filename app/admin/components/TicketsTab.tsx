@@ -1,6 +1,6 @@
 'use client'
 
-import { Headset } from 'lucide-react'
+import { Edit } from 'lucide-react'
 
 interface SupportTicket {
   id: number
@@ -39,7 +39,7 @@ export default function TicketsTab({ tickets, users, getPriorityClass, getStatus
               <th className="px-6 py-3">Priority</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Created</th>
-              <th className="px-6 py-3">Actions</th>
+              <th className="px-6 py-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -63,9 +63,9 @@ export default function TicketsTab({ tickets, users, getPriorityClass, getStatus
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityClass(ticket.priority)}`}>{ticket.priority}</span></td>
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(ticket.status)}`}>{ticket.status}</span></td>
                   <td className="px-6 py-4">{new Date(ticket.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-center">
                     <button onClick={() => onOpen(ticket)} className="text-blue-600 hover:text-blue-800" title="View and respond to ticket">
-                      <Headset size={16} />
+                      <Edit size={16} />
                     </button>
                   </td>
                 </tr>
