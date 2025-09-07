@@ -154,11 +154,11 @@ export default function CheckoutPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen py-16 px-6">
+      <div className="min-h-screen py-8 md:py-16 px-4 md:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-responsive-2xl font-bold text-gray-800 mb-4">Your Cart is Empty</h1>
-          <p className="text-gray-600 mb-8">Add some programs to your cart to proceed with checkout.</p>
-          <Link href="/packages" className="btn-primary">
+          <h1 className="text-xl md:text-responsive-2xl font-bold text-gray-800 mb-4">Your Cart is Empty</h1>
+          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">Add some programs to your cart to proceed with checkout.</p>
+          <Link href="/packages" className="btn-primary text-sm md:text-base">
             Browse Programs
           </Link>
         </div>
@@ -168,57 +168,57 @@ export default function CheckoutPage() {
 
   return (
     <Elements stripe={stripePromise}>
-      <div className="min-h-screen py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-responsive-2xl font-bold text-gray-900 mb-8">Checkout</h1>
+      <div className="min-h-screen py-6 md:py-12">
+        <div className="max-w-7xl mx-auto px-3 md:px-4">
+          <h1 className="text-2xl md:text-responsive-2xl font-bold text-gray-900 mb-4 md:mb-8">Checkout</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 md:space-y-4">
               {cartItems.map((item) => {
                 const program = programs.find(p => p.id === item.id)
                 if (!program) return null
 
                 return (
-                  <div key={item.id} className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-start gap-4">
+                  <div key={item.id} className="bg-white rounded-lg shadow-sm p-3 md:p-6">
+                    <div className="flex items-start gap-3 md:gap-4">
                       {/* Program Image/Emoji */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-2xl text-white">{program.emoji}</span>
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg md:text-2xl text-white">{program.emoji}</span>
                       </div>
 
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{program.title}</h3>
-                            <p className="text-sm text-gray-500">{program.bodyFatRange}</p>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">{program.title}</h3>
+                            <p className="text-xs md:text-sm text-gray-500">{program.bodyFatRange}</p>
                           </div>
                           <button
                             onClick={() => removeFromCart(item.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
+                            className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
                             title="Remove item"
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                           </button>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between">
+                        <div className="mt-3 md:mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">Quantity:</span>
+                            <span className="text-xs md:text-sm text-gray-600">Quantity:</span>
                             <div className="flex items-center border border-gray-300 rounded-lg bg-white">
                               <button
                                 onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                className="p-2 hover:bg-gray-100 rounded-l-lg text-gray-800"
+                                className="p-1.5 md:p-2 hover:bg-gray-100 rounded-l-lg text-gray-800"
                                 disabled={item.quantity <= 1}
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <span className="px-4 py-2 bg-white border-x border-gray-300 min-w-[3rem] text-center text-gray-800">
+                              <span className="px-2 md:px-4 py-1.5 md:py-2 bg-white border-x border-gray-300 min-w-[2rem] md:min-w-[3rem] text-center text-xs md:text-sm text-gray-800">
                                 {item.quantity}
                               </span>
                               <button
                                 onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                className="p-2 hover:bg-gray-100 rounded-r-lg text-gray-800"
+                                className="p-1.5 md:p-2 hover:bg-gray-100 rounded-r-lg text-gray-800"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -226,8 +226,8 @@ export default function CheckoutPage() {
                           </div>
                           
                           <div className="text-right">
-                            <p className="text-sm text-gray-600">Total</p>
-                            <p className="font-bold text-gray-800">£{(convertToGBP(program.discountedPrice) * item.quantity).toFixed(2)}</p>
+                            <p className="text-xs md:text-sm text-gray-600">Total</p>
+                            <p className="font-bold text-sm md:text-base text-gray-800">£{(convertToGBP(program.discountedPrice) * item.quantity).toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
@@ -237,14 +237,14 @@ export default function CheckoutPage() {
               })}
             </div>
 
-            {/*  */}
+            {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
+              <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 sticky top-6">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6">Order Summary</h2>
 
                 {/* Customer Email */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="mb-4 md:mb-6">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
                     Email Address *
                   </label>
                   <input
@@ -252,7 +252,7 @@ export default function CheckoutPage() {
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder={user ? "Auto-filled from your account" : "Enter your email address"}
-                    className={`w-full border border-gray-300 rounded-lg text-black px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                    className={`w-full border border-gray-300 rounded-lg text-black px-2 md:px-3 py-2 text-sm md:text-base focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
                       user ? 'bg-gray-100 cursor-not-allowed' : ''
                     }`}
                     required
@@ -268,28 +268,28 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Discount Code */}
-                <div className="mb-6">
+                <div className="mb-4 md:mb-6">
                   <div className="flex gap-2 text-black">
                     <input
                       type="text"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value)}
                       placeholder="Enter discount code"
-                      className="flex-1 border rounded-lg px-3 py-2"
+                      className="flex-1 border rounded-lg px-2 md:px-3 py-2 text-sm md:text-base"
                     />
                     <button
                       onClick={applyDiscountCode}
-                      className="btn-secondary px-4"
+                      className="btn-secondary px-3 md:px-4 text-xs md:text-sm"
                       disabled={!discountCode}
                     >
                       Apply
                     </button>
                   </div>
                   {discountError && (
-                    <p className="text-red-500 text-sm mt-2">{discountError}</p>
+                    <p className="text-red-500 text-xs md:text-sm mt-2">{discountError}</p>
                   )}
                   {appliedDiscount && (
-                    <div className="flex items-center justify-between mt-2 text-green-600 text-sm">
+                    <div className="flex items-center justify-between mt-2 text-green-600 text-xs md:text-sm">
                       <span>
                         {appliedDiscount.code} ({appliedDiscount.percentage}% off)
                       </span>
@@ -304,18 +304,18 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="space-y-3 text-gray-600">
-                  <div className="flex justify-between">
+                <div className="space-y-2 md:space-y-3 text-gray-600">
+                  <div className="flex justify-between text-sm md:text-base">
                     <span>Subtotal</span>
                     <span>£{subtotal.toFixed(2)}</span>
                   </div>
                   {appliedDiscount && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-green-600 text-sm md:text-base">
                       <span>Discount</span>
                       <span>-£{discountAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="border-t pt-3 font-semibold text-gray-900 text-lg">
+                  <div className="border-t pt-2 md:pt-3 font-semibold text-gray-900 text-base md:text-lg">
                     <div className="flex justify-between">
                       <span>Total</span>
                       <span>£{finalTotal.toFixed(2)}</span>
@@ -323,15 +323,15 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <div className="mt-8">
+                <div className="mt-6 md:mt-8">
                   <button
                     onClick={handleCompleteOrder}
                     disabled={isProcessing || !customerEmail.trim()}
-                    className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full btn-primary py-2.5 md:py-3 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? (
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white mr-2"></div>
                         Processing...
                       </div>
                     ) : (
@@ -340,9 +340,9 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600">
-                    By completing the order, you agree to our <Link href="/terms" className="text-blue-500">Terms of Service</Link> and <Link href="/privacy" className="text-blue-500">Privacy Policy</Link>.
+                <div className="mt-3 md:mt-4 text-center">
+                  <p className="text-xs md:text-sm text-gray-600">
+                    By completing the order, you agree to our <Link href="/policies/terms" className="text-blue-500">Terms of Service</Link> and <Link href="/policies/privacy" className="text-blue-500">Privacy Policy</Link>.
                   </p>
                 </div>
               </div>

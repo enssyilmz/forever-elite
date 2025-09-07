@@ -57,9 +57,9 @@ export default function PrivacyPolicy() {
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">6. Contact Us</h2>
             <p className="text-responsive-sm">If you have questions about this Privacy Policy, please contact us at:</p>
             <p className="mt-2 text-responsive-sm">
-              Email: privacy@ozcanfit.com<br />
-              Address: 123 Oxford Street, London W1D 2LG, United Kingdom<br />
-              Phone: +44 20 1234 5678
+              Email: runner4ever1@gmail.com<br />
+              Address: 123 79 Old Church Road E1 0QB, United Kingdom<br />
+              Phone: +44 7718 624609
             </p>
           </section>
         </div>

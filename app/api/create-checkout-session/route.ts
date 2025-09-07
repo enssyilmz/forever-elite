@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       invoice_creation: {
         enabled: true,
         invoice_data: {
-          description: 'Ozcan Fit Training Package',
+          description: 'Forever Elite Training Package',
           metadata: {
             customer_email: customerEmail,
           },
