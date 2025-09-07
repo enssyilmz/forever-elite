@@ -12,8 +12,8 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">2. Use License</h2>
-            <p className="mb-3 md:mb-4 text-responsive-sm">Permission is granted to temporarily access the materials (information or software) on Ozcan Fit's website for personal, non-commercial viewing only.</p>
-            <p className="text-responsive-sm">This license shall automatically terminate if you violate any of these restrictions and may be terminated by Ozcan Fit at any time.</p>
+            <p className="mb-3 md:mb-4 text-responsive-sm">Permission is granted to temporarily access the materials (information or software) on Forever elite website for personal, non-commercial viewing only.</p>
+            <p className="text-responsive-sm">This license shall automatically terminate if you violate any of these restrictions and may be terminated by Forever Elite at any time.</p>
           </section>
 
           <section>
@@ -39,21 +39,21 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">5. Disclaimer</h2>
-            <p className="text-responsive-sm">The materials on Ozcan Fit's website are provided on an 'as is' basis. Ozcan Fit makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
+            <p className="text-responsive-sm">The materials on Forever Elite website are provided on an 'as is' basis. Forever Elite makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
           </section>
 
           <section>
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">6. Limitations</h2>
-            <p className="text-responsive-sm">In no event shall Ozcan Fit or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Ozcan Fit's website.</p>
+            <p className="text-responsive-sm">In no event shall Forever Elite or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Forever Elite website.</p>
           </section>
 
           <section>
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">7. Contact Information</h2>
             <p className="text-responsive-sm">If you have any questions about these Terms of Service, please contact us at:</p>
             <p className="mt-2 text-responsive-sm">
-              Email: legal@ozcanfit.com<br />
-              Address: 123 Oxford Street, London W1D 2LG, United Kingdom<br />
-              Phone: +44 20 1234 5678
+              Email: runner4ever1@gmail.com<br />
+              Address: 123 79 Old Church Road E1 0QB, United Kingdom<br />
+              Phone: +44 7718 624609
             </p>
           </section>
         </div>

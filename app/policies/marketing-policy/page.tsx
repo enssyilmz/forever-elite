@@ -53,7 +53,7 @@ export default function MarketingPolicy() {
             <h2 className="text-responsive-base md:text-responsive-lg font-semibold text-gray-800 mb-3 md:mb-4">6. Contact Us</h2>
             <p className="text-responsive-sm">If you have any questions about this Marketing Policy, please contact us at:</p>
             <p className="mt-2 text-responsive-sm">
-              Email: marketing@ozcanfit.com<br />
+              Email: runner4ever1@gmail.com<br />
             </p>
           </section>
         </div>
