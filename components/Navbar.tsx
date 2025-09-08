@@ -164,9 +164,9 @@ export default function Navbar() {
         <div className="md:hidden h-14 px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center">
-              <div className="w-8 h-8 relative overflow-hidden rounded-full border-2 border-gray-200">
+              <div className="w-14 h-14 relative overflow-hidden rounded-full">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="Logo"
                   fill
                   className="object-cover"
@@ -222,10 +222,10 @@ export default function Navbar() {
         <div className="hidden md:flex h-16 px-6 items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 relative overflow-hidden rounded-full border-2 border-gray-200 hover:border-sky-500 transition-colors">
+              <div className="w-16 h-16 relative overflow-hidden rounded-full 0">
                 <Image
-                  src="/logo.jpg"
-                  alt="Özcan-fit Logo"
+                  src="/logo.png"
+                  alt="Logo"
                   fill
                   className="object-cover"
                   priority
