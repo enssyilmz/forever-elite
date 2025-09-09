@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 // GET - List custom programs
 export async function GET(request: Request) {
   try {
-    // Next.js 15 dynamic cookies API must be awaited; provide a function
-    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -57,7 +55,7 @@ export async function GET(request: Request) {
 // POST - Create new custom program
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

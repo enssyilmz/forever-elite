@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 import { checkAdminAuth } from '@/lib/adminAuth'
 
 export async function GET() {
@@ -8,7 +7,7 @@ export async function GET() {
     const authResult = await checkAdminAuth()
     if (authResult.error) return authResult.error
     
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createSupabaseServerClient()
 
     // Try with join first
     const { data: ticketsWithUser, error: joinError } = await supabase
@@ -57,7 +56,7 @@ export async function PUT(request: Request) {
     const authResult = await checkAdminAuth()
     if (authResult.error) return authResult.error
     
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createSupabaseServerClient()
 
     const { ticketId, adminResponse, status } = await request.json()
     if (!ticketId || !adminResponse) {
