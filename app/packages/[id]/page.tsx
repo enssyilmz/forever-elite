@@ -32,6 +32,8 @@ export default function PackageDetailPage() {
     setShowSuccessModal(true)
   }
 
+  // Deletion handled inside components/ReviewSection.tsx
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',

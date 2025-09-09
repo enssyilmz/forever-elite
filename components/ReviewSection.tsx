@@ -11,6 +11,7 @@ interface ReviewSectionProps {
 
 export default function ReviewSection({ programId }: ReviewSectionProps) {
   const { user, reviews, addReview, deleteReview, toggleNavbar } = useApp()
+  const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
   
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [rating, setRating] = useState(0)
@@ -19,6 +20,7 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [confirmState, setConfirmState] = useState<{ open: boolean, reviewId: number | null }>({ open: false, reviewId: null })
 
   const programReviews = reviews.filter(review => review.program_id === programId);
 
@@ -45,19 +47,25 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
     }
   }
 
-  const handleDeleteReview = async (reviewId: number) => {
+  const confirmDelete = (reviewId: number) => {
+    setConfirmState({ open: true, reviewId })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.reviewId) return
     try {
-      await deleteReview(reviewId)
-      setModalTitle('Success');
-      setModalMessage('Your review has been deleted.');
-      setShowSuccessModal(true);
+      await deleteReview(confirmState.reviewId)
+      setModalTitle('Success')
+      setModalMessage('Your review has been deleted.')
+      setShowSuccessModal(true)
     } catch (error: any) {
-      console.error('Error deleting review:', error);
-      setModalTitle('Error');
-      setModalMessage(error.message || 'There was an error deleting your review. Please try again.');
-      setShowSuccessModal(true);
+      setModalTitle('Error')
+      setModalMessage(error.message || 'There was an error deleting your review. Please try again.')
+      setShowSuccessModal(true)
+    } finally {
+      setConfirmState({ open: false, reviewId: null })
     }
-  };
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -158,14 +166,15 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
                       />
                     ))}
                   </div>
-                  {user && user.id === review.user_id && (
+                  {user && (user.id === review.user_id || (user.email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase()) && (
                     <button
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="ml-4 text-red-500 hover:text-red-700"
+                      onClick={() => confirmDelete(review.id)}
+                      className="ml-4 text-red-600 hover:text-red-700 flex items-center gap-1 text-sm"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
                       </svg>
+                      Delete
                     </button>
                   )}
                 </div>
@@ -194,6 +203,30 @@ export default function ReviewSection({ programId }: ReviewSectionProps) {
         title={modalTitle}
         message={modalMessage}
       />
+
+      {/* Confirm Delete Modal */}
+      {confirmState.open && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setConfirmState({ open: false, reviewId: null })}>
+          <div className="bg-white rounded-lg p-5 w-full max-w-sm mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete review?</h3>
+            <p className="text-gray-600 mb-4 text-sm">Are you sure you want to delete this review? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmState({ open: false, reviewId: null })}
+                className="btn-secondary-sm px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="btn-primary-sm px-4 py-2"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

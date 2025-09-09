@@ -375,7 +375,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .from('reviews')
         .delete()
         .eq('id', reviewId)
-        .eq('user_id', user.id)
+        // allow admin via RLS/DB policies; client filters only for UX
 
       if (error) {
         console.error('Error deleting review:', error)

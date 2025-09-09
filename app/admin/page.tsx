@@ -953,7 +953,7 @@ export default function AdminPage() {
       {/* Create/Edit Program Modal */}
       {isProgramModalOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 overflow-y-auto"
+          className="fixed inset-0 bg-black/10 backdrop-blur-md flex justify-center items-center z-50 overflow-y-auto"
           onClick={() => setProgramModalOpen(false)}
         >
           <div 

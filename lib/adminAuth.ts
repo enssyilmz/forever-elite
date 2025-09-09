@@ -1,12 +1,11 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
 export async function checkAdminAuth() {
   try {
-    const supabase = createRouteHandlerClient({ cookies: () => cookies() })
+    const supabase = await createSupabaseServerClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
