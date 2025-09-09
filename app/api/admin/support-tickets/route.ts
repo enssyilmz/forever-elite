@@ -9,42 +9,17 @@ export async function GET() {
     
     const supabase = await createSupabaseServerClient()
 
-    // Try with join first
-    const { data: ticketsWithUser, error: joinError } = await supabase
-      .from('support_tickets')
-      .select(`
-        *,
-        user:user_id(
-          id,
-          email
-        )
-      `)
-      .order('created_at', { ascending: false })
 
-    if (!joinError) {
-      return NextResponse.json({ tickets: ticketsWithUser || [] })
-    }
-
-    // Fallback without join to diagnose join-related RLS issues
+    // Use admin RPC to include user emails safely
     const { data: tickets, error } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .rpc('admin_get_support_tickets')
 
     if (error) {
-      console.error('Error fetching tickets (no join):', error)
-      return NextResponse.json({ 
-        error: `Failed to fetch tickets: ${error.message || 'unknown error'}`,
-        details: error
-      }, { status: 500 })
+      console.error('Error fetching tickets via RPC:', error)
+      return NextResponse.json({ error: 'Failed to fetch tickets', details: error }, { status: 500 })
     }
 
-    console.error('Join failed, returning tickets without user join:', joinError)
-    return NextResponse.json({ 
-      tickets: tickets || [],
-      warning: 'Join to auth.users failed due to RLS/permissions; returned without user field.',
-      joinError
-    })
+    return NextResponse.json({ tickets: tickets || [] })
   } catch (error: any) {
     console.error('Error in GET /api/admin/support-tickets:', error)
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 })
