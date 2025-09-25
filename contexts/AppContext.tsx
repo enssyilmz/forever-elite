@@ -70,6 +70,10 @@ interface AppContextType {
   lastViewedSupportAt: number
   setLastViewedSupportAt: (timestamp: number) => void
   updateLastViewedSupportAt: (timestamp: number) => void
+  
+  // Custom Programs Notifications
+  lastViewedProgramsAt: number
+  updateLastViewedProgramsAt: (timestamp: number) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -84,6 +88,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lastViewedSupportAt, setLastViewedSupportAt] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     const raw = window.localStorage.getItem('ozcanfit.support.lastViewedAt')
+    return raw ? parseInt(raw, 10) : 0
+  })
+  
+  const [lastViewedProgramsAt, setLastViewedProgramsAt] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    const raw = window.localStorage.getItem('ozcanfit.programs.lastViewedAt')
     return raw ? parseInt(raw, 10) : 0
   })
 
@@ -399,6 +409,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.setItem('ozcanfit.support.lastViewedAt', timestamp.toString())
     }
   }
+  
+  // Update lastViewedProgramsAt and localStorage
+  const updateLastViewedProgramsAt = (timestamp: number) => {
+    setLastViewedProgramsAt(timestamp)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('ozcanfit.programs.lastViewedAt', timestamp.toString())
+    }
+  }
 
   return (
     <AppContext.Provider value={{
@@ -423,7 +441,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toggleNavbar,
       lastViewedSupportAt,
       setLastViewedSupportAt,
-      updateLastViewedSupportAt
+      updateLastViewedSupportAt,
+      lastViewedProgramsAt,
+      updateLastViewedProgramsAt
     }}>
       {children}
     </AppContext.Provider>
