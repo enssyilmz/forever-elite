@@ -16,7 +16,7 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
   users: AuthUserFromAdmin[]
   formatUserName: (u: AuthUserFromAdmin) => string | null
   onEdit: (p: CustomProgram) => void
-  onDelete: (id: number) => void
+  onDelete: (p: CustomProgram) => void
 }) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -74,7 +74,7 @@ export default function ProgramsTab({ programs, users, formatUserName, onEdit, o
                         <button onClick={() => onEdit(program)} className="text-blue-600 hover:text-blue-800">
                           <Edit size={16} />
                         </button>
-                        <button onClick={() => onDelete(program.id)} className="text-red-600 hover:text-red-800">
+                        <button onClick={() => onDelete(program)} className="text-red-600 hover:text-red-800">
                           <Trash2 size={16} />
                         </button>
                       </div>

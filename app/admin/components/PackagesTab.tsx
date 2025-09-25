@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit, Trash2, Package } from 'lucide-react'
+import { Edit, Trash2, Package, Plus } from 'lucide-react'
 
 interface Package {
   id: number
@@ -27,7 +27,7 @@ interface Package {
 export default function PackagesTab({ 
   packages, 
   onEdit, 
-  onDelete 
+  onDelete
 }: { 
   packages: Package[]
   onEdit: (pkg: Package) => void

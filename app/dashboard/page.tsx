@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, Suspense, useRef } from 'react'
+import { withTimeout, TimeoutError } from '@/lib/asyncUtils'
 import { supabase } from '@/utils/supabaseClient'
 import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, Menu, X } from 'lucide-react'
 import { User } from '@supabase/supabase-js'
@@ -15,6 +16,7 @@ import CommunicationPreferences from './components/CommunicationPreferences'
 import MyOrders from './components/MyOrders'
 import Favorites from './components/Favorites'
 import Support from './components/Support'
+import CustomPrograms from './components/CustomPrograms'
 
 interface Product {
   id: number;
@@ -37,7 +39,7 @@ interface SupportTicket {
 
 function DashboardContent() {
   const searchParams = useSearchParams()
-  const { user, lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
+  const { user, lastViewedSupportAt, updateLastViewedSupportAt, lastViewedProgramsAt, updateLastViewedProgramsAt, fetchCustomPrograms, customPrograms } = useApp()
   const [activeSection, setActiveSection] = useState('profile')
   const [formData, setFormData] = useState({
     firstName: '',
@@ -67,6 +69,12 @@ function DashboardContent() {
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [purchasesLoading, setPurchasesLoading] = useState(true)
   
+  // Custom programs states
+  const [customProgramsLoading, setCustomProgramsLoading] = useState(true)
+  const [hasPurchases, setHasPurchases] = useState(false)
+  const hasCustomPrograms = customPrograms.length > 0
+  
+  
   // Support ticket states
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
   const [supportLoading, setSupportLoading] = useState(true)
@@ -87,12 +95,16 @@ function DashboardContent() {
     (t) => t.admin_response_at && new Date(t.admin_response_at).getTime() > lastViewedSupportAt
   )
   
+  const hasUnreadPrograms = customPrograms.some(
+    (p) => new Date(p.created_at).getTime() > lastViewedProgramsAt
+  )
+  
   // Paylaşılan Supabase client kullan
 
   useEffect(() => {
     // Set active section from URL parameter
     const section = searchParams.get('section')
-    if (section && ['profile', 'communication', 'cart', 'orders', 'favorites', 'support'].includes(section)) {
+    if (section && ['profile', 'communication', 'cart', 'orders', 'favorites', 'support', 'programs'].includes(section)) {
       setActiveSection(section)
     }
 
@@ -101,7 +113,7 @@ function DashboardContent() {
 
     const loadUserData = async () => {
       if (user) {
-        console.log('Dashboard: Loading user data for:', user.email)
+        console.log('Dashboard: Loading user data for:', user.email, 'User ID:', user.id)
           
         // Load user data from auth.users metadata
         try {
@@ -125,17 +137,20 @@ function DashboardContent() {
           })
 
           // Load communication preferences from user_communication_preferences table
-          const { data: commPrefs } = await supabase
+          const { data: commPrefs } = await withTimeout(
+            supabase
             .from('user_communication_preferences')
             .select('*')
             .eq('user_id', user.id)
-            .single()
+            .maybeSingle(),
+            15000
+          )
             
           if (commPrefs) {
             setCommunicationPrefs({
-              phone: commPrefs.phone_notifications || false,
-              email: commPrefs.email_notifications || false,
-              sms: commPrefs.sms_notifications || false,
+              phone: commPrefs.phone_notifications || true,
+              email: commPrefs.email_notifications || true,
+              sms: commPrefs.sms_notifications || true,
             })
           }
         } catch (error) {
@@ -149,10 +164,13 @@ function DashboardContent() {
           (async () => {
             try {
               setFavoritesLoading(true)
-              const { data: favorites, error: favoritesError } = await supabase
+              const { data: favorites, error: favoritesError } = await withTimeout(
+                supabase
                 .from('user_favorites')
                 .select('product_id')
-                .eq('user_id', user.id)
+                .eq('user_id', user.id),
+                15000
+              )
 
               if (favoritesError) {
                 console.error('Error fetching favorites:', favoritesError)
@@ -181,17 +199,21 @@ function DashboardContent() {
           (async () => {
             try {
               setPurchasesLoading(true)
-              const { data: userPurchases, error: purchasesError } = await supabase
+              const { data: userPurchases, error: purchasesError } = await withTimeout(
+                supabase
                 .from('purchases')
                 .select('*')
                 .eq('user_email', user.email)
-                .order('created_at', { ascending: false })
+                .order('created_at', { ascending: false }),
+                15000
+              )
 
               if (purchasesError) {
                 console.error('dashboard: Error fetching purchases:', purchasesError)
                 setPurchases([])
               } else {
                 setPurchases(userPurchases || [])
+                setHasPurchases((userPurchases || []).length > 0)
               }
             } catch (error) {
               console.error('dashboard: Error fetching purchases:', error)
@@ -205,11 +227,14 @@ function DashboardContent() {
           (async () => {
             try {
               setSupportLoading(true)
-              const { data: tickets, error: ticketsError } = await supabase
+              const { data: tickets, error: ticketsError } = await withTimeout(
+                supabase
                 .from('support_tickets')
                 .select('*')
                 .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
+                .order('created_at', { ascending: false }),
+                15000
+              )
 
               if (ticketsError) {
                 console.error('Error fetching support tickets:', ticketsError)
@@ -223,7 +248,10 @@ function DashboardContent() {
             } finally {
               setSupportLoading(false)
             }
-          })()
+          })(),
+          
+          // Custom programs are fetched via AppContext
+          setCustomProgramsLoading(false)
         ]).catch(error => {
           console.error('Error in parallel data fetching:', error)
         })
@@ -266,6 +294,10 @@ function DashboardContent() {
       const now = Date.now()
       updateLastViewedSupportAt(now)
     }
+    if (id === 'programs') {
+      const now = Date.now()
+      updateLastViewedProgramsAt(now)
+    }
     // Close mobile sidebar when selecting a section
     setIsMobileSidebarOpen(false)
   }
@@ -300,9 +332,12 @@ function DashboardContent() {
       }
 
       // Update user metadata using Supabase Auth
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: updatedMetadata
-      })
+      const { error: updateError } = await withTimeout(
+        supabase.auth.updateUser({
+          data: updatedMetadata
+        }),
+        15000
+      )
 
       if (updateError) throw updateError
 
@@ -337,27 +372,34 @@ function DashboardContent() {
 
     try {
       // First, check if user has existing preferences
-      const { data: existingPrefs } = await supabase
+      const { data: existingPrefs } = await withTimeout(
+        supabase
         .from('user_communication_preferences')
         .select('id')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle(),
+        15000
+      )
 
       if (!existingPrefs) {
         // Create new preferences
-        const { error } = await supabase
+        const { error } = await withTimeout(
+          supabase
           .from('user_communication_preferences')
           .insert({
             user_id: user.id,
             phone_notifications: communicationPrefs.phone,
             email_notifications: communicationPrefs.email,
             sms_notifications: communicationPrefs.sms,
-          })
+          }),
+          15000
+        )
         
         if (error) throw error
       } else {
         // Update existing preferences
-        const { error } = await supabase
+        const { error } = await withTimeout(
+          supabase
           .from('user_communication_preferences')
           .update({
             phone_notifications: communicationPrefs.phone,
@@ -365,7 +407,9 @@ function DashboardContent() {
             sms_notifications: communicationPrefs.sms,
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', user.id)
+          .eq('user_id', user.id),
+          15000
+        )
         
         if (error) throw error
       }
@@ -403,7 +447,8 @@ function DashboardContent() {
     setIsSubmittingTicket(true)
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(
+        supabase
         .from('support_tickets')
         .insert({
           user_id: user.id,
@@ -412,7 +457,9 @@ function DashboardContent() {
           status: 'open',
           priority: 'normal'
         })
-        .select()
+        .select(),
+        15000
+      )
 
       if (error) throw error
 
@@ -423,11 +470,14 @@ function DashboardContent() {
       // Reset reCAPTCHA widget (handled in Support component)
       
       // Refresh tickets
-      const { data: tickets } = await supabase
+      const { data: tickets } = await withTimeout(
+        supabase
         .from('support_tickets')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
+        15000
+      )
       
       setSupportTickets(tickets || [])
       
@@ -470,6 +520,7 @@ function DashboardContent() {
     { id: 'communication', label: 'Communication Preferences', icon: Mail },
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'favorites', label: 'Favorites Products', icon: Star },
+    ...(hasCustomPrograms ? [{ id: 'programs', label: 'Custom Programs', icon: CreditCard, hasNotification: hasUnreadPrograms }] : []),
     { id: 'support', label: 'Support', icon: Headset },
     { id: 'logout', label: 'Logout', icon: LogOut }
   ]
@@ -516,6 +567,14 @@ function DashboardContent() {
           <MyOrders
             purchases={purchases}
             purchasesLoading={purchasesLoading}
+          />
+        )
+      
+      case 'programs':
+        return (
+          <CustomPrograms
+            programs={customPrograms}
+            loading={customProgramsLoading}
           />
         )
       
@@ -604,12 +663,17 @@ function DashboardContent() {
                         ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
                         : item.id === 'support' && hasUnreadSupport
                           ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
-                          : 'hover:bg-gray-50 text-gray-700'
+                          : (item as any).hasNotification
+                            ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
+                            : 'hover:bg-gray-50 text-gray-700'
                     } ${item.id === 'logout' ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                   >
                     <item.icon className="mr-3 w-4 h-4 md:w-5 md:h-5" />
                     <span className="font-medium text-responsive-sm">{item.label}</span>
                     {item.id === 'support' && hasUnreadSupport && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                    )}
+                    {(item as any).hasNotification && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
                     )}
                   </button>
@@ -629,7 +693,7 @@ function DashboardContent() {
           <div className="fixed inset-0 z-50 md:hidden">
             {/* Backdrop */}
             <div 
-              className="absolute inset-0 bg-black bg-opacity-50"
+              className="absolute inset-0 bg-opacity-20 backdrop-blur-sm"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
             
@@ -676,12 +740,17 @@ function DashboardContent() {
                           ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500' 
                           : item.id === 'support' && hasUnreadSupport
                             ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
-                            : 'hover:bg-gray-50 text-gray-700'
+                            : (item as any).hasNotification
+                              ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
+                              : 'hover:bg-gray-50 text-gray-700'
                       } ${item.id === 'logout' ? 'hover:bg-red-50 hover:text-red-600' : ''}`}
                     >
                       <item.icon className="mr-3 w-4 h-4 md:w-5 md:h-5" />
                       <span className="font-medium text-responsive-sm">{item.label}</span>
                       {item.id === 'support' && hasUnreadSupport && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                      )}
+                      {(item as any).hasNotification && (
                         <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
                       )}
                     </button>

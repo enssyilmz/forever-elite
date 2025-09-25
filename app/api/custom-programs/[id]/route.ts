@@ -74,6 +74,7 @@ export async function PUT(
       workouts
     } = body
 
+
     // Update the program
     const { data: program, error: programError } = await supabase
       .from('custom_programs')
@@ -96,14 +97,18 @@ export async function PUT(
     }
 
     // If workouts are provided, update them
-    if (workouts) {
+    if (workouts && Array.isArray(workouts)) {
       // Delete existing workouts and exercises
-      await supabase
+      const { error: deleteError } = await supabase
         .from('custom_program_workouts')
         .delete()
         .eq('program_id', programId)
 
-      // Create new workouts
+      if (deleteError) {
+        console.error('Error deleting existing workouts:', deleteError)
+      }
+
+      // Create new workouts (and exercises)
       if (workouts.length > 0) {
         const workoutPromises = workouts.map(async (workout: any) => {
           const { data: workoutData, error: workoutError } = await supabase
@@ -124,10 +129,11 @@ export async function PUT(
             return null
           }
 
+
           // Create exercises for this workout
           if (workout.exercises && workout.exercises.length > 0) {
-            const exercisePromises = workout.exercises.map((exercise: any, index: number) => {
-              return supabase
+            const exercisePromises = workout.exercises.map(async (exercise: any, index: number) => {
+              const { error: exError } = await supabase
                 .from('custom_program_exercises')
                 .insert({
                   workout_id: workoutData.id,
@@ -139,6 +145,9 @@ export async function PUT(
                   notes: exercise.notes,
                   order_index: index
                 })
+              if (exError) {
+                console.error('Error creating exercise:', exError)
+              }
             })
 
             await Promise.all(exercisePromises)
@@ -184,10 +193,16 @@ export async function DELETE(
     const { id } = await params
     const programId = parseInt(id)
     
-    // Soft delete by setting is_active to false
+    // First delete related workouts and exercises (cascade delete)
+    await supabase
+      .from('custom_program_workouts')
+      .delete()
+      .eq('program_id', programId)
+
+    // Then delete the program
     const { error } = await supabase
       .from('custom_programs')
-      .update({ is_active: false })
+      .delete()
       .eq('id', programId)
       .eq('created_by', user.id)
 

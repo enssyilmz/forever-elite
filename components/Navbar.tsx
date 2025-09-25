@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { Search, User, CreditCard, Check , Star, Eye, EyeOff, Headset } from 'lucide-react'
+import { Search, User, CreditCard, Check , Star, Eye, EyeOff, Headset, Dumbbell } from 'lucide-react'
 import ShoppingCart from './ShoppingCart'
 import SearchPackages from './SearchPackages'
 import { useApp } from '@/contexts/AppContext'
@@ -23,7 +23,7 @@ export default function Navbar() {
   const drawerRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const { getCartItemCount, isNavbarOpen, toggleNavbar, user, lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
+  const { getCartItemCount, isNavbarOpen, toggleNavbar, user, lastViewedSupportAt, updateLastViewedSupportAt, customPrograms, lastViewedProgramsAt, updateLastViewedProgramsAt } = useApp()
   const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
 
   // GOOGLE OAUTH
@@ -113,6 +113,11 @@ export default function Navbar() {
 
   const hasUnreadSupport = supportTickets.some(
     (t) => t.admin_response_at && new Date(t.admin_response_at).getTime() > lastViewedSupportAt
+  )
+
+  const hasCustomPrograms = (customPrograms?.length || 0) > 0
+  const hasUnreadPrograms = (customPrograms || []).some(
+    (p: any) => p?.created_at && new Date(p.created_at).getTime() > (lastViewedProgramsAt || 0)
   )
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -337,6 +342,30 @@ export default function Navbar() {
                   <Star className='w-4 h-4 mr-3 text-gray-600' />
                   My Favorites
                 </Link>
+
+                {hasCustomPrograms && (
+                  <Link
+                    href="/dashboard?section=programs"
+                    className={`flex items-center w-full p-3 text-left rounded transition text-responsive-sm ${
+                      hasUnreadPrograms
+                        ? 'bg-yellow-50 text-yellow-700 border-l-4 border-yellow-400'
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      if (hasUnreadPrograms) {
+                        const now = Date.now()
+                        updateLastViewedProgramsAt(now)
+                      }
+                      setTimeout(() => toggleNavbar(), 100)
+                    }}
+                  >
+                    <Dumbbell className='w-4 h-4 mr-3 text-gray-600' />
+                    <span className="flex-1">Custom Programs</span>
+                    {hasUnreadPrograms && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-white">New</span>
+                    )}
+                  </Link>
+                )}
 
                 <Link
                   href="/dashboard?section=support"

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { withTimeout } from '@/lib/asyncUtils'
 import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
@@ -143,13 +144,18 @@ export default function AdminPage() {
   })
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [packageToDelete, setPackageToDelete] = useState<any | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  
+  // Program delete modal states
+  const [isProgramDeleteModalOpen, setIsProgramDeleteModalOpen] = useState(false)
+  const [programToDelete, setProgramToDelete] = useState<CustomProgram | null>(null)
 
   const router = useRouter()
 
   const fetchUsers = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/users')
+      const response = await withTimeout(fetch('/api/admin/users'), 15000)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch users')
@@ -164,7 +170,7 @@ export default function AdminPage() {
   const fetchPrograms = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/custom-programs')
+      const response = await withTimeout(fetch('/api/custom-programs'), 15000)
       if (!response.ok) throw new Error('Failed to fetch programs')
       const data = await response.json()
       setPrograms(data.programs || [])
@@ -176,7 +182,7 @@ export default function AdminPage() {
   const fetchPurchases = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/purchases')
+      const response = await withTimeout(fetch('/api/admin/purchases'), 15000)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch purchases')
@@ -191,7 +197,7 @@ export default function AdminPage() {
   const fetchSupportTickets = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/support-tickets')
+      const response = await withTimeout(fetch('/api/admin/support-tickets'), 15000)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch support tickets')
@@ -207,7 +213,7 @@ export default function AdminPage() {
   const fetchMailLogs = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/admin/mail-logs')
+      const response = await withTimeout(fetch('/api/admin/mail-logs'), 15000)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch mail logs')
@@ -222,7 +228,7 @@ export default function AdminPage() {
   const fetchPackages = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/packages')
+      const response = await withTimeout(fetch('/api/packages'), 15000)
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to fetch packages')
@@ -237,7 +243,7 @@ export default function AdminPage() {
   const checkUserAndFetchData = async () => {
     try {
       setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await withTimeout(supabase.auth.getUser(), 15000)
       
       if (!user) {
         router.push('/')
@@ -277,11 +283,11 @@ export default function AdminPage() {
   const handleSendMail = async (subject: string, body: string, recipients: string[]) => {
     setIsSending(true)
     try {
-      const response = await fetch('/api/admin/send-bulk-mail', {
+      const response = await withTimeout(fetch('/api/admin/send-bulk-mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject, html: body, recipients })
-      })
+      }), 15000)
       const result = await response.json()
       if (!response.ok || !result.ok) {
         const reason = result?.error || 'Please check your connection or configuration.'
@@ -310,7 +316,7 @@ export default function AdminPage() {
   const openMailModal = async () => {
     setMailModalOpen(true)
     try {
-      const response = await fetch('/api/admin/users')
+      const response = await withTimeout(fetch('/api/admin/users'), 15000)
       if (!response.ok) throw new Error('Failed to fetch users')
       const data = await response.json()
       setAllUserEmails(data.users.map((u: any) => u.email))
@@ -361,22 +367,29 @@ export default function AdminPage() {
 
   const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault()
+
     try {
-      const response = await fetch('/api/custom-programs', {
+      const response = await withTimeout(fetch('/api/custom-programs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(programFormData),
-      })
+      }), 15000)
 
       if (!response.ok) throw new Error('Failed to create program')
 
       await fetchPrograms()
       setProgramModalOpen(false)
       resetProgramForm()
+      setModalTitle('Program created')
+      setModalMessage('The program has been created successfully.')
+      setShowSuccessModal(true)
     } catch (error) {
       console.error('Error creating program:', error)
+      setModalTitle('Error')
+      setModalMessage('Failed to create program. Please try again.')
+      setShowSuccessModal(true)
     }
   }
 
@@ -385,13 +398,13 @@ export default function AdminPage() {
     if (!editingProgram) return
 
     try {
-      const response = await fetch(`/api/custom-programs/${editingProgram.id}`, {
+      const response = await withTimeout(fetch(`/api/custom-programs/${editingProgram.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(programFormData),
-      })
+      }), 15000)
 
       if (!response.ok) throw new Error('Failed to update program')
 
@@ -399,24 +412,41 @@ export default function AdminPage() {
       setProgramModalOpen(false)
       setEditingProgram(null)
       resetProgramForm()
+      setModalTitle('Program updated')
+      setModalMessage('The program has been updated successfully.')
+      setShowSuccessModal(true)
     } catch (error) {
       console.error('Error updating program:', error)
+      setModalTitle('Error')
+      setModalMessage('Failed to update program. Please try again.')
+      setShowSuccessModal(true)
     }
   }
 
-  const handleDeleteProgram = async (programId: number) => {
-    if (!confirm('Are you sure you want to delete this program?')) return
+  const openProgramDeleteModal = (program: CustomProgram) => {
+    setProgramToDelete(program)
+    setIsProgramDeleteModalOpen(true)
+  }
+
+  const handleDeleteProgram = async () => {
+    if (!programToDelete) return
 
     try {
-      const response = await fetch(`/api/custom-programs/${programId}`, {
-        method: 'DELETE',
-      })
+      const response = await withTimeout(fetch(`/api/custom-programs/${programToDelete.id}`, { method: 'DELETE' }), 15000)
 
       if (!response.ok) throw new Error('Failed to delete program')
 
       await fetchPrograms()
+      setIsProgramDeleteModalOpen(false)
+      setProgramToDelete(null)
+      setModalTitle('Program deleted')
+      setModalMessage('The program has been deleted successfully.')
+      setShowSuccessModal(true)
     } catch (error) {
       console.error('Error deleting program:', error)
+      setModalTitle('Error')
+      setModalMessage('Failed to delete program.')
+      setShowSuccessModal(true)
     }
   }
 
@@ -443,20 +473,21 @@ export default function AdminPage() {
       })
     } else {
       setEditingPackage(null)
+      setIsCreating(true)
       setPackageFormData({
         title: '',
         body_fat_range: '',
         description: '',
         long_description: '',
-        features: [],
+        features: ['', '', '', ''], // Default empty features for new package
         image_url: '',
         price_usd: 0,
         price_gbp: 0,
         discounted_price_gbp: 0,
         discount_percentage: 0,
         emoji: '',
-        specifications: [],
-        recommendations: [],
+        specifications: ['', '', '', ''], // Default empty specifications for new package
+        recommendations: ['', '', ''], // Default empty recommendations for new package
         duration_weeks: 0,
         is_active: true,
         sort_order: 0
@@ -465,14 +496,13 @@ export default function AdminPage() {
     setPackageModalOpen(true)
   }
 
-  const handleUpdatePackage = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleUpdatePackage = async (updatedData: any) => {
     try {
-      const response = await fetch(`/api/admin/packages/${editingPackage?.id}`, {
+      const response = await withTimeout(fetch(`/api/admin/packages/${editingPackage?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(packageFormData)
-      })
+        body: JSON.stringify(updatedData)
+      }), 15000)
       if (!response.ok) throw new Error('Failed to update package')
       await fetchPackages()
       setPackageModalOpen(false)
@@ -487,12 +517,75 @@ export default function AdminPage() {
     }
   }
 
+  const handleCreatePackage = async (data: any) => {
+    // Validation: all fields must be filled
+    const requiredStringFields = ['title','body_fat_range','description','long_description','emoji','image_url']
+    for (const f of requiredStringFields) {
+      if (!data[f] || String(data[f]).trim().length === 0) {
+        setModalTitle('Validation error')
+        setModalMessage(`Please fill the field: ${f}`)
+        setShowSuccessModal(true)
+        return
+      }
+    }
+    const requiredNumberFields = ['price_usd','price_gbp','discounted_price_gbp','discount_percentage','duration_weeks','sort_order']
+    for (const f of requiredNumberFields) {
+      if (data[f] === undefined || data[f] === null || Number.isNaN(Number(data[f]))) {
+        setModalTitle('Validation error')
+        setModalMessage(`Please provide a valid number for: ${f}`)
+        setShowSuccessModal(true)
+        return
+      }
+    }
+    
+    // Validate features, specifications, recommendations arrays - all must be non-empty
+    if (data.features && data.features.some((f: string) => !f || f.trim().length === 0)) {
+      setModalTitle('Validation error')
+      setModalMessage('All feature fields must be filled')
+      setShowSuccessModal(true)
+      return
+    }
+    if (data.specifications && data.specifications.some((s: string) => !s || s.trim().length === 0)) {
+      setModalTitle('Validation error')
+      setModalMessage('All specification fields must be filled')
+      setShowSuccessModal(true)
+      return
+    }
+    if (data.recommendations && data.recommendations.some((r: string) => !r || r.trim().length === 0)) {
+      setModalTitle('Validation error')
+      setModalMessage('All recommendation fields must be filled')
+      setShowSuccessModal(true)
+      return
+    }
+
+    try {
+      const response = await withTimeout(fetch('/api/admin/packages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }), 15000)
+      if (!response.ok) {
+        const e = await response.json().catch(() => ({}))
+        throw new Error(e.error || 'Failed to create package')
+      }
+      await fetchPackages()
+      setPackageModalOpen(false)
+      setIsCreating(false)
+      setModalTitle('Package created')
+      setModalMessage('The package has been created successfully.')
+      setShowSuccessModal(true)
+    } catch (error) {
+      console.error('Error creating package:', error)
+      setModalTitle('Error')
+      setModalMessage('Failed to create package.')
+      setShowSuccessModal(true)
+    }
+  }
+
   const handleDeletePackage = async () => {
     if (!packageToDelete) return
     try {
-      const response = await fetch(`/api/admin/packages/${packageToDelete.id}`, {
-        method: 'DELETE'
-      })
+      const response = await withTimeout(fetch(`/api/admin/packages/${packageToDelete.id}`, { method: 'DELETE' }), 15000)
       if (!response.ok) throw new Error('Failed to delete package')
       await fetchPackages()
       setIsDeleteModalOpen(false)
@@ -745,6 +838,15 @@ export default function AdminPage() {
                 Create Custom Program
               </button>
             )}
+            {activeTab === 'packages' && (
+              <button
+                onClick={() => openPackageModal()}
+                className="btn-tertiary-sm flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Add Package
+              </button>
+            )}
 
           </div>
         </div>
@@ -907,13 +1009,13 @@ export default function AdminPage() {
           <PackagesTab 
             packages={packages} 
             onEdit={openPackageModal} 
-            onDelete={openDeleteModal} 
+            onDelete={openDeleteModal}
           />
         )}
 
         {/* Programs Tab */}
         {activeTab === 'programs' && (
-          <ProgramsTab programs={programs} users={users} formatUserName={formatUserName} onEdit={openProgramModal} onDelete={handleDeleteProgram} />
+          <ProgramsTab programs={programs} users={users} formatUserName={formatUserName} onEdit={openProgramModal} onDelete={openProgramDeleteModal} />
         )}
 
         {/* Purchases Tab */}
@@ -1245,8 +1347,11 @@ export default function AdminPage() {
 
       <PackageModal
         isOpen={isPackageModalOpen}
-        onClose={() => setPackageModalOpen(false)}
-        onSubmit={handleUpdatePackage}
+        onClose={() => {
+          setPackageModalOpen(false)
+          setIsCreating(false)
+        }}
+        onSubmit={isCreating ? handleCreatePackage : handleUpdatePackage}
         formData={packageFormData}
         setFormData={setPackageFormData}
         isEditing={!!editingPackage}
@@ -1259,6 +1364,15 @@ export default function AdminPage() {
         title="Delete Package"
         message="Are you sure you want to delete this package? This action cannot be undone."
         itemName={packageToDelete?.title}
+      />
+
+      <DeleteModal
+        isOpen={isProgramDeleteModalOpen}
+        onClose={() => setIsProgramDeleteModalOpen(false)}
+        onConfirm={handleDeleteProgram}
+        title="Delete Program"
+        message="Are you sure you want to delete this program? This action cannot be undone."
+        itemName={programToDelete?.title}
       />
       
     </div>

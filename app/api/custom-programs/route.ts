@@ -26,15 +26,15 @@ export async function GET(request: Request) {
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
+      // Ensure stable ordering for nested relations
+      .order('day_number', { ascending: true, foreignTable: 'custom_program_workouts' })
+      .order('order_index', { ascending: true, foreignTable: 'custom_program_workouts.custom_program_exercises' })
 
-    // If admin is requesting specific user's programs
+    // If admin is requesting specific user's programs (for admin panel)
     if (isAdmin && userId) {
       query = query.eq('user_id', userId)
-    } else if (isAdmin) {
-      // Admin can see all programs
-      // No additional filter needed
     } else {
-      // Regular users can only see their own programs
+      // All users (including admin) can only see their own programs when no userId specified
       query = query.eq('user_id', user.id)
     }
 
@@ -79,6 +79,7 @@ export async function POST(request: Request) {
       notes,
       workouts = []
     } = body
+
 
     if (!title || !user_id) {
       return NextResponse.json({ error: 'Title and user_id are required' }, { status: 400 })
@@ -128,8 +129,8 @@ export async function POST(request: Request) {
 
         // Create exercises for this workout
         if (workout.exercises && workout.exercises.length > 0) {
-          const exercisePromises = workout.exercises.map((exercise: any, index: number) => {
-            return supabase
+          const exercisePromises = workout.exercises.map(async (exercise: any, index: number) => {
+            const { error: exError } = await supabase
               .from('custom_program_exercises')
               .insert({
                 workout_id: workoutData.id,
@@ -141,6 +142,10 @@ export async function POST(request: Request) {
                 notes: exercise.notes,
                 order_index: index
               })
+
+            if (exError) {
+              console.error('Error creating exercise:', exError)
+            }
           })
 
           await Promise.all(exercisePromises)
