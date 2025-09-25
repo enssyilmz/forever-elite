@@ -37,8 +37,7 @@ interface SupportTicket {
 
 function DashboardContent() {
   const searchParams = useSearchParams()
-  const { lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
-  const [user, setUser] = useState<User | null>(null)
+  const { user, lastViewedSupportAt, updateLastViewedSupportAt } = useApp()
   const [activeSection, setActiveSection] = useState('profile')
   const [formData, setFormData] = useState({
     firstName: '',
@@ -100,166 +99,139 @@ function DashboardContent() {
     // Check for body fat result from localStorage
     const savedBodyFat = localStorage.getItem('bodyFatResult')
 
-    const getUser = async () => {
-      try {
-        console.log('Dashboard: Getting user...')
-        
-        // Get both session and user data
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error('Dashboard Session error:', sessionError)
-        }
-
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-        if (userError) {
-          console.error('Dashboard User error:', userError)
-        }
-
-        // Try to get user from session first, then from getUser
-        const currentUser = user || session?.user
-        console.log('Dashboard: Current user:', currentUser)
-        
-        if (currentUser) {
-          setUser(currentUser)
+    const loadUserData = async () => {
+      if (user) {
+        console.log('Dashboard: Loading user data for:', user.email)
           
-          // Load user data from auth.users metadata
-          try {
-            // Extract names from user metadata
-            const fullName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || ''
-            const nameParts = fullName.split(' ')
-            const firstName = currentUser.user_metadata?.first_name || nameParts[0] || ''
-            const lastName = currentUser.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
-            
-            setFormData({
-              firstName: firstName,
-              lastName: lastName,
-              email: currentUser.email || '',
-              phone: currentUser.user_metadata?.phone || currentUser.user_metadata?.phone_number || '',
-              birthdate: currentUser.user_metadata?.birthdate || currentUser.user_metadata?.birth_date || '',
-              gender: currentUser.user_metadata?.gender || '',
-              bodyFat: savedBodyFat || currentUser.user_metadata?.body_fat || '',
-              fullName: fullName,
-              height: currentUser.user_metadata?.height || '',
-              weight: currentUser.user_metadata?.weight || ''
-            })
+        // Load user data from auth.users metadata
+        try {
+          // Extract names from user metadata
+          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || ''
+          const nameParts = fullName.split(' ')
+          const firstName = user.user_metadata?.first_name || nameParts[0] || ''
+          const lastName = user.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
+          
+          setFormData({
+            firstName: firstName,
+            lastName: lastName,
+            email: user.email || '',
+            phone: user.user_metadata?.phone || user.user_metadata?.phone_number || '',
+            birthdate: user.user_metadata?.birthdate || user.user_metadata?.birth_date || '',
+            gender: user.user_metadata?.gender || '',
+            bodyFat: savedBodyFat || user.user_metadata?.body_fat || '',
+            fullName: fullName,
+            height: user.user_metadata?.height || '',
+            weight: user.user_metadata?.weight || ''
+          })
 
-            // Load communication preferences from user_communication_preferences table
-            const { data: commPrefs } = await supabase
-              .from('user_communication_preferences')
-              .select('*')
-              .eq('user_id', currentUser.id)
-              .single()
-              
-            if (commPrefs) {
-              setCommunicationPrefs({
-                phone: commPrefs.phone_notifications || false,
-                email: commPrefs.email_notifications || false,
-                sms: commPrefs.sms_notifications || false,
-              })
-            }
-          } catch (error) {
-            console.error('Error loading user data:', error)
+          // Load communication preferences from user_communication_preferences table
+          const { data: commPrefs } = await supabase
+            .from('user_communication_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+            
+          if (commPrefs) {
+            setCommunicationPrefs({
+              phone: commPrefs.phone_notifications || false,
+              email: commPrefs.email_notifications || false,
+              sms: commPrefs.sms_notifications || false,
+            })
           }
+        } catch (error) {
+          console.error('Error loading user data:', error)
+        }
 
 
           // Load favorites, purchases and support tickets in background
-          Promise.all([
-            // Fetch favorite products
-            (async () => {
-              try {
-                setFavoritesLoading(true)
-                const { data: favorites, error: favoritesError } = await supabase
-                  .from('user_favorites')
-                  .select('product_id')
-                  .eq('user_id', currentUser.id)
+        Promise.all([
+          // Fetch favorite products
+          (async () => {
+            try {
+              setFavoritesLoading(true)
+              const { data: favorites, error: favoritesError } = await supabase
+                .from('user_favorites')
+                .select('product_id')
+                .eq('user_id', user.id)
 
-                if (favoritesError) {
-                  console.error('Error fetching favorites:', favoritesError)
-                  setFavoriteProducts([])
-                } else {
-                  const favoriteProductIds = favorites.map((fav: any) => fav.product_id)
-                  const favoriteProgramDetails = allPrograms
-                    .filter(p => favoriteProductIds.includes(p.id))
-                    .map(p => ({
-                      id: p.id,
-                      name: p.title,
-                      description: p.bodyFatRange,
-                      emoji: p.emoji || '⭐'
-                    }))
-                  setFavoriteProducts(favoriteProgramDetails)
-                }
-              } catch (error) {
-                console.error('Error fetching favorites:', error)
+              if (favoritesError) {
+                console.error('Error fetching favorites:', favoritesError)
                 setFavoriteProducts([])
-              } finally {
-                setFavoritesLoading(false)
+              } else {
+                const favoriteProductIds = favorites.map((fav: any) => fav.product_id)
+                const favoriteProgramDetails = allPrograms
+                  .filter(p => favoriteProductIds.includes(p.id))
+                  .map(p => ({
+                    id: p.id,
+                    name: p.title,
+                    description: p.bodyFatRange,
+                    emoji: p.emoji || '⭐'
+                  }))
+                setFavoriteProducts(favoriteProgramDetails)
               }
-            })(),
+            } catch (error) {
+              console.error('Error fetching favorites:', error)
+              setFavoriteProducts([])
+            } finally {
+              setFavoritesLoading(false)
+            }
+          })(),
 
-            // Fetch purchases
-            (async () => {
-              try {
-                setPurchasesLoading(true)
-                const { data: userPurchases, error: purchasesError } = await supabase
-                  .from('purchases')
-                  .select('*')
-                  .eq('user_email', currentUser.email)
-                  .order('created_at', { ascending: false })
+          // Fetch purchases
+          (async () => {
+            try {
+              setPurchasesLoading(true)
+              const { data: userPurchases, error: purchasesError } = await supabase
+                .from('purchases')
+                .select('*')
+                .eq('user_email', user.email)
+                .order('created_at', { ascending: false })
 
-                if (purchasesError) {
-                  console.error('dashboard: Error fetching purchases:', purchasesError)
-                  setPurchases([])
-                } else {
-                  setPurchases(userPurchases || [])
-                }
-              } catch (error) {
-                console.error('dashboard: Error fetching purchases:', error)
+              if (purchasesError) {
+                console.error('dashboard: Error fetching purchases:', purchasesError)
                 setPurchases([])
-              } finally {
-                setPurchasesLoading(false)
+              } else {
+                setPurchases(userPurchases || [])
               }
-            })(),
-            
-            // Fetch support tickets
-            (async () => {
-              try {
-                setSupportLoading(true)
-                const { data: tickets, error: ticketsError } = await supabase
-                  .from('support_tickets')
-                  .select('*')
-                  .eq('user_id', currentUser.id)
-                  .order('created_at', { ascending: false })
+            } catch (error) {
+              console.error('dashboard: Error fetching purchases:', error)
+              setPurchases([])
+            } finally {
+              setPurchasesLoading(false)
+            }
+          })(),
+          
+          // Fetch support tickets
+          (async () => {
+            try {
+              setSupportLoading(true)
+              const { data: tickets, error: ticketsError } = await supabase
+                .from('support_tickets')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
 
-                if (ticketsError) {
-                  console.error('Error fetching support tickets:', ticketsError)
-                  setSupportTickets([])
-                } else {
-                  setSupportTickets(tickets || [])
-                }
-              } catch (error) {
-                console.error('Error fetching support tickets:', error)
+              if (ticketsError) {
+                console.error('Error fetching support tickets:', ticketsError)
                 setSupportTickets([])
-              } finally {
-                setSupportLoading(false)
+              } else {
+                setSupportTickets(tickets || [])
               }
-            })()
-          ]).catch(error => {
-            console.error('Error in parallel data fetching:', error)
-          })
-
-        } else {
-          setUser(null)
-        }
-      } catch (error) {
-        console.error('Error in getUser:', error)
+            } catch (error) {
+              console.error('Error fetching support tickets:', error)
+              setSupportTickets([])
+            } finally {
+              setSupportLoading(false)
+            }
+          })()
+        ]).catch(error => {
+          console.error('Error in parallel data fetching:', error)
+        })
       }
     }
 
-    getUser()
-
-    // Auth değişikliklerini AppContext dinliyor; burada ikinci bir listener kurmuyoruz
-    return () => {}
-  }, [searchParams])
+    loadUserData()
+  }, [user, searchParams])
 
   const handleLogout = async () => {
     try {
@@ -486,9 +458,8 @@ function DashboardContent() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h1 className="text-responsive-xl font-bold mb-4 text-gray-600">Access Denied</h1>
-          <p className="text-gray-600 mb-4">Please log in to access the dashboard.</p>
-          <a href="/" className="btn-primary px-4 py-2 rounded">Go Home</a>
+          <h1 className="text-responsive-xl font-bold mb-4 text-gray-600">Loading...</h1>
+          <p className="text-gray-600 mb-4">Please wait while we load your dashboard.</p>
         </div>
       </div>
     )
