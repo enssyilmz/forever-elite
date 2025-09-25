@@ -122,59 +122,45 @@ function DashboardContent() {
         if (currentUser) {
           setUser(currentUser)
           
-          // Load user data from user_registrations table
+          // Load user data from auth.users metadata
           try {
-            const { data: userData } = await supabase
-              .from('user_registrations')
+            // Extract names from user metadata
+            const fullName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || ''
+            const nameParts = fullName.split(' ')
+            const firstName = currentUser.user_metadata?.first_name || nameParts[0] || ''
+            const lastName = currentUser.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
+            
+            setFormData({
+              firstName: firstName,
+              lastName: lastName,
+              email: currentUser.email || '',
+              phone: currentUser.user_metadata?.phone || currentUser.user_metadata?.phone_number || '',
+              birthdate: currentUser.user_metadata?.birthdate || currentUser.user_metadata?.birth_date || '',
+              gender: currentUser.user_metadata?.gender || '',
+              bodyFat: savedBodyFat || currentUser.user_metadata?.body_fat || '',
+              fullName: fullName,
+              height: currentUser.user_metadata?.height || '',
+              weight: currentUser.user_metadata?.weight || ''
+            })
+
+            // Load communication preferences from user_communication_preferences table
+            const { data: commPrefs } = await supabase
+              .from('user_communication_preferences')
               .select('*')
-              .eq('email', currentUser.email)
+              .eq('user_id', currentUser.id)
               .single()
               
-            if (userData) {
-              setFormData({
-                firstName: userData.first_name || '',
-                lastName: userData.last_name || '',
-                email: userData.email || '',
-                phone: userData.phone || '',
-                birthdate: userData.birthdate || '',
-                gender: userData.gender || '',
-                bodyFat: savedBodyFat || userData.body_fat || '',
-                fullName: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-                height: userData.height || '',
-                weight: userData.weight || ''
-              })
-              
-              // İletişim tercihlerini de yükle
+            if (commPrefs) {
               setCommunicationPrefs({
-                phone: userData.comm_phone || false,
-                email: userData.comm_email || false,
-                sms: userData.comm_sms || false,
-              })
-            } else {
-              // Extract names from Google metadata
-              const fullName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || ''
-              const nameParts = fullName.split(' ')
-              const firstName = currentUser.user_metadata?.first_name || nameParts[0] || ''
-              const lastName = currentUser.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
-              
-              setFormData({
-                firstName: firstName,
-                lastName: lastName,
-                email: currentUser.email || '',
-                phone: currentUser.user_metadata?.phone || currentUser.user_metadata?.phone_number || '',
-                birthdate: currentUser.user_metadata?.birthdate || currentUser.user_metadata?.birth_date || '',
-                gender: currentUser.user_metadata?.gender || '',
-                bodyFat: savedBodyFat || '',
-                fullName: fullName,
-                height: currentUser.user_metadata?.height || '',
-                weight: currentUser.user_metadata?.weight || ''
+                phone: commPrefs.phone_notifications || false,
+                email: commPrefs.email_notifications || false,
+                sms: commPrefs.sms_notifications || false,
               })
             }
           } catch (error) {
             console.error('Error loading user data:', error)
           }
 
-          // İletişim tercihleri artık user_registrations tablosundan yükleniyor
 
           // Load favorites, purchases and support tickets in background
           Promise.all([
@@ -322,56 +308,37 @@ function DashboardContent() {
     setIsUpdating(true)
 
     try {
-      // Doğrudan formData'dan firstName ve lastName'i kullan
+      // Prepare updated user metadata
       const firstName = formData.firstName.trim()
       const lastName = formData.lastName.trim()
-
-      // Önce kayıt var mı kontrol et
-      const { data: existingUser } = await supabase
-        .from('user_registrations')
-        .select('id')
-        .eq('email', user.email)
-        .single()
-
-      if (!existingUser) {
-        // Kayıt yoksa oluştur
-        const { error: insertError } = await supabase
-          .from('user_registrations')
-          .insert({
-            id: user.id,
-            email: user.email,
-            first_name: firstName,
-            last_name: lastName,
-            phone: formData.phone,
-            birthdate: formData.birthdate,
-            gender: formData.gender,
-            height: formData.height || null,
-            weight: formData.weight || null,
-            body_fat: formData.bodyFat || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-
-        if (insertError) throw insertError
-      } else {
-        // Kayıt varsa güncelle
-        const { error: updateError } = await supabase
-          .from('user_registrations')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            phone: formData.phone,
-            birthdate: formData.birthdate,
-            gender: formData.gender,
-            height: formData.height || null,
-            weight: formData.weight || null,
-            body_fat: formData.bodyFat || null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('email', user.email)
-
-        if (updateError) throw updateError
+      
+      const updatedMetadata = {
+        ...user.user_metadata,
+        first_name: firstName,
+        last_name: lastName,
+        full_name: `${firstName} ${lastName}`.trim(),
+        phone: formData.phone,
+        phone_number: formData.phone,
+        birthdate: formData.birthdate,
+        birth_date: formData.birthdate,
+        gender: formData.gender,
+        height: formData.height || null,
+        weight: formData.weight || null,
+        body_fat: formData.bodyFat || null
       }
+
+      // Update user metadata using Supabase Auth
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: updatedMetadata
+      })
+
+      if (updateError) throw updateError
+
+      // Update local state
+      setFormData(prev => ({
+        ...prev,
+        fullName: `${firstName} ${lastName}`.trim()
+      }))
 
       showPopup('Success', 'Profile updated successfully!')
     } catch (error) {
@@ -397,18 +364,39 @@ function DashboardContent() {
     setMessage('')
 
     try {
-      const { error } = await supabase
-        .from('user_registrations')
-        .update({
-          comm_phone: communicationPrefs.phone,
-          comm_email: communicationPrefs.email,
-          comm_sms: communicationPrefs.sms,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', user.email)
-        .select()
+      // First, check if user has existing preferences
+      const { data: existingPrefs } = await supabase
+        .from('user_communication_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!existingPrefs) {
+        // Create new preferences
+        const { error } = await supabase
+          .from('user_communication_preferences')
+          .insert({
+            user_id: user.id,
+            phone_notifications: communicationPrefs.phone,
+            email_notifications: communicationPrefs.email,
+            sms_notifications: communicationPrefs.sms,
+          })
         
-      if (error) throw error
+        if (error) throw error
+      } else {
+        // Update existing preferences
+        const { error } = await supabase
+          .from('user_communication_preferences')
+          .update({
+            phone_notifications: communicationPrefs.phone,
+            email_notifications: communicationPrefs.email,
+            sms_notifications: communicationPrefs.sms,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id)
+        
+        if (error) throw error
+      }
       
       showPopup('Success', 'Communication preferences saved successfully!')
     } catch (error) {
