@@ -104,29 +104,20 @@ function DashboardContent() {
       try {
         console.log('Dashboard: Getting user...')
         
-        // Get both session and user data with better error handling
+        // Get both session and user data
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         if (sessionError) {
           console.error('Dashboard Session error:', sessionError)
-          // Don't return early, try getUser as fallback
         }
 
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         if (userError) {
           console.error('Dashboard User error:', userError)
-          // Don't return early, try session as fallback
         }
 
         // Try to get user from session first, then from getUser
         const currentUser = user || session?.user
         console.log('Dashboard: Current user:', currentUser)
-
-        // If no user found, redirect to login
-        if (!currentUser) {
-          console.log('Dashboard: No authenticated user found, redirecting to login')
-          window.location.href = '/'
-          return
-        }
         
         if (currentUser) {
           setUser(currentUser)
@@ -136,7 +127,7 @@ function DashboardContent() {
             const { data: userData } = await supabase
               .from('user_registrations')
               .select('*')
-              .eq('id', currentUser.id)
+              .eq('email', currentUser.email)
               .single()
               
             if (userData) {
@@ -327,11 +318,7 @@ function DashboardContent() {
   }
 
   const handleUpdate = async () => {
-    if (!user) {
-      showPopup('Error', 'User not authenticated. Please refresh the page and try again.')
-      return
-    }
-    
+    if (!user) return
     setIsUpdating(true)
 
     try {
@@ -339,11 +326,11 @@ function DashboardContent() {
       const firstName = formData.firstName.trim()
       const lastName = formData.lastName.trim()
 
-      // Use user ID instead of email for better security with RLS
+      // Önce kayıt var mı kontrol et
       const { data: existingUser } = await supabase
         .from('user_registrations')
         .select('id')
-        .eq('id', user.id)
+        .eq('email', user.email)
         .single()
 
       if (!existingUser) {
@@ -381,7 +368,7 @@ function DashboardContent() {
             body_fat: formData.bodyFat || null,
             updated_at: new Date().toISOString()
           })
-          .eq('id', user.id)
+          .eq('email', user.email)
 
         if (updateError) throw updateError
       }
