@@ -109,7 +109,7 @@ function DashboardContent() {
     }
 
     // Check for body fat result from localStorage
-    const savedBodyFat = localStorage.getItem('bodyFatResult')
+  const savedBodyFat = typeof window !== 'undefined' ? localStorage.getItem('bodyFatResult') : null
 
     const loadUserData = async () => {
       if (user) {
@@ -123,6 +123,28 @@ function DashboardContent() {
           const firstName = user.user_metadata?.first_name || nameParts[0] || ''
           const lastName = user.user_metadata?.last_name || nameParts.slice(1).join(' ') || ''
           
+          // Ek olarak user_profiles tablosundan body_fat, height, weight çek
+          let profileBodyFat: string | null = null
+          let profileHeight: string | null = null
+          let profileWeight: string | null = null
+          try {
+            const { data: profile } = await withTimeout(
+              supabase
+                .from('user_profiles')
+                .select('body_fat, height, weight')
+                .eq('user_id', user.id)
+                .maybeSingle(),
+              10000
+            )
+            if (profile) {
+              profileBodyFat = profile.body_fat !== null ? profile.body_fat.toString() : null
+              profileHeight = profile.height !== null ? profile.height.toString() : null
+              profileWeight = profile.weight !== null ? profile.weight.toString() : null
+            }
+          } catch (e) {
+            // sessiz geç
+          }
+
           setFormData({
             firstName: firstName,
             lastName: lastName,
@@ -130,10 +152,10 @@ function DashboardContent() {
             phone: user.user_metadata?.phone || user.user_metadata?.phone_number || '',
             birthdate: user.user_metadata?.birthdate || user.user_metadata?.birth_date || '',
             gender: user.user_metadata?.gender || '',
-            bodyFat: savedBodyFat || user.user_metadata?.body_fat || '',
+            bodyFat: profileBodyFat || savedBodyFat || user.user_metadata?.body_fat || '',
             fullName: fullName,
-            height: user.user_metadata?.height || '',
-            weight: user.user_metadata?.weight || ''
+            height: profileHeight || user.user_metadata?.height || '',
+            weight: profileWeight || user.user_metadata?.weight || ''
           })
 
           // Load communication preferences from user_communication_preferences table
