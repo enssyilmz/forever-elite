@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useApp } from '@/contexts/AppContext'
 
 interface SuggestionsFormProps {
   packageId: number
   packageTitle: string
   onSuccess: () => void
+  onError: (message: string) => void
 }
 
 const suggestionOptions = [
@@ -16,7 +18,8 @@ const suggestionOptions = [
   "This product should have different alternatives"
 ]
 
-export default function SuggestionsForm({ packageId, packageTitle, onSuccess }: SuggestionsFormProps) {
+export default function SuggestionsForm({ packageId, packageTitle, onSuccess, onError }: SuggestionsFormProps) {
+  const { user } = useApp()
   const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -32,7 +35,7 @@ export default function SuggestionsForm({ packageId, packageTitle, onSuccess }: 
     e.preventDefault()
     
     if (selectedSuggestions.length === 0) {
-      alert('Please select at least one suggestion')
+      onError('Please select at least one suggestion.')
       return
     }
 
@@ -45,21 +48,25 @@ export default function SuggestionsForm({ packageId, packageTitle, onSuccess }: 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          packageId,
-          packageTitle,
-          suggestions: selectedSuggestions
+          package_id: packageId,
+          package_title: packageTitle,
+          suggestions: selectedSuggestions,
+          user_id: user?.id || null,
+          user_email: user?.email || null
         })
       })
+
+      const data = await response.json()
 
       if (response.ok) {
         setSelectedSuggestions([])
         onSuccess()
       } else {
-        alert('Failed to submit suggestions. Please try again.')
+        onError(data.error || 'Failed to submit suggestions. Please try again.')
       }
     } catch (error) {
       console.error('Error submitting suggestions:', error)
-      alert('Failed to submit suggestions. Please try again.')
+      onError('Failed to submit suggestions. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
