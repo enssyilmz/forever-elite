@@ -30,6 +30,8 @@ export default function BodyFatCalculator() {
   const [isSaving, setIsSaving] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [hasCalculated, setHasCalculated] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [existingProfile, setExistingProfile] = useState<null | { body_fat: number | null, height: number | null, weight: number | null, updated_at: string | null }>(null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -39,6 +41,29 @@ export default function BodyFatCalculator() {
     getUser()
   }, [supabase.auth])
 
+  // Fetch existing profile once user is known
+  useEffect(() => {
+    if (!user) return
+    const fetchProfile = async () => {
+      setProfileLoading(true)
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('body_fat, height, weight, updated_at')
+        .eq('user_id', user.id)
+        .single()
+      if (!error && data) {
+        setExistingProfile({
+          body_fat: data.body_fat,
+            height: data.height,
+            weight: data.weight,
+            updated_at: data.updated_at
+        })
+      }
+      setProfileLoading(false)
+    }
+    fetchProfile()
+  }, [user])
+
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
     setModalMessage(message)
@@ -47,16 +72,16 @@ export default function BodyFatCalculator() {
 
   const getCategory = (bf: number, gender: string) => {
     if (gender === 'male') {
-      if (bf < 6) return 'Essential Fat'
-      if (bf < 14) return 'Athletes'
-      if (bf < 18) return 'Fitness'
-      if (bf < 25) return 'Average'
+      if (bf <= 5) return 'Essential Fat'
+      if (bf <= 13) return 'Athletes'
+      if (bf <= 17) return 'Fitness'
+      if (bf <= 24) return 'Average'
       return 'Obese'
     } else {
-      if (bf < 14) return 'Essential Fat'
-      if (bf < 21) return 'Athletes'
-      if (bf < 25) return 'Fitness'
-      if (bf < 32) return 'Average'
+      if (bf <= 13) return 'Essential Fat'
+      if (bf <= 20) return 'Athletes'
+      if (bf <= 24) return 'Fitness'
+      if (bf <= 31) return 'Average'
       return 'Obese'
     }
   }
@@ -78,6 +103,11 @@ export default function BodyFatCalculator() {
       return
     }
 
+    if (gender === 'female' && unit === 'us' && (!hipFeet || !hipInches)) {
+      showPopup('Missing Information', 'Hip measurements are required for female calculations')
+      return
+    }
+
     if (unit === 'metric') {
       h = parseFloat(height)
       w = parseFloat(weight)
@@ -87,11 +117,6 @@ export default function BodyFatCalculator() {
     } else {
       if (!heightFeet || !heightInches || !neckFeet || !neckInches || !waistFeet || !waistInches) {
         showPopup('Missing Information', 'Please fill in all measurement fields')
-        return
-      }
-      
-      if (gender === 'female' && (!hipFeet || !hipInches)) {
-        showPopup('Missing Information', 'Hip measurements are required for female calculations')
         return
       }
 
@@ -113,8 +138,10 @@ export default function BodyFatCalculator() {
     let bodyFat: number
 
     if (gender === 'male') {
+      // Original US Navy Body Fat formula for men
       bodyFat = 495 / (1.0324 - 0.19077 * Math.log10(ws - n) + 0.15456 * Math.log10(h)) - 450
     } else {
+      // Original US Navy Body Fat formula for women  
       bodyFat = 495 / (1.29579 - 0.35004 * Math.log10(ws + hp - n) + 0.221 * Math.log10(h)) - 450
     }
 
@@ -158,47 +185,85 @@ export default function BodyFatCalculator() {
     try {
       const bfRounded = result
 
-      const { error: logError } = await supabase
-        .from('body_fat_logs')
-        .insert({
-          user_id: user.id,
-          user_email: user.email,
-          body_fat_percentage: bfRounded,
-        })
-
-      if (logError) {
-        throw new Error(`Failed to log result: ${logError.message}`)
-      }
-
+      // Try to update existing user registration first
       const { data: existingUser, error: fetchError } = await supabase
-        .from('user_registrations')
-        .select('id')
-        .eq('email', user.email)
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
         .single()
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError
+      // Özel durum: tablo henüz oluşturulmamışsa (migration uygulanmadı)
+      if (fetchError && (fetchError.code === '42P01' || (fetchError.message && fetchError.message.includes('user_profiles')))) {
+        console.error('Missing table user_profiles. Apply migration 20250926130000_create_user_profiles.sql')
+        throw new Error('Profil tablosu (user_profiles) henüz oluşturulmamış. Supabase migration\'ı çalıştırmalısın: 20250926130000_create_user_profiles.sql')
+      }
+
+      // Only log non-empty errors that are not "no rows found" (PGRST116 = no rows)
+      if (fetchError && fetchError.code && fetchError.code !== 'PGRST116') {
+        console.error('Fetch error:', fetchError.message || fetchError)
+        throw new Error(`Failed to check existing profile: ${fetchError.message || 'Unknown error'}`)
       }
 
       if (existingUser) {
+        // Update existing record
         const { error: updateError } = await supabase
-          .from('user_registrations')
-          .update({ body_fat: bfRounded.toString(), updated_at: new Date().toISOString() })
-          .eq('email', user.email)
-        if (updateError) throw updateError
-      } else {
-        const { error: insertError } = await supabase
-          .from('user_registrations')
-          .insert({ 
-            email: user.email, 
-            body_fat: bfRounded.toString(),
-            updated_at: new Date().toISOString()
+          .from('user_profiles')
+          .update({ 
+            body_fat: bfRounded, 
+            weight: weight ? (unit === 'metric' ? parseFloat(weight) : parseFloat(weight) * 0.453592) : null,
+            height: height ? (unit === 'metric' ? parseFloat(height) : ((parseFloat(heightFeet || '0') * 12 + parseFloat(heightInches || '0')) * 2.54)) : null
           })
-        if (insertError) throw insertError
+          .eq('user_id', user.id)
+        
+        if (updateError) {
+          console.error('Update error:', updateError)
+          throw new Error(`Failed to update profile: ${updateError.message}`)
+        }
+      } else {
+        // Create new record
+        const metricHeight = unit === 'metric' 
+          ? (height ? parseFloat(height) : null) 
+          : (heightFeet || heightInches ? ((parseFloat(heightFeet || '0') * 12 + parseFloat(heightInches || '0')) * 2.54) : null)
+
+        const metricWeight = unit === 'metric'
+          ? (weight ? parseFloat(weight) : null)
+          : (weight ? parseFloat(weight) * 0.453592 : null)
+
+        const { error: insertError } = await supabase
+          .from('user_profiles')
+          .insert({ 
+            user_id: user.id,
+            email: user.email, 
+            body_fat: bfRounded,
+            height: metricHeight,
+            weight: metricWeight
+          })
+        
+        if (insertError) {
+          console.error('Insert error:', insertError)
+          throw new Error(`Failed to create profile: ${insertError.message}`)
+        }
       }
 
       showPopup('Saved', 'Your body fat has been saved successfully.')
       setHasCalculated(false)
+      try {
+        localStorage.setItem('bodyFatResult', bfRounded.toString())
+      } catch (_) {}
+      // Refresh profile panel
+      const { data: refreshed, error: refreshError } = await supabase
+        .from('user_profiles')
+        .select('body_fat, height, weight, updated_at')
+        .eq('user_id', user.id)
+        .single()
+      if (!refreshError && refreshed) {
+        setExistingProfile({
+          body_fat: refreshed.body_fat,
+          height: refreshed.height,
+          weight: refreshed.weight,
+          updated_at: refreshed.updated_at
+        })
+      }
     } catch (error) {
       const err = error as { message?: string }
       console.error('Error saving to profile:', err)
@@ -213,6 +278,31 @@ export default function BodyFatCalculator() {
         <div className="min-h-screen py-4 px-2">
           <div className="max-w-8xl mx-auto">
             <h2 className="text-responsive-2xl font-bold mb-4 md:mb-6 text-center text-gray-800">Body Fat Calculator</h2>
+
+            {user && (
+              <div className="max-w-lg mx-auto mb-6">
+                <div className="bg-white border border-sky-100 rounded-xl p-4 shadow-md flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Last Saved Profile</span>
+                    {profileLoading && <span className="text-xs text-gray-400">Loading...</span>}
+                  </div>
+                  {existingProfile ? (
+                    <div className="grid grid-cols-2 gap-y-1 text-sm text-gray-600">
+                      <span className="font-medium">Body Fat:</span>
+                      <span>{existingProfile.body_fat !== null ? `${existingProfile.body_fat}%` : '-'}</span>
+                      <span className="font-medium">Height:</span>
+                      <span>{existingProfile.height !== null ? `${existingProfile.height} cm` : '-'}</span>
+                      <span className="font-medium">Weight:</span>
+                      <span>{existingProfile.weight !== null ? `${existingProfile.weight} kg` : '-'}</span>
+                      <span className="font-medium">Updated:</span>
+                      <span>{existingProfile.updated_at ? new Date(existingProfile.updated_at).toLocaleString() : '-'}</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Henüz kayıt yok. Hesaplayıp kaydedince burada görünecek.</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
               <div className="order-2 lg:order-1 lg:col-span-2 bg-white rounded-2xl shadow-lg p-2 md:p-4 text-black">
