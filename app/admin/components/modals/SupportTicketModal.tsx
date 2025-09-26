@@ -89,11 +89,11 @@ export default function SupportTicketModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/10 backdrop-blur-md flex items-center justify-center z-50 p-2 md:p-4"
+      className="fixed inset-0 bg-black/10 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-3 md:p-4"
       onClick={handleOverlayClick}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] md:max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-3 md:p-6 border-b flex-shrink-0">
+      <div className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl w-full max-h-[95vh] md:max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b flex-shrink-0">
           <h2 className="text-responsive-lg font-semibold text-gray-900">
             Support Ticket #{ticket.id}
           </h2>
@@ -105,14 +105,14 @@ export default function SupportTicketModal({
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
           {/* Ticket Details and User Message - Two Column Layout */}
-          <div className="p-3 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 flex-shrink-0">
+          <div className="p-3 sm:p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 flex-shrink-0">
             {/* Left Column - Ticket Details */}
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h3 className="text-responsive-base font-medium text-gray-900">Ticket Details</h3>
               
-              <div className="space-y-2">
+                <div className="space-y-1 sm:space-y-2">
                 <div>
                   <span className="text-responsive-sm text-gray-600">Subject:</span>
                   <p className="text-responsive-sm font-medium text-gray-900 mt-1">{ticket.subject}</p>
@@ -159,42 +159,42 @@ export default function SupportTicketModal({
             </div>
 
             {/* Right Column - User Message */}
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h3 className="text-responsive-base font-medium text-gray-900">User Message</h3>
-              <div className="bg-gray-50 p-3 md:p-4 rounded-md min-h-[120px]">
+              <div className="bg-gray-50 p-2 sm:p-3 md:p-4 rounded-md min-h-[100px] sm:min-h-[120px]">
                 <p className="text-responsive-sm text-gray-800 whitespace-pre-wrap">{ticket.content}</p>
               </div>
             </div>
           </div>
 
           {/* Admin Response Section */}
-          <div className="flex-1 flex flex-col p-3 md:p-6 border-t">
-            <h3 className="text-responsive-base font-medium text-gray-900 mb-3 md:mb-4">Admin Response</h3>
+          <div className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 border-t min-h-0">
+            <h3 className="text-responsive-base font-medium text-gray-900 mb-2 sm:mb-3 md:mb-4">Admin Response</h3>
             
             {/* Response Form */}
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-              <div className="flex-1 flex flex-col">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 flex flex-col min-h-0">
                 <textarea
                   value={adminResponse}
                   onChange={(e) => setAdminResponse(e.target.value)}
-                  className="flex-1 w-full input-responsive text-black resize-none"
+                  className="flex-1 w-full input-responsive-sm text-black resize-none min-h-[120px]"
                   placeholder="Type your response here..."
                   required
                 />
               </div>
 
-              <div className="flex justify-end gap-2 md:gap-3 pt-3 md:pt-4 border-t mt-3 md:mt-4 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 md:pt-4 border-t mt-3 md:mt-4 flex-shrink-0">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="btn-secondary-sm px-3 py-2 md:px-4 md:py-2.5 text-xs md:text-sm"
+                  className="btn-secondary-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isResponding || !adminResponse.trim()}
-                  className="btn-primary-sm px-3 py-2 md:px-4 md:py-2.5 text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isResponding ? 'Responding...' : 'Send Response'}
                 </button>
