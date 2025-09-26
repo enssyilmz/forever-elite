@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
 import { programs } from '@/lib/packagesData' // Import from centralized file
 import { CustomProgram } from '@/lib/database.types'
@@ -74,6 +75,11 @@ interface AppContextType {
   // Custom Programs Notifications
   lastViewedProgramsAt: number
   updateLastViewedProgramsAt: (timestamp: number) => void
+
+  // Global loading bar
+  progress: number
+  startLoading: () => void
+  stopLoading: () => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -97,6 +103,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return raw ? parseInt(raw, 10) : 0
   })
 
+  // Global loading bar state
+  const [busyCount, setBusyCount] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const startLoading = () => setBusyCount((c) => c + 1)
+  const stopLoading = () => setBusyCount((c) => Math.max(0, c - 1))
+
+  useEffect(() => {
+    let intervalId: any
+    let finishTimeout: any
+    if (busyCount > 0) {
+      setProgress((p) => (p === 0 ? 10 : p))
+      intervalId = setInterval(() => {
+        setProgress((p) => Math.min(p + 12 + Math.random() * 10, 90))
+      }, 350)
+    } else {
+      if (progress > 0) {
+        setProgress(100)
+        finishTimeout = setTimeout(() => setProgress(0), 250)
+      }
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      if (finishTimeout) clearTimeout(finishTimeout)
+    }
+  }, [busyCount])
+
+  // Route change pulse
+  const pathname = usePathname()
+  useEffect(() => {
+    startLoading()
+    const t = setTimeout(() => stopLoading(), 600)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
   // Get user, favorites, reviews, and custom programs on mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -110,7 +151,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       setUser(user)
 
-      if (user) {
+      const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+      if (user && !isAdminRoute) {
         await Promise.all([
           fetchFavorites(),
           fetchReviews(),
@@ -123,10 +165,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
          const {
        data: { subscription },
-     } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+    } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       setUser(session?.user ?? null)
       
-      if (session?.user) {
+      const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+      if (session?.user && !isAdminRoute) {
         await Promise.all([
           fetchFavorites(),
           fetchReviews(),
@@ -443,8 +486,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLastViewedSupportAt,
       updateLastViewedSupportAt,
       lastViewedProgramsAt,
-      updateLastViewedProgramsAt
+      updateLastViewedProgramsAt,
+      progress,
+      startLoading,
+      stopLoading
     }}>
+      {/* Global Top Loading Bar */}
+      {progress > 0 && (
+        <div className="fixed top-0 left-0 right-0 z-[60]">
+          <div className="h-1 bg-blue-500/20">
+            <div className="h-1 bg-blue-500 transition-all duration-200" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
       {children}
     </AppContext.Provider>
   )

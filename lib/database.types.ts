@@ -136,6 +136,8 @@ export interface Database {
           long_description: string | null
           features: string[]
           image_url: string | null
+          image_url_1: string | null
+          image_url_2: string | null
           price_usd: number
           price_gbp: number
           discounted_price_gbp: number | null
@@ -157,6 +159,8 @@ export interface Database {
           long_description?: string | null
           features?: string[]
           image_url?: string | null
+          image_url_1?: string | null
+          image_url_2?: string | null
           price_usd: number
           price_gbp: number
           discounted_price_gbp?: number | null
@@ -318,6 +322,8 @@ export interface Package {
   long_description: string | null
   features: string[]
   image_url: string | null
+  image_url_1: string | null
+  image_url_2: string | null
   price_usd: number
   price_gbp: number
   discounted_price_gbp: number | null

@@ -16,11 +16,19 @@ export default function PackageCard({ package: pkg }: PackageCardProps) {
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
       {/* Package Image */}
       <div className="relative h-48 sm:h-56 md:h-64 lg:h-72 bg-gradient-to-br from-sky-400 to-sky-600 flex-shrink-0">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white opacity-80">
-            {pkg.emoji}
+        {pkg.image_url_1 ? (
+          <img 
+            src={`${pkg.image_url_1}`} 
+            alt={pkg.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white opacity-80">
+              📦
+            </div>
           </div>
-        </div>
+        )}
         {/* Body Fat Range Badge */}
         <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
           <span className="bg-white text-sky-800 text-xs font-semibold px-2 py-1 sm:px-3 rounded-full">
