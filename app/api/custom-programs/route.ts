@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabaseServer'
+import { createSupabaseAdminClient } from '@/lib/supabaseAdminServer'
 
 // GET - List custom programs
 export async function GET(request: Request) {
@@ -12,33 +13,58 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('user_id')
+  const userId = searchParams.get('user_id')
+  const scope = searchParams.get('scope') // 'admin' only when called explicitly from admin panel
     const isAdmin = user.email === 'yozdzhansyonmez@gmail.com'
 
-    let query = supabase
-      .from('custom_programs')
-      .select(`
-        *,
-        custom_program_workouts (
+    let programs
+    let error
+
+    if (isAdmin && scope === 'admin') {
+      // Use service role client to bypass RLS deliberately (admin only)
+      const adminClient = createSupabaseAdminClient()
+      let adminQuery = adminClient
+        .from('custom_programs')
+        .select(`
           *,
-          custom_program_exercises (*)
-        )
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      // Ensure stable ordering for nested relations
-      .order('day_number', { ascending: true, foreignTable: 'custom_program_workouts' })
-      .order('order_index', { ascending: true, foreignTable: 'custom_program_workouts.custom_program_exercises' })
+          workouts:custom_program_workouts (
+            *,
+            exercises:custom_program_exercises (*)
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .order('day_number', { ascending: true, foreignTable: 'custom_program_workouts' })
+        .order('order_index', { ascending: true, foreignTable: 'custom_program_workouts.custom_program_exercises' })
 
-    // If admin is requesting specific user's programs (for admin panel)
-    if (isAdmin && userId) {
-      query = query.eq('user_id', userId)
+      if (userId) {
+        adminQuery = adminQuery.eq('user_id', userId)
+      }
+
+      const adminResult = await adminQuery
+      programs = adminResult.data
+      error = adminResult.error
     } else {
-      // All users (including admin) can only see their own programs when no userId specified
-      query = query.eq('user_id', user.id)
-    }
+      // Normal user path (RLS enforced)
+      const userQuery = supabase
+        .from('custom_programs')
+        .select(`
+          *,
+          workouts:custom_program_workouts (
+            *,
+            exercises:custom_program_exercises (*)
+          )
+        `)
+        .eq('is_active', true)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .order('day_number', { ascending: true, foreignTable: 'custom_program_workouts' })
+        .order('order_index', { ascending: true, foreignTable: 'custom_program_workouts.custom_program_exercises' })
 
-    const { data: programs, error } = await query
+      const userResult = await userQuery
+      programs = userResult.data
+      error = userResult.error
+    }
 
     if (error) {
       console.error('Error fetching custom programs:', error)
@@ -80,7 +106,6 @@ export async function POST(request: Request) {
       workouts = []
     } = body
 
-
     if (!title || !user_id) {
       return NextResponse.json({ error: 'Title and user_id are required' }, { status: 400 })
     }
@@ -106,7 +131,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create program' }, { status: 500 })
     }
 
-    // Create workouts if provided
+        // Create workouts if provided
     if (workouts.length > 0) {
       const workoutPromises = workouts.map(async (workout: any) => {
         const { data: workoutData, error: workoutError } = await supabase
@@ -114,10 +139,10 @@ export async function POST(request: Request) {
           .insert({
             program_id: program.id,
             day_number: parseInt(workout.day_number),
-            week_number: parseInt(workout.week_number) || 1,
+            week_number: parseInt(workout.week_number),
             workout_name: workout.workout_name,
             description: workout.description,
-            rest_time_seconds: parseInt(workout.rest_time_seconds) || 60
+            rest_time_seconds: parseInt(workout.rest_time_seconds)
           })
           .select()
           .single()
@@ -127,7 +152,7 @@ export async function POST(request: Request) {
           return null
         }
 
-        // Create exercises for this workout
+        // Create exercises if provided
         if (workout.exercises && workout.exercises.length > 0) {
           const exercisePromises = workout.exercises.map(async (exercise: any, index: number) => {
             const { error: exError } = await supabase
@@ -138,7 +163,7 @@ export async function POST(request: Request) {
                 sets: parseInt(exercise.sets),
                 reps: exercise.reps,
                 weight: exercise.weight,
-                rest_time_seconds: parseInt(exercise.rest_time_seconds) || 60,
+                rest_time_seconds: exercise.rest_time_seconds ? parseInt(exercise.rest_time_seconds) : 60,
                 notes: exercise.notes,
                 order_index: index
               })
