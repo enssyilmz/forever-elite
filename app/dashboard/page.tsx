@@ -225,7 +225,8 @@ function DashboardContent() {
                 supabase
                 .from('purchases')
                 .select('*')
-                .eq('user_email', user.email)
+                // Webhook'ta email'i lowercase kaydediyoruz; olası case farklarını engellemek için normalize
+                .eq('user_email', (user.email || '').toLowerCase())
                 .order('created_at', { ascending: false }),
                 15000
               )

@@ -174,6 +174,7 @@ export default function Navbar() {
                   src="/logo.png"
                   alt="Logo"
                   fill
+                  sizes="(max-width: 768px) 56px, 64px"
                   className="object-cover"
                   priority
                 />
@@ -232,6 +233,7 @@ export default function Navbar() {
                   src="/logo.png"
                   alt="Logo"
                   fill
+                  sizes="64px"
                   className="object-cover"
                   priority
                 />

@@ -7,6 +7,17 @@ export async function POST(request: Request) {
   try {
     const { items, customerEmail, successUrl, cancelUrl } = await request.json()
 
+    // successUrl kullanıcıdan gelmişse ve {CHECKOUT_SESSION_ID} içermiyorsa otomatik ekle
+    let finalSuccessUrl = successUrl
+    if (finalSuccessUrl) {
+      if (!finalSuccessUrl.includes('{CHECKOUT_SESSION_ID}')) {
+        const sep = finalSuccessUrl.includes('?') ? '&' : '?'
+        finalSuccessUrl = `${finalSuccessUrl}${sep}session_id={CHECKOUT_SESSION_ID}`
+      }
+    } else {
+      finalSuccessUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/confirmation?session_id={CHECKOUT_SESSION_ID}`
+    }
+
     // Validate email
     if (!customerEmail || !customerEmail.includes('@')) {
       return NextResponse.json(
@@ -35,7 +46,7 @@ export async function POST(request: Request) {
       mode: 'payment',
       line_items: lineItems,
       customer_email: customerEmail,
-      success_url: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+  success_url: finalSuccessUrl,
       cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/checkout`,
       metadata: {
         customer_email: customerEmail,

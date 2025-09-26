@@ -115,7 +115,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: stripeItems,
           customerEmail,
-          successUrl: `${window.location.origin}/checkout/confirmation`,
+          // Stripe'ın {CHECKOUT_SESSION_ID} placeholder'ını kullanarak confirmation sayfasına session_id ekleyelim
+          successUrl: `${window.location.origin}/checkout/confirmation?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/checkout`,
         }),
       })

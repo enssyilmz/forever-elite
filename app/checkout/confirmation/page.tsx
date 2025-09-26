@@ -20,6 +20,8 @@ function ConfirmationContent() {
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [reconcileStatus, setReconcileStatus] = useState<'idle' | 'running' | 'success' | 'exists' | 'error'>('idle')
+  const [reconcileMessage, setReconcileMessage] = useState('')
 
   useEffect(() => {
     if (sessionId) {
@@ -42,6 +44,76 @@ function ConfirmationContent() {
       setError('Unable to load payment details')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Localhost otomatik reconcile: webhook çalışmadığı durumlarda purchases kaydını oluştur.
+  useEffect(() => {
+    const autoReconcile = async () => {
+      if (!sessionId) return
+      if (typeof window === 'undefined') return
+      if (window.location.hostname !== 'localhost') return // sadece local
+      try {
+        setReconcileStatus('running')
+        setReconcileMessage('Local ortam algılandı, satın alım kaydı senkronize ediliyor...')
+        const res = await fetch('/api/reconcile-purchase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId })
+        })
+        const json = await res.json()
+        if (!res.ok) {
+          setReconcileStatus('error')
+          setReconcileMessage('Reconcile hata: ' + (json.error || 'Bilinmeyen hata'))
+          return
+        }
+        if (json.status === 'already_exists') {
+          setReconcileStatus('exists')
+          setReconcileMessage('Satın alım zaten kayıtlı (purchase_id: ' + json.purchase_id + ')')
+        } else if (json.status === 'reconciled') {
+          setReconcileStatus('success')
+          setReconcileMessage('Satın alım kaydedildi. (inserted: ' + json.inserted?.join(', ') + ')')
+        } else {
+          setReconcileStatus('success')
+          setReconcileMessage('Durum: ' + json.status)
+        }
+      } catch (e: any) {
+        setReconcileStatus('error')
+        setReconcileMessage('Reconcile exception: ' + e.message)
+      }
+    }
+    autoReconcile()
+  }, [sessionId])
+
+  const manualReconcile = async () => {
+    if (!sessionId) return
+    setReconcileStatus('running')
+    setReconcileMessage('Tekrar deneniyor...')
+    try {
+      const res = await fetch('/api/reconcile-purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setReconcileStatus('error')
+        setReconcileMessage('Hata: ' + (json.error || 'Bilinmeyen'))
+        return
+      }
+      if (json.status === 'already_exists') {
+        setReconcileStatus('exists')
+        setReconcileMessage('Zaten kayıtlı (purchase_id: ' + json.purchase_id + ')')
+      } else if (json.status === 'reconciled') {
+        setReconcileStatus('success')
+        setReconcileMessage('Kaydedildi (inserted: ' + json.inserted?.join(', ') + ')')
+      } else {
+        setReconcileStatus('success')
+        setReconcileMessage('Durum: ' + json.status)
+      }
+    } catch (e: any) {
+      setReconcileStatus('error')
+      setReconcileMessage('Exception: ' + e.message)
     }
   }
 
@@ -133,6 +205,31 @@ function ConfirmationContent() {
                     <strong>Order ID:</strong> {paymentDetails.id}
                   </p>
                 </div>
+                {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+                  <div className="mt-6 p-4 border rounded-lg bg-gray-50 space-y-3">
+                    <p className="text-xs text-gray-500 font-medium">Local ortam: Webhook çalışmadığı için otomatik senkron denemesi yapıldı.</p>
+                    <div className="text-xs">
+                      <span className="font-semibold">Reconcile Durumu:</span>{' '}
+                      <span className={
+                        reconcileStatus === 'success' || reconcileStatus === 'exists' ? 'text-green-600' : 
+                        reconcileStatus === 'error' ? 'text-red-600' : 'text-gray-700'
+                      }>
+                        {reconcileStatus}
+                      </span>
+                    </div>
+                    {reconcileMessage && (
+                      <div className="text-[11px] text-gray-700 break-all">{reconcileMessage}</div>
+                    )}
+                    <button
+                      onClick={manualReconcile}
+                      disabled={reconcileStatus === 'running'}
+                      className="px-3 py-1.5 text-xs rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+                    >
+                      {reconcileStatus === 'running' ? 'Bekleyin...' : 'Tekrar Senkronize Et'}
+                    </button>
+                    <p className="text-[10px] text-gray-500">Production ortamında bu kutu görünmez; gerçek kayıt Stripe webhook üzerinden gelir.</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center">
