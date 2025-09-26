@@ -6,9 +6,21 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServerClient()
     const body = await request.json()
     
-    const { packageId, packageTitle, suggestions } = body
+    // Support both camelCase (old) and snake_case (new) payloads
+    const {
+      packageId,
+      packageTitle,
+      package_id,
+      package_title,
+      suggestions,
+      user_id: providedUserId,
+      user_email: providedUserEmail,
+    } = body
 
-    if (!packageId || !packageTitle || !suggestions || !Array.isArray(suggestions)) {
+    const pkgId = packageId ?? package_id
+    const pkgTitle = packageTitle ?? package_title
+
+    if (!pkgId || !pkgTitle || !suggestions || !Array.isArray(suggestions)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -19,11 +31,11 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase
       .from('suggestions')
       .insert({
-        package_id: packageId,
-        package_title: packageTitle,
+        package_id: pkgId,
+        package_title: pkgTitle,
         suggestions: suggestions,
-        user_id: user?.id || null,
-        user_email: user?.email || null,
+        user_id: user?.id ?? providedUserId ?? null,
+        user_email: user?.email ?? providedUserEmail ?? null,
         created_at: new Date().toISOString()
       })
 

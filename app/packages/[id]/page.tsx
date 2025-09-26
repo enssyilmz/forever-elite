@@ -9,6 +9,7 @@ import ReviewSection from '@/components/ReviewSection'
 import { Package } from '@/lib/database.types'
 import SuggestionsForm from './components/SuggestionsForm'
 import ReviewModal from './components/ReviewModal'
+import ImageLightbox from './components/ImageLightbox'
 import { Edit, Heart, HeartOff, Trash2 } from 'lucide-react'
 
 export default function PackageDetailPage() {
@@ -29,6 +30,8 @@ export default function PackageDetailPage() {
     show: false,
     reviewId: null
   })
+  const [showLightbox, setShowLightbox] = useState(false)
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
 
   // Fetch package from database
   useEffect(() => {
@@ -120,6 +123,11 @@ export default function PackageDetailPage() {
     setShowDeleteConfirm({ show: false, reviewId: null })
   }
 
+  const openLightbox = (index: number) => {
+    setLightboxInitialIndex(index)
+    setShowLightbox(true)
+  }
+
   const increaseQuantity = () => setQuantity(prev => prev + 1)
   const decreaseQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1)
 
@@ -167,7 +175,8 @@ export default function PackageDetailPage() {
               {[program.image_url_1, program.image_url_2].map((imageUrl, index) => (
                 <div
                   key={index}
-                  className="aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl md:rounded-2xl overflow-hidden"
+                  className="aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl md:rounded-2xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300"
+                  onClick={() => imageUrl && openLightbox(index)}
                 >
                   {imageUrl ? (
                     <img 
@@ -354,16 +363,21 @@ export default function PackageDetailPage() {
                   activeAccordion === 'suggestions' ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                 }`}>
                   <div className="px-3 md:px-4 py-3 md:py-4">
-                    <SuggestionsForm 
-                      packageId={programId}
-                      packageTitle={program.title}
-                      onSuccess={() => {
-                        setModalTitle('Thank You!')
-                        setModalMessage('Your suggestions have been received. Thank you!')
-                        setShowSuccessModal(true)
-                        setActiveAccordion(null)
-                      }}
-                    />
+                <SuggestionsForm
+                  packageId={programId}
+                  packageTitle={program.title}
+                  onSuccess={() => {
+                    setModalTitle('Thank You!')
+                    setModalMessage('Your suggestions have been received. Thank you!')
+                    setShowSuccessModal(true)
+                    setActiveAccordion(null)
+                  }}
+                  onError={(message) => {
+                    setModalTitle('Error')
+                    setModalMessage(message)
+                    setShowSuccessModal(true)
+                  }}
+                />
                   </div>
                 </div>
               </div>
@@ -484,6 +498,14 @@ export default function PackageDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={[program.image_url_1, program.image_url_2]}
+        isOpen={showLightbox}
+        onClose={() => setShowLightbox(false)}
+        initialIndex={lightboxInitialIndex}
+      />
     </div>
   )
 } 
