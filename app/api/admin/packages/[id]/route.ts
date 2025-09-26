@@ -38,8 +38,6 @@ export async function PUT(
         discounted_price_gbp: body.discounted_price_gbp,
         discount_percentage: body.discount_percentage,
         emoji: body.emoji,
-        specifications: body.specifications,
-        recommendations: body.recommendations,
         duration_weeks: body.duration_weeks,
         is_active: body.is_active,
         sort_order: body.sort_order,

@@ -7,21 +7,28 @@ import { useApp } from '@/contexts/AppContext'
 import SuccessModal from '@/components/SuccessModal'
 import ReviewSection from '@/components/ReviewSection'
 import { Package } from '@/lib/database.types'
+import SuggestionsForm from './components/SuggestionsForm'
+import ReviewModal from './components/ReviewModal'
+import { Edit, Heart, HeartOff, Trash2 } from 'lucide-react'
 
 export default function PackageDetailPage() {
   const params = useParams()
   const router = useRouter()
   const programId = parseInt(params.id as string)
-  const { addToCart, addToFavorites, removeFromFavorites, isFavorite, reviews } = useApp()
+  const { addToCart, addToFavorites, removeFromFavorites, isFavorite, reviews, user, deleteReview } = useApp()
   
   const [quantity, setQuantity] = useState(1)
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null)
-  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
   const [program, setProgram] = useState<Package | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{show: boolean, reviewId: number | null}>({
+    show: false,
+    reviewId: null
+  })
 
   // Fetch package from database
   useEffect(() => {
@@ -68,9 +75,9 @@ export default function PackageDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sky-600"></div>
-          <p className="mt-4 text-gray-600">Loading package details...</p>
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sky-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-center">Loading package details...</p>
         </div>
       </div>
     )
@@ -95,6 +102,24 @@ export default function PackageDetailPage() {
     setActiveAccordion(activeAccordion === section ? null : section)
   }
 
+  const handleDeleteReview = (reviewId: number) => {
+    setShowDeleteConfirm({ show: true, reviewId })
+  }
+
+  const confirmDeleteReview = async () => {
+    if (showDeleteConfirm.reviewId) {
+      await deleteReview(showDeleteConfirm.reviewId)
+      setShowDeleteConfirm({ show: false, reviewId: null })
+      setModalTitle('Success!')
+      setModalMessage('Your review has been deleted successfully.')
+      setShowSuccessModal(true)
+    }
+  }
+
+  const cancelDeleteReview = () => {
+    setShowDeleteConfirm({ show: false, reviewId: null })
+  }
+
   const increaseQuantity = () => setQuantity(prev => prev + 1)
   const decreaseQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1)
 
@@ -106,8 +131,14 @@ export default function PackageDetailPage() {
   const handleFavoriteToggle = () => {
     if (isFavorite(programId)) {
       removeFromFavorites(programId)
+      setModalTitle('Removed!')
+      setModalMessage('Product removed from favorites.')
+      setShowSuccessModal(true)
     } else {
       addToFavorites(programId)
+      setModalTitle('Added!')
+      setModalMessage('Product added to favorites.')
+      setShowSuccessModal(true)
     }
   }
 
@@ -130,40 +161,13 @@ export default function PackageDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
           {/* Sol Taraf - Fotoğraflar */}
-          <div className="space-y-3 md:space-y-4">
-            {/* Ana Fotoğraf */}
-            <div className={`aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 transition ${
-              isFavorite(programId) ? 'border-red-500' : 'border-transparent'
-            }`}>
-              {program.image_url_1 ? (
-                <img 
-                  src={`${program.image_url_1}`} 
-                  alt={program.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-4xl md:text-8xl text-white opacity-80">
-                    📦
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnail'ler - İki resim gösterimi */}
-            <div className="grid grid-cols-2 gap-2 md:gap-3">
+          <div>
+            {/* İki büyük resim gösterimi */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {[program.image_url_1, program.image_url_2].map((imageUrl, index) => (
-                <button
+                <div
                   key={index}
-                  className={`aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-md md:rounded-lg overflow-hidden border-2 transition ${
-                    isFavorite(programId) 
-                      ? 'border-red-500 hover:border-red-600' 
-                      : 'border-transparent hover:border-sky-600'
-                  }`}
-                  onClick={() => {
-                    if (!imageUrl) return
-                    setProgram({ ...program, image_url_1: imageUrl })
-                  }}
+                  className="aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl md:rounded-2xl overflow-hidden"
                 >
                   {imageUrl ? (
                     <img 
@@ -173,12 +177,12 @@ export default function PackageDetailPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-lg md:text-2xl text-white opacity-80">
+                      <div className="text-2xl md:text-4xl text-white opacity-80">
                         📦
                       </div>
                     </div>
                   )}
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -256,30 +260,35 @@ export default function PackageDetailPage() {
             {/* Yorum Yaz */}
             <div className="border-t pt-3 md:pt-4">
               <button 
-                onClick={() => setShowReviewForm(!showReviewForm)}
-                className="text-sky-600 hover:text-sky-700 font-medium text-responsive-sm"
+                onClick={() => setShowReviewModal(true)}
+                className="text-sky-600 hover:text-sky-700 font-medium text-responsive-sm flex items-center gap-2"
               >
-                📝 Write a Review
+                <Edit className="w-4 h-4" />
+                Write a Review
               </button>
             </div>
-
-            {showReviewForm && (
-              <div className="mt-4 md:mt-8">
-                <ReviewSection programId={programId} />
-              </div>
-            )}
 
             {/* Favorilere Ekle */}
             <div>
               <button 
                 onClick={handleFavoriteToggle}
-                className={`font-medium transition text-responsive-sm ${
+                className={`font-medium transition text-responsive-sm flex items-center gap-2 ${
                   isFavorite(programId) 
                     ? 'text-red-600 hover:text-red-700' 
                     : 'text-red-500 hover:text-red-600'
                 }`}
               >
-                {isFavorite(programId) ? '💖 Remove from Favorites' : '❤️ Add to Favorites'}
+                {isFavorite(programId) ? (
+                  <>
+                    <HeartOff className="w-4 h-4" />
+                    Remove from Favorites
+                  </>
+                ) : (
+                  <>
+                    <Heart className="w-4 h-4" />
+                    Add to Favorites
+                  </>
+                )}
               </button>
             </div>
 
@@ -291,9 +300,9 @@ export default function PackageDetailPage() {
                   onClick={() => toggleAccordion('specifications')}
                   className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50"
                 >
-                  <span className="font-medium text-gray-900 text-responsive-sm">Package Specifications</span>
+                  <span className="font-medium text-gray-900 text-responsive-sm">PACKAGE SPECIFICATIONS</span>
                   <svg
-                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${
+                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform text-black ${
                       activeAccordion === 'specifications' ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -303,8 +312,11 @@ export default function PackageDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                {activeAccordion === 'specifications' && (
-                  <div className="px-3 md:px-4 pb-3 md:pb-4">
+                <hr className="border-black" />
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  activeAccordion === 'specifications' ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="px-3 md:px-4 py-3 md:py-4">
                     <ul className="space-y-2">
                       {program.specifications.map((spec, index) => (
                         <li key={index} className="text-gray-600 flex items-center text-responsive-sm">
@@ -316,19 +328,19 @@ export default function PackageDetailPage() {
                       ))}
                     </ul>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Önerilerimiz */}
+              {/* Suggestions Form */}
               <div className="border border-gray-200 rounded-lg">
                 <button
-                  onClick={() => toggleAccordion('recommendations')}
+                  onClick={() => toggleAccordion('suggestions')}
                   className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50"
                 >
-                  <span className="font-medium text-gray-900 text-responsive-sm">Our Recommendations</span>
+                  <span className="font-medium text-gray-900 text-responsive-sm">YOUR SUGGESTIONS</span>
                   <svg
-                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${
-                      activeAccordion === 'recommendations' ? 'rotate-180' : ''
+                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform text-black ${
+                      activeAccordion === 'suggestions' ? 'rotate-180' : ''
                     }`}
                     fill="none"
                     stroke="currentColor"
@@ -337,20 +349,23 @@ export default function PackageDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                {activeAccordion === 'recommendations' && (
-                  <div className="px-3 md:px-4 pb-3 md:pb-4">
-                    <ul className="space-y-2">
-                      {program.recommendations.map((rec, index) => (
-                        <li key={index} className="text-gray-600 flex items-center text-responsive-sm">
-                          <svg className="w-3 h-3 md:w-4 md:h-4 text-amber-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          {rec}
-                        </li>
-                      ))}
-                    </ul>
+                <hr className="border-black" />
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  activeAccordion === 'suggestions' ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="px-3 md:px-4 py-3 md:py-4">
+                    <SuggestionsForm 
+                      packageId={programId}
+                      packageTitle={program.title}
+                      onSuccess={() => {
+                        setModalTitle('Thank You!')
+                        setModalMessage('Your suggestions have been received. Thank you!')
+                        setShowSuccessModal(true)
+                        setActiveAccordion(null)
+                      }}
+                    />
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Ürün Yorumları */}
@@ -359,9 +374,9 @@ export default function PackageDetailPage() {
                   onClick={() => toggleAccordion('reviews')}
                   className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50"
                 >
-                  <span className="font-medium text-gray-900 text-responsive-sm">Customer Reviews ({programReviews.length})</span>
+                  <span className="font-medium text-gray-900 text-responsive-sm">CUSTOMER REVİEWS ({programReviews.length})</span>
                   <svg
-                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${
+                    className={`w-4 h-4 md:w-5 md:h-5 transition-transform text-black ${
                       activeAccordion === 'reviews' ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -371,30 +386,47 @@ export default function PackageDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                {activeAccordion === 'reviews' && (
-                  <div className="px-3 md:px-4 pb-3 md:pb-4 space-y-3 md:space-y-4">
-                    {programReviews.map((review) => (
-                      <div key={review.id} className="border-b border-gray-100 pb-3 md:pb-4 last:border-b-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
-                          <span className="font-medium text-gray-900 text-responsive-sm">{review.user_name}</span>
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`w-3 h-3 md:w-4 md:h-4 ${i < review.rating ? 'fill-current' : 'text-gray-300'}`}
-                                viewBox="0 0 20 20"
+                <hr className="border-black" />
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  activeAccordion === 'reviews' ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="px-3 md:px-4 py-3 md:py-4 space-y-3 md:space-y-4">
+                    {programReviews.length > 0 ? (
+                      programReviews.map((review) => (
+                        <div key={review.id} className="border-b border-gray-100 pb-3 md:pb-4 last:border-b-0">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-gray-900 text-responsive-sm">{review.user_name}</span>
+                              <div className="flex text-yellow-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    className={`w-3 h-3 md:w-4 md:h-4 ${i < review.rating ? 'fill-current' : 'text-gray-300'}`}
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                ))}
+                              </div>
+                              <span className="text-responsive-sm text-gray-500">{formatDate(review.created_at)}</span>
+                            </div>
+                            {user && user.id === review.user_id && (
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                className="text-red-500 hover:text-red-700 transition-colors ml-2"
                               >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
-                          <span className="text-responsive-sm text-gray-500">{formatDate(review.created_at)}</span>
+                          <p className="text-gray-600 text-responsive-sm">{review.comment}</p>
                         </div>
-                        <p className="text-gray-600 text-responsive-sm">{review.comment}</p>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-responsive-sm text-center py-4">No reviews yet. Be the first to write a review!</p>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -407,6 +439,51 @@ export default function PackageDetailPage() {
         title={modalTitle}
         message={modalMessage}
       />
+
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        programId={programId}
+        onSuccess={() => {
+          setModalTitle('Thank You!')
+          setModalMessage('Your review has been submitted successfully!')
+          setShowSuccessModal(true)
+        }}
+      />
+
+      {/* Delete Review Confirmation Modal */}
+      {showDeleteConfirm.show && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={cancelDeleteReview}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-sm w-full p-4 md:p-6 mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
+              Delete Review
+            </h3>
+            <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">
+              Are you sure you want to delete your review? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 md:gap-3">
+              <button
+                onClick={cancelDeleteReview}
+                className="btn-secondary-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteReview}
+                className="btn-danger-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
