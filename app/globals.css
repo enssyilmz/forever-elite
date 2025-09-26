@@ -75,6 +75,13 @@ body {
   @apply md:px-3 md:py-1.5 md:text-sm;
   @apply lg:px-4 lg:py-2 lg:text-base;
 }
+
+.btn-danger-sm {
+  @apply bg-red-600 text-white rounded mt-2 hover:bg-transparent hover:text-red-600 transition;
+  @apply px-2 py-1 text-xs;
+  @apply md:px-3 md:py-1.5 md:text-sm;
+  @apply lg:px-4 lg:py-2 lg:text-base;
+}
 /* Responsive Text Styles */
 .text-responsive-sm {
   @apply text-xs;
@@ -140,6 +147,11 @@ body {
 .bg-green-500:hover {
   background-color: transparent !important;
   color: #10b981 !important;
+}
+
+.bg-red-600:hover {
+  background-color: transparent !important;
+  color: #dc2626 !important;
 }
 
 /* Line clamp utility for text truncation */

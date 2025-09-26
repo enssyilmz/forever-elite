@@ -982,7 +982,7 @@ export default function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('packages')}
-              className={`flex items-center gap-2 px-4 py-2 text-responsive-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
                 activeTab === 'packages'
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -1059,37 +1059,39 @@ export default function AdminPage() {
           onClick={() => setProgramModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl p-4 md:p-8 w-full max-w-3xl md:max-w-4xl mx-4 my-4 md:my-8 relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-2 sm:mx-4 my-2 sm:my-4 md:my-8 relative max-h-[90vh] overflow-y-auto flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setProgramModalOpen(false)} className="absolute top-2 md:top-4 right-2 md:right-4 text-gray-500 hover:text-gray-800">
-              <X size={20} className="md:w-6 md:h-6" />
-            </button>
-            <h2 className="text-responsive-lg md:text-responsive-xl font-bold mb-4 md:mb-6 text-black">
-              {editingProgram ? 'Edit Program' : 'Create New Program'}
-            </h2>
-            <form onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram}>
-              <div className="space-y-6">
+            <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b flex-shrink-0">
+              <h2 className="text-responsive-lg font-semibold text-gray-900">
+                {editingProgram ? 'Edit Program' : 'Create New Program'}
+              </h2>
+              <button onClick={() => setProgramModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
+            </div>
+            <form onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram} className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 overflow-y-auto">
+              <div className="space-y-3 sm:space-y-4 md:space-y-6">
                 {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                   <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">Program Title</label>
+                    <label htmlFor="title" className="block text-responsive-sm font-medium text-gray-700">Program Title</label>
                     <input
                       type="text"
                       id="title"
                       value={programFormData.title}
                       onChange={(e) => setProgramFormData({ ...programFormData, title: e.target.value })}
-                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      className="input-responsive-sm mt-1 block w-full text-black"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="user_id" className="block text-sm font-medium text-gray-700">Select User</label>
+                    <label htmlFor="user_id" className="block text-responsive-sm font-medium text-gray-700">Select User</label>
                     <select
                       id="user_id"
                       value={programFormData.user_id}
                       onChange={(e) => setProgramFormData({ ...programFormData, user_id: e.target.value })}
-                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      className="input-responsive-sm mt-1 block w-full text-black"
                       required
                     >
                       <option value="">Select a user...</option>
@@ -1101,12 +1103,12 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="difficulty_level" className="block text-sm font-medium text-gray-700">Difficulty Level</label>
+                    <label htmlFor="difficulty_level" className="block text-responsive-sm font-medium text-gray-700">Difficulty Level</label>
                     <select
                       id="difficulty_level"
                       value={programFormData.difficulty_level}
                       onChange={(e) => setProgramFormData({ ...programFormData, difficulty_level: e.target.value })}
-                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      className="input-responsive-sm mt-1 block w-full text-black"
                     >
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
@@ -1114,13 +1116,13 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="duration_weeks" className="block text-sm font-medium text-gray-700">Duration (weeks)</label>
+                    <label htmlFor="duration_weeks" className="block text-responsive-sm font-medium text-gray-700">Duration (weeks)</label>
                     <input
                       type="number"
                       id="duration_weeks"
                       value={programFormData.duration_weeks}
                       onChange={(e) => setProgramFormData({ ...programFormData, duration_weeks: parseInt(e.target.value) })}
-                      className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                      className="input-responsive-sm mt-1 block w-full text-black"
                       min="1"
                       max="52"
                     />
@@ -1128,31 +1130,31 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+                  <label htmlFor="description" className="block text-responsive-sm font-medium text-gray-700">Description</label>
                   <textarea
                     id="description"
                     rows={3}
                     value={programFormData.description}
                     onChange={(e) => setProgramFormData({ ...programFormData, description: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                    className="input-responsive-sm mt-1 block w-full text-black"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700">Notes</label>
+                  <label htmlFor="notes" className="block text-responsive-sm font-medium text-gray-700">Notes</label>
                   <textarea
                     id="notes"
                     rows={3}
                     value={programFormData.notes}
                     onChange={(e) => setProgramFormData({ ...programFormData, notes: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                    className="input-responsive-sm mt-1 block w-full text-black"
                   />
                 </div>
 
                 {/* Workouts Section */}
                 <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Workout Days</h3>
+                  <div className="flex justify-between items-center mb-2 sm:mb-3 md:mb-4">
+                    <h3 className="text-responsive-base font-medium text-gray-900">Workout Days</h3>
                     <button
                       type="button"
                       onClick={addWorkoutDay}
@@ -1164,57 +1166,57 @@ export default function AdminPage() {
                   </div>
 
                   {programFormData.workouts.map((workout, workoutIndex) => (
-                    <div key={workoutIndex} className="border border-gray-200 rounded-lg p-4 mb-4">
-                      <div className="flex justify-between items-start mb-4">
-                        <h4 className="font-medium text-gray-900">Day {workout.day_number}</h4>
+                    <div key={workoutIndex} className="border border-gray-200 rounded-lg p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4">
+                      <div className="flex justify-between items-start mb-2 sm:mb-3 md:mb-4">
+                        <h4 className="text-responsive-sm font-medium text-gray-900">Day {workout.day_number}</h4>
                         <button
                           type="button"
                           onClick={() => removeWorkout(workoutIndex)}
                           className="text-red-600 hover:text-red-800"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 md:mb-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Workout Name</label>
+                          <label className="block text-responsive-sm font-medium text-gray-700">Workout Name</label>
                           <input
                             type="text"
                             value={workout.workout_name}
                             onChange={(e) => updateWorkout(workoutIndex, { ...workout, workout_name: e.target.value })}
-                            className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                            className="input-responsive-sm mt-1 block w-full text-black"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Week Number</label>
+                          <label className="block text-responsive-sm font-medium text-gray-700">Week Number</label>
                           <input
                             type="number"
                             value={workout.week_number}
                             onChange={(e) => updateWorkout(workoutIndex, { ...workout, week_number: parseInt(e.target.value) })}
-                            className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                            className="input-responsive-sm mt-1 block w-full text-black"
                             min="1"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Rest Time (seconds)</label>
+                          <label className="block text-responsive-sm font-medium text-gray-700">Rest Time (seconds)</label>
                           <input
                             type="number"
                             value={workout.rest_time_seconds}
                             onChange={(e) => updateWorkout(workoutIndex, { ...workout, rest_time_seconds: parseInt(e.target.value) })}
-                            className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                            className="input-responsive-sm mt-1 block w-full text-black"
                             min="0"
                           />
                         </div>
                       </div>
 
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <div className="mb-2 sm:mb-3 md:mb-4">
+                        <label className="block text-responsive-sm font-medium text-gray-700">Description</label>
                         <textarea
                           value={workout.description}
                           onChange={(e) => updateWorkout(workoutIndex, { ...workout, description: e.target.value })}
-                          className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
+                          className="input-responsive-sm mt-1 block w-full text-black"
                           rows={2}
                         />
                       </div>
@@ -1222,88 +1224,88 @@ export default function AdminPage() {
                       {/* Exercises */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <h5 className="font-medium text-gray-800">Exercises</h5>
+                          <h5 className="text-responsive-sm font-medium text-gray-800">Exercises</h5>
                           <button
                             type="button"
                             onClick={() => addExercise(workoutIndex)}
                             className="btn-fourth-sm flex items-center gap-1"
                           >
-                            <Plus size={14} />
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                             Add Exercise
                           </button>
                         </div>
 
                         {workout.exercises.map((exercise, exerciseIndex) => (
-                          <div key={exerciseIndex} className="border border-gray-100 rounded-md p-3 mb-2">
+                          <div key={exerciseIndex} className="border border-gray-100 rounded-md p-2 sm:p-3 mb-2">
                             <div className="flex justify-between items-start mb-2">
-                              <span className="text-sm font-medium text-gray-700">Exercise {exerciseIndex + 1}</span>
+                              <span className="text-responsive-sm font-medium text-gray-700">Exercise {exerciseIndex + 1}</span>
                               <button
                                 type="button"
                                 onClick={() => removeExercise(workoutIndex, exerciseIndex)}
                                 className="text-red-600 hover:text-red-800"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2">
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Exercise Name</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Exercise Name</label>
                                 <input
                                   type="text"
                                   value={exercise.exercise_name}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, exercise_name: e.target.value })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                   required
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Sets</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Sets</label>
                                 <input
                                   type="number"
                                   value={exercise.sets}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, sets: parseInt(e.target.value) })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                   min="1"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Reps</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Reps</label>
                                 <input
                                   type="text"
                                   value={exercise.reps}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, reps: e.target.value })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                   placeholder="e.g., 8-12, 15, to failure"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Weight</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Weight</label>
                                 <input
                                   type="text"
                                   value={exercise.weight}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, weight: e.target.value })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                   placeholder="e.g., 20kg, bodyweight"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Rest (seconds)</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Rest (seconds)</label>
                                 <input
                                   type="number"
                                   value={exercise.rest_time_seconds}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, rest_time_seconds: parseInt(e.target.value) })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                   min="0"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-600">Notes</label>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Notes</label>
                                 <input
                                   type="text"
                                   value={exercise.notes}
                                   onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, notes: e.target.value })}
-                                  className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-1.5 text-sm"
+                                  className="input-responsive-sm mt-1 block w-full text-black"
                                 />
                               </div>
                             </div>
@@ -1315,7 +1317,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 md:pt-4 border-t mt-3 md:mt-4 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setProgramModalOpen(false)}
