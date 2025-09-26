@@ -224,10 +224,11 @@ export default function Navbar() {
         </div>
 
         {/* Desktop */}
-        <div className="hidden md:flex h-16 px-6 items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="hidden md:flex h-16 px-6 items-center">
+          {/* Sol taraf - Logo */}
+          <div className="flex items-center">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-16 h-16 relative overflow-hidden rounded-full 0">
+              <div className="w-16 h-16 relative overflow-hidden rounded-full">
                 <Image
                   src="/logo.png"
                   alt="Logo"
@@ -237,14 +238,10 @@ export default function Navbar() {
                 />
               </div>
             </Link>
-            {user && user.email === ADMIN_EMAIL && (
-              <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
-                Admin Panel
-              </Link>
-            )}
           </div>
 
-          <div className="flex gap-6">
+          {/* Orta - Navigation Linkleri (Gerçekten ortalanmış) */}
+          <div className="flex-1 flex justify-center gap-6">
             <Link href="/packages" className="font-bold text-responsive-base text-gray-800 hover:bg-sky-500 hover:text-white p-3 rounded">
               Packages
             </Link>
@@ -253,7 +250,14 @@ export default function Navbar() {
             </Link>
           </div>
 
+          {/* Sağ taraf - Admin Panel + İkonlar */}
           <div className="flex items-center gap-4">
+            {user && user.email === ADMIN_EMAIL && (
+              <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
+                Admin Panel
+              </Link>
+            )}
+            
             <div className="relative" ref={searchRef}>
               <Search
                 className="w-5 h-5 text-gray-600 cursor-pointer"

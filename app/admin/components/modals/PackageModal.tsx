@@ -395,53 +395,7 @@ export default function PackageModal({
             </div>
           </div>
 
-          {/* Specifications */}
-          <div>
-            <label className="block text-responsive-sm font-medium text-gray-700 mb-1 sm:mb-2">
-              Specifications
-            </label>
-            <div className="space-y-1 sm:space-y-2">
-              {formData.specifications.map((spec: string, index: number) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={spec}
-                    onChange={(e) => {
-                      const newSpecs = [...formData.specifications]
-                      newSpecs[index] = e.target.value
-                      setFormData({ ...formData, specifications: newSpecs })
-                    }}
-                    className="input-responsive-sm flex-1 text-black"
-                    placeholder={`Specification ${index + 1}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Recommendations */}
-          <div>
-            <label className="block text-responsive-sm font-medium text-gray-700 mb-1 sm:mb-2">
-              Recommendations
-            </label>
-            <div className="space-y-1 sm:space-y-2">
-              {formData.recommendations.map((rec: string, index: number) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={rec}
-                    onChange={(e) => {
-                      const newRecs = [...formData.recommendations]
-                      newRecs[index] = e.target.value
-                      setFormData({ ...formData, recommendations: newRecs })
-                    }}
-                    className="input-responsive-sm flex-1 text-black"
-                    placeholder={`Recommendation ${index + 1}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t flex-shrink-0">
             <button
