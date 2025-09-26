@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
 import SuccessModal from '@/components/SuccessModal'
 import ReviewSection from '@/components/ReviewSection'
-import { programs } from '@/lib/packagesData' // Import programs
+import { Package } from '@/lib/database.types'
 
 export default function PackageDetailPage() {
   const params = useParams()
@@ -20,6 +20,29 @@ export default function PackageDetailPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMessage, setModalMessage] = useState('')
+  const [program, setProgram] = useState<Package | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch package from database
+  useEffect(() => {
+    const fetchPackage = async () => {
+      try {
+        const response = await fetch(`/api/packages/${programId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProgram(data.package)
+        } else {
+          console.error('Failed to fetch package')
+        }
+      } catch (error) {
+        console.error('Error fetching package:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPackage()
+  }, [programId])
 
   const convertToGBP = (usdPrice: number) => {
     // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
@@ -42,7 +65,16 @@ export default function PackageDetailPage() {
     })
   }
 
-  const program = programs.find(p => p.id === programId)
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sky-600"></div>
+          <p className="mt-4 text-gray-600">Loading package details...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!program) {
     return (
@@ -103,16 +135,24 @@ export default function PackageDetailPage() {
             <div className={`aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 transition ${
               isFavorite(programId) ? 'border-red-500' : 'border-transparent'
             }`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-4xl md:text-8xl text-white opacity-80">
-                  {program.emoji}
+              {program.image_url_1 ? (
+                <img 
+                  src={`${program.image_url_1}`} 
+                  alt={program.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-4xl md:text-8xl text-white opacity-80">
+                    📦
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Thumbnail'ler */}
-            <div className="grid grid-cols-4 gap-2 md:gap-3">
-              {[1, 2, 3, 4].map((index) => (
+            {/* Thumbnail'ler - İki resim gösterimi */}
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
+              {[program.image_url_1, program.image_url_2].map((imageUrl, index) => (
                 <button
                   key={index}
                   className={`aspect-square bg-gradient-to-br from-sky-400 to-sky-600 rounded-md md:rounded-lg overflow-hidden border-2 transition ${
@@ -120,12 +160,24 @@ export default function PackageDetailPage() {
                       ? 'border-red-500 hover:border-red-600' 
                       : 'border-transparent hover:border-sky-600'
                   }`}
+                  onClick={() => {
+                    if (!imageUrl) return
+                    setProgram({ ...program, image_url_1: imageUrl })
+                  }}
                 >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-lg md:text-2xl text-white opacity-80">
-                      {program.emoji}
+                  {imageUrl ? (
+                    <img 
+                      src={`${imageUrl}`} 
+                      alt={`${program.title} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-lg md:text-2xl text-white opacity-80">
+                        📦
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </button>
               ))}
             </div>
@@ -137,7 +189,7 @@ export default function PackageDetailPage() {
             <div>
               <div className="flex items-center gap-2 md:gap-3 mb-2">
                 <span className="bg-sky-100 text-sky-800 text-responsive-sm font-semibold px-2 md:px-3 py-1 rounded-full">
-                  {program.bodyFatRange}
+                  {program.body_fat_range}
                 </span>
               </div>
               <h1 className="text-responsive-xl md:text-responsive-2xl font-bold text-gray-900 mb-3 md:mb-4">{program.title}</h1>
@@ -145,17 +197,21 @@ export default function PackageDetailPage() {
 
             {/* İndirim ve Fiyat */}
             <div className="space-y-2">
-              <div className="bg-red-100 text-red-600 text-responsive-sm font-bold px-2 md:px-3 py-1 rounded-full inline-block">
-                %{program.discount} OFF - Limited Time!
-              </div>
+              {program.discount_percentage > 0 && (
+                <div className="bg-red-100 text-red-600 text-responsive-sm font-bold px-2 md:px-3 py-1 rounded-full inline-block">
+                  %{program.discount_percentage} OFF - Limited Time!
+                </div>
+              )}
               <div className="flex items-center gap-2 md:gap-3">
-                <span className="text-responsive-xl md:text-responsive-2xl font-bold text-sky-600">£{convertToGBP(program.discountedPrice)}</span>
-                <span className="text-responsive-base md:text-responsive-lg text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</span>
+                <span className="text-responsive-xl md:text-responsive-2xl font-bold text-sky-600">£{program.discounted_price_gbp || program.price_gbp}</span>
+                {program.discount_percentage > 0 && (
+                  <span className="text-responsive-base md:text-responsive-lg text-gray-400 line-through">£{program.price_gbp}</span>
+                )}
               </div>
             </div>
 
             {/* Açıklama */}
-            <p className="text-gray-600 leading-relaxed text-responsive-sm md:text-responsive-base">{program.longDescription}</p>
+            <p className="text-gray-600 leading-relaxed text-responsive-sm md:text-responsive-base">{program.long_description}</p>
 
             {/* Miktar ve Butonlar */}
             <div className="space-y-3 md:space-y-4">

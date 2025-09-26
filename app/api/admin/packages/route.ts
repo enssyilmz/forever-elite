@@ -24,7 +24,6 @@ export async function POST(request: Request) {
       'description',
       'long_description',
       'emoji',
-      'image_url',
     ]
     for (const f of requiredStringFields) {
       if (!body[f] || String(body[f]).trim().length === 0) {
@@ -55,6 +54,8 @@ export async function POST(request: Request) {
         long_description: body.long_description,
         features: body.features || [],
         image_url: body.image_url,
+        image_url_1: body.image_url_1,
+        image_url_2: body.image_url_2,
         price_usd: body.price_usd,
         price_gbp: body.price_gbp,
         discounted_price_gbp: body.discounted_price_gbp,

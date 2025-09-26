@@ -20,9 +20,17 @@ export default function Favorites({ favoriteProducts, favoritesLoading }: Favori
           {favoriteProducts.map((product) => (
             <Link href={`/packages/${product.id}`} key={product.id}>
               <div className="border rounded-lg overflow-hidden shadow-sm group transform hover:-translate-y-1 transition-transform duration-300 h-full flex flex-col cursor-pointer">
-                {/* Program Emoji */}
-                <div className="w-full h-32 md:h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center">
-                   <span className="text-4xl md:text-7xl opacity-90">{product.emoji}</span>
+                {/* Program Image */}
+                <div className="w-full h-32 md:h-48 bg-gradient-to-br from-sky-50 to-sky-100 flex items-center justify-center overflow-hidden">
+                  {product.image_url_1 ? (
+                    <img 
+                      src={product.image_url_1} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl md:text-7xl opacity-90">📦</span>
+                  )}
                 </div>
                 <div className="p-3 md:p-4 flex-grow">
                   <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800 group-hover:text-sky-600 transition-colors">{product.name}</h3>

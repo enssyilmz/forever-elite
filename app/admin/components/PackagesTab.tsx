@@ -10,6 +10,8 @@ interface Package {
   long_description: string | null
   features: string[]
   image_url: string | null
+  image_url_1: string | null
+  image_url_2: string | null
   price_usd: number
   price_gbp: number
   discounted_price_gbp: number | null
@@ -65,8 +67,16 @@ export default function PackagesTab({
                   <tr key={pkg.id} className="bg-white border-b hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-responsive-sm text-gray-900">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-lg">{pkg.emoji}</span>
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {pkg.image_url_1 ? (
+                            <img 
+                              src={pkg.image_url_1} 
+                              alt={pkg.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-lg">📦</span>
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-responsive-sm text-gray-900 truncate">{pkg.title}</div>

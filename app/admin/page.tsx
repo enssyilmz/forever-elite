@@ -5,19 +5,17 @@ import { withTimeout } from '@/lib/asyncUtils'
 import { supabase } from '@/utils/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { User as AuthUser } from '@supabase/supabase-js'
-import { Mail, Shield, X, RefreshCw, Plus, Trash2, Users, Dumbbell, CreditCard, Headset } from 'lucide-react'
-import UsersTab from './components/UsersTab'
-import ProgramsTab from './components/ProgramsTab'
-import PurchasesTab from './components/PurchasesTab'
-import TicketsTab from './components/TicketsTab'
-import MailTab from './components/MailTab'
-import PackagesTab from './components/PackagesTab'
+import { Mail, Shield, X, RefreshCw, Plus, Trash2 } from 'lucide-react'
+import AdminTabs from './components/AdminTabs'
+import AdminTabContent from './components/AdminTabContent'
 import SendMailModal from './components/modals/SendMailModal'
 import SupportTicketModal from './components/modals/SupportTicketModal'
+import ProgramModal from './components/modals/ProgramModal'
 import PackageModal from './components/modals/PackageModal'
 import DeleteModal from './components/modals/DeleteModal'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
+import { useApp } from '@/contexts/AppContext'
 
 // RPC fonksiyonundan gelen JSON dönüş tipini temsil eden interface
 interface AuthUserFromAdmin {
@@ -95,6 +93,18 @@ export default function AdminPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  // Loading states for each tab
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [programsLoading, setProgramsLoading] = useState(false)
+  const [purchasesLoading, setPurchasesLoading] = useState(false)
+  const [ticketsLoading, setTicketsLoading] = useState(false)
+  const [mailLoading, setMailLoading] = useState(false)
+  const [packagesLoading, setPackagesLoading] = useState(false)
+  
+  // Track which tabs have been loaded
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['users']))
+  
+  
   // Mail modal states
   const [isMailModalOpen, setMailModalOpen] = useState(false)
   const [isSending, setIsSending] = useState(false)
@@ -132,12 +142,12 @@ export default function AdminPage() {
     description: '',
     long_description: '',
     features: [] as string[],
-    image_url: '',
+    image_url_1: '',
+    image_url_2: '',
     price_usd: 0,
     price_gbp: 0,
     discounted_price_gbp: 0,
     discount_percentage: 0,
-    emoji: '',
     specifications: [] as string[],
     recommendations: [] as string[],
     duration_weeks: 0,
@@ -154,8 +164,15 @@ export default function AdminPage() {
 
   const router = useRouter()
 
+  // Use global loading helpers
+  const { startLoading: startGlobalLoading, stopLoading: stopGlobalLoading } = useApp()
+
+
   const fetchUsers = async () => {
+    if (usersLoading) return
     try {
+      startGlobalLoading()
+      setUsersLoading(true)
       setError(null)
       const response = await withTimeout(fetch('/api/admin/users'), 15000)
       if (!response.ok) {
@@ -164,13 +181,20 @@ export default function AdminPage() {
       }
       const data = await response.json()
       setUsers(data.users || [])
+      setLoadedTabs(prev => new Set([...prev, 'users']))
     } catch (e: any) {
       setError('Failed to fetch users: ' + e.message)
+    } finally {
+      setUsersLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const fetchPrograms = async (userIdForFilter?: string) => {
+    if (programsLoading) return
     try {
+      startGlobalLoading()
+      setProgramsLoading(true)
       setError(null)
       const paramUserId = userIdForFilter ?? programsFilterUserId
       const base = '/api/custom-programs?scope=admin'
@@ -179,13 +203,20 @@ export default function AdminPage() {
       if (!response.ok) throw new Error('Failed to fetch programs')
       const data = await response.json()
       setPrograms(data.programs || [])
+      setLoadedTabs(prev => new Set([...prev, 'programs']))
     } catch (e: any) {
       setError('Failed to fetch programs: ' + e.message)
+    } finally {
+      setProgramsLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const fetchPurchases = async () => {
+    if (purchasesLoading) return
     try {
+      startGlobalLoading()
+      setPurchasesLoading(true)
       setError(null)
       const response = await withTimeout(fetch('/api/admin/purchases'), 15000)
       if (!response.ok) {
@@ -194,13 +225,20 @@ export default function AdminPage() {
       }
       const data = await response.json()
       setPurchases(data.purchases || [])
+      setLoadedTabs(prev => new Set([...prev, 'purchases']))
     } catch (e: any) {
       setError('Failed to fetch purchases: ' + e.message)
+    } finally {
+      setPurchasesLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const fetchSupportTickets = async () => {
+    if (ticketsLoading) return
     try {
+      startGlobalLoading()
+      setTicketsLoading(true)
       setError(null)
       const response = await withTimeout(fetch('/api/admin/support-tickets'), 15000)
       if (!response.ok) {
@@ -209,14 +247,21 @@ export default function AdminPage() {
       }
       const data = await response.json()
       setSupportTickets(data.tickets || [])
+      setLoadedTabs(prev => new Set([...prev, 'tickets']))
     } catch (e: any) {
       console.error('Support tickets fetch error:', e)
       setError('Failed to fetch support tickets: ' + e.message)
+    } finally {
+      setTicketsLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const fetchMailLogs = async () => {
+    if (mailLoading) return
     try {
+      startGlobalLoading()
+      setMailLoading(true)
       setError(null)
       const response = await withTimeout(fetch('/api/admin/mail-logs'), 15000)
       if (!response.ok) {
@@ -225,13 +270,20 @@ export default function AdminPage() {
       }
       const data = await response.json()
       setMailLogs(data.mailLogs || [])
+      setLoadedTabs(prev => new Set([...prev, 'mail']))
     } catch (e: any) {
       setError('Failed to fetch mail logs: ' + e.message)
+    } finally {
+      setMailLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const fetchPackages = async () => {
+    if (packagesLoading) return
     try {
+      startGlobalLoading()
+      setPackagesLoading(true)
       setError(null)
       const response = await withTimeout(fetch('/api/packages'), 15000)
       if (!response.ok) {
@@ -240,37 +292,51 @@ export default function AdminPage() {
       }
       const data = await response.json()
       setPackages(data.packages || [])
+      setLoadedTabs(prev => new Set([...prev, 'packages']))
     } catch (e: any) {
       setError('Failed to fetch packages: ' + e.message)
+    } finally {
+      setPackagesLoading(false)
+      stopGlobalLoading()
     }
   }
 
   const checkUserAndFetchData = async () => {
     try {
       setLoading(true)
-      const { data: { user } } = await withTimeout(supabase.auth.getUser(), 15000)
-      
-      if (!user) {
+      // Prefer local session (instant) to avoid network-induced timeouts
+      const { data: sessionData } = await supabase.auth.getSession()
+      let authUser = sessionData.session?.user || null
+
+      // Fallback to network call only if absolutely necessary
+      if (!authUser) {
+        try {
+          const { data: getUserData } = await supabase.auth.getUser()
+          authUser = getUserData.user || null
+        } catch {
+          // Ignore network errors here; we'll treat as unauthenticated below
+        }
+      }
+
+      if (!authUser) {
         router.push('/')
         return
       }
 
-      setUser(user)
+      setUser(authUser as AuthUser)
       
-      if (user.email !== ADMIN_EMAIL) {
+      if ((authUser as any).email !== ADMIN_EMAIL) {
         router.push('/')
         return
       }
 
-      // Loading'i daha erken false yap, data'lar background'da yüklensin
+      // Render the shell immediately; load first tab data in background
       setLoading(false)
-      
-      // Data'ları background'da fetch et
-  Promise.all([fetchUsers(), fetchPrograms(programsFilterUserId), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()]).catch((e) => {
-        setError('Failed to load data: ' + e.message)
-      })
+      startGlobalLoading()
+      fetchUsers().finally(() => stopGlobalLoading())
     } catch (e: any) {
-      setError('Failed to authenticate: ' + e.message)
+      // Do not block the UI with a hard error; show a friendly message
+      setError('Failed to authenticate. Please try again.')
       setLoading(false)
     }
   }
@@ -279,15 +345,67 @@ export default function AdminPage() {
     checkUserAndFetchData()
   }, [])
 
+  // Handle tab switching with lazy loading
+  const handleTabChange = (tab: 'users' | 'programs' | 'purchases' | 'tickets' | 'mail' | 'packages') => {
+    setActiveTab(tab)
+    
+    // Only fetch data if this tab hasn't been loaded yet
+    if (!loadedTabs.has(tab)) {
+      switch (tab) {
+        case 'users':
+          fetchUsers()
+          break
+        case 'programs':
+          fetchPrograms(programsFilterUserId)
+          break
+        case 'purchases':
+          fetchPurchases()
+          break
+        case 'tickets':
+          fetchSupportTickets()
+          break
+        case 'mail':
+          fetchMailLogs()
+          break
+        case 'packages':
+          fetchPackages()
+          break
+      }
+    }
+  }
+
   const handleRefresh = async () => {
     setRefreshing(true)
-  await Promise.all([fetchUsers(), fetchPrograms(programsFilterUserId), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()])
+    
+    // Refresh current active tab data only
+    switch (activeTab) {
+      case 'users':
+        await fetchUsers()
+        break
+      case 'programs':
+        await fetchPrograms(programsFilterUserId)
+        break
+      case 'purchases':
+        await fetchPurchases()
+        break
+      case 'tickets':
+        await fetchSupportTickets()
+        break
+      case 'mail':
+        await fetchMailLogs()
+        break
+      case 'packages':
+        await fetchPackages()
+        break
+    }
+    
     setRefreshing(false)
   }
 
   const handleSendMail = async (subject: string, body: string, recipients: string[]) => {
     setIsSending(true)
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch('/api/admin/send-bulk-mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -315,12 +433,14 @@ export default function AdminPage() {
       setShowSuccessModal(true)
     } finally {
       setIsSending(false)
+      stopGlobalLoading()
     }
   }
 
   const openMailModal = async () => {
     setMailModalOpen(true)
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch('/api/admin/users'), 15000)
       if (!response.ok) throw new Error('Failed to fetch users')
       const data = await response.json()
@@ -328,6 +448,8 @@ export default function AdminPage() {
     } catch (e) {
       console.error('Error fetching user emails:', e)
       setAllUserEmails([])
+    } finally {
+      stopGlobalLoading()
     }
   }
 
@@ -341,6 +463,7 @@ export default function AdminPage() {
   const handleTicketResponse = async (ticketId: number, response: string, status: string) => {
     setIsResponding(true)
     try {
+      startGlobalLoading()
       const apiResponse = await fetch('/api/admin/support-tickets', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -367,6 +490,7 @@ export default function AdminPage() {
       setShowSuccessModal(true)
     } finally {
       setIsResponding(false)
+      stopGlobalLoading()
     }
   }
 
@@ -380,6 +504,7 @@ export default function AdminPage() {
     }
 
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch('/api/custom-programs', {
         method: 'POST',
         headers: {
@@ -407,6 +532,8 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to create program. Please try again.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
@@ -415,6 +542,7 @@ export default function AdminPage() {
     if (!editingProgram) return
 
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch(`/api/custom-programs/${editingProgram.id}`, {
         method: 'PUT',
         headers: {
@@ -437,6 +565,8 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to update program. Please try again.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
@@ -449,6 +579,7 @@ export default function AdminPage() {
     if (!programToDelete) return
 
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch(`/api/custom-programs/${programToDelete.id}`, { method: 'DELETE' }), 15000)
 
       if (!response.ok) throw new Error('Failed to delete program')
@@ -464,6 +595,8 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to delete program.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
@@ -476,12 +609,12 @@ export default function AdminPage() {
         description: packageData.description || '',
         long_description: packageData.long_description || '',
         features: packageData.features || [],
-        image_url: packageData.image_url || '',
+        image_url_1: packageData.image_url_1 || '',
+        image_url_2: packageData.image_url_2 || '',
         price_usd: packageData.price_usd || 0,
         price_gbp: packageData.price_gbp || 0,
         discounted_price_gbp: packageData.discounted_price_gbp || 0,
         discount_percentage: packageData.discount_percentage || 0,
-        emoji: packageData.emoji || '',
         specifications: packageData.specifications || [],
         recommendations: packageData.recommendations || [],
         duration_weeks: packageData.duration_weeks || 0,
@@ -497,12 +630,12 @@ export default function AdminPage() {
         description: '',
         long_description: '',
         features: ['', '', '', ''], // Default empty features for new package
-        image_url: '',
+        image_url_1: '',
+        image_url_2: '',
         price_usd: 0,
         price_gbp: 0,
         discounted_price_gbp: 0,
         discount_percentage: 0,
-        emoji: '',
         specifications: ['', '', '', ''], // Default empty specifications for new package
         recommendations: ['', '', ''], // Default empty recommendations for new package
         duration_weeks: 0,
@@ -515,6 +648,7 @@ export default function AdminPage() {
 
   const handleUpdatePackage = async (updatedData: any) => {
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch(`/api/admin/packages/${editingPackage?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -531,16 +665,18 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to update package.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
   const handleCreatePackage = async (data: any) => {
     // Validation: all fields must be filled
-    const requiredStringFields = ['title','body_fat_range','description','long_description','emoji','image_url']
+    const requiredStringFields = ['title','body_fat_range','description','long_description','image_url_1','image_url_2']
     for (const f of requiredStringFields) {
       if (!data[f] || String(data[f]).trim().length === 0) {
         setModalTitle('Validation error')
-        setModalMessage(`Please fill the field: ${f}`)
+        setModalMessage(`Please fill the field: ${f.replace('_', ' ')}`)
         setShowSuccessModal(true)
         return
       }
@@ -576,6 +712,7 @@ export default function AdminPage() {
     }
 
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch('/api/admin/packages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -596,12 +733,15 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to create package.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
   const handleDeletePackage = async () => {
     if (!packageToDelete) return
     try {
+      startGlobalLoading()
       const response = await withTimeout(fetch(`/api/admin/packages/${packageToDelete.id}`, { method: 'DELETE' }), 15000)
       if (!response.ok) throw new Error('Failed to delete package')
       await fetchPackages()
@@ -615,6 +755,8 @@ export default function AdminPage() {
       setModalTitle('Error')
       setModalMessage('Failed to delete package.')
       setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
     }
   }
 
@@ -668,72 +810,7 @@ export default function AdminPage() {
     })
   }
 
-  const addWorkoutDay = () => {
-    const newWorkout: WorkoutDay = {
-      day_number: programFormData.workouts.length + 1,
-      week_number: 1,
-      workout_name: '',
-      description: '',
-      rest_time_seconds: 60,
-      exercises: []
-    }
-    setProgramFormData({
-      ...programFormData,
-      workouts: [...programFormData.workouts, newWorkout]
-    })
-  }
-
-  const updateWorkout = (index: number, workout: WorkoutDay) => {
-    const updatedWorkouts = [...programFormData.workouts]
-    updatedWorkouts[index] = workout
-    setProgramFormData({
-      ...programFormData,
-      workouts: updatedWorkouts
-    })
-  }
-
-  const removeWorkout = (index: number) => {
-    const updatedWorkouts = programFormData.workouts.filter((_, i) => i !== index)
-    setProgramFormData({
-      ...programFormData,
-      workouts: updatedWorkouts
-    })
-  }
-
-  const addExercise = (workoutIndex: number) => {
-    const newExercise: Exercise = {
-      exercise_name: '',
-      sets: 3,
-      reps: '8-12',
-      weight: '',
-      rest_time_seconds: 60,
-      notes: ''
-    }
-    const updatedWorkouts = [...programFormData.workouts]
-    updatedWorkouts[workoutIndex].exercises.push(newExercise)
-    setProgramFormData({
-      ...programFormData,
-      workouts: updatedWorkouts
-    })
-  }
-
-  const updateExercise = (workoutIndex: number, exerciseIndex: number, exercise: Exercise) => {
-    const updatedWorkouts = [...programFormData.workouts]
-    updatedWorkouts[workoutIndex].exercises[exerciseIndex] = exercise
-    setProgramFormData({
-      ...programFormData,
-      workouts: updatedWorkouts
-    })
-  }
-
-  const removeExercise = (workoutIndex: number, exerciseIndex: number) => {
-    const updatedWorkouts = [...programFormData.workouts]
-    updatedWorkouts[workoutIndex].exercises = updatedWorkouts[workoutIndex].exercises.filter((_, i) => i !== exerciseIndex)
-    setProgramFormData({
-      ...programFormData,
-      workouts: updatedWorkouts
-    })
-  }
+  // Workout/exercise handlers moved into ProgramModal component
 
   const formatUserName = (user: any) => {
     if (user.display_name) {
@@ -825,6 +902,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen p-8">
+      {/* Page uses global top loading bar from AppContext */}
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-responsive-2xl font-bold text-gray-800">Admin Panel</h1>
@@ -867,210 +945,69 @@ export default function AdminPage() {
                     ))}
                   </select>
                 </div>
-                <button
-                  onClick={() => openProgramModal()}
-                  className="btn-tertiary-sm flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Create Custom Program
-                </button>
-              </div>
+              <button
+                onClick={() => openProgramModal()}
+                className="btn-tertiary-sm flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Create Custom Program
+              </button>
+          </div>
             )}
             {activeTab === 'packages' && (
-              <button
+            <button
                 onClick={() => openPackageModal()}
                 className="btn-tertiary-sm flex items-center gap-2"
               >
                 <Plus size={18} />
                 Add Package
-              </button>
+            </button>
             )}
 
           </div>
         </div>
 
-        {/* Tab Navigation - Responsive */}
-        <div className="mb-6 border-b border-gray-200">
-          {/* Desktop: Horizontal tabs */}
-          <div className="hidden md:flex">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'users' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Users size={20} />
-              Users ({users.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('mail')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'mail' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Mail size={20} />
-              Mail ({mailLogs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('programs')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'programs' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Dumbbell size={20} />
-              Custom Programs ({programs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('purchases')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'purchases' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <CreditCard size={20} />
-              Purchases ({purchases.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('tickets')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'tickets' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Headset size={20} />
-              Support Tickets ({supportTickets.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('packages')}
-              className={`flex items-center gap-2 px-6 py-3 font-medium ${
-                activeTab === 'packages' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Dumbbell size={20} />
-              Packages ({packages.length})
-            </button>
-          </div>
+        <AdminTabs 
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          loadingStates={{
+            users: usersLoading,
+            mail: mailLoading,
+            programs: programsLoading,
+            purchases: purchasesLoading,
+            tickets: ticketsLoading,
+            packages: packagesLoading
+          }}
+        />
 
-          {/* Mobile: Vertical tabs */}
-          <div className="md:hidden space-y-1">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'users' 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Users size={14} />
-              Users ({users.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('mail')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'mail' 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Mail size={14} />
-              Mail ({mailLogs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('programs')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'programs' 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Dumbbell size={14} />
-              Custom Programs ({programs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('purchases')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'purchases' 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <CreditCard size={14} />
-              Purchases ({purchases.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('tickets')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'tickets' 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Headset size={14} />
-              Support Tickets ({supportTickets.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('packages')}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 font-medium rounded text-xs ${
-                activeTab === 'packages'
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Dumbbell size={14} />
-              Packages ({packages.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <UsersTab users={users as any} renderProviders={(u:any)=>renderProviders(u as any)} formatUserName={(u:any)=>formatUserName(u as any)} />
-        )}
-
-        {/* Mail Tab */}
-        {activeTab === 'mail' && (
-          <MailTab logs={mailLogs} />
-        )}
-
-        {/* Packages Tab */}
-        {activeTab === 'packages' && (
-          <PackagesTab 
-            packages={packages} 
-            onEdit={openPackageModal} 
-            onDelete={openDeleteModal}
-          />
-        )}
-
-        {/* Programs Tab */}
-        {activeTab === 'programs' && (
-          <ProgramsTab programs={programs} users={users} formatUserName={formatUserName} onEdit={openProgramModal} onDelete={openProgramDeleteModal} />
-        )}
-
-        {/* Purchases Tab */}
-        {activeTab === 'purchases' && (
-          <PurchasesTab purchases={purchases} />
-        )}
-
-        {/* Support Tickets Tab */}
-        {activeTab === 'tickets' && (
-          <TicketsTab
-            tickets={supportTickets as any}
-            users={users as any}
-            getPriorityClass={(p) => p === 'urgent' ? 'bg-red-100 text-red-800' : p === 'high' ? 'bg-orange-100 text-orange-800' : p === 'normal' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}
-            getStatusClass={(s) => s === 'open' ? 'bg-red-100 text-red-800' : s === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : s === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-            onOpen={openTicketModal as any}
-          />
-        )}
+        <AdminTabContent
+          activeTab={activeTab}
+          loadingStates={{
+            users: usersLoading,
+            mail: mailLoading,
+            programs: programsLoading,
+            purchases: purchasesLoading,
+            tickets: ticketsLoading,
+            packages: packagesLoading
+          }}
+          data={{
+            users,
+            mailLogs,
+            programs,
+            purchases,
+            supportTickets,
+            packages
+          }}
+          handlers={{
+            formatUserName,
+            renderProviders,
+            openProgramModal,
+            openProgramDeleteModal,
+            openTicketModal,
+            openPackageModal,
+            openDeleteModal
+          }}
+        />
       </div>
 
       {/* Send Mail Modal */}
@@ -1091,290 +1028,16 @@ export default function AdminPage() {
       />
 
       {/* Create/Edit Program Modal */}
-      {isProgramModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/10 backdrop-blur-md flex justify-center items-center z-50 overflow-y-auto"
-          onClick={() => setProgramModalOpen(false)}
-        >
-          <div 
-            className="bg-white rounded-lg shadow-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-2 sm:mx-4 my-2 sm:my-4 md:my-8 relative max-h-[90vh] overflow-y-auto flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b flex-shrink-0">
-              <h2 className="text-responsive-lg font-semibold text-gray-900">
-                {editingProgram ? 'Edit Program' : 'Create New Program'}
-              </h2>
-              <button onClick={() => setProgramModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                <X className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-            </div>
-            <form onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram} className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 overflow-y-auto">
-              <div className="space-y-3 sm:space-y-4 md:space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                  <div>
-                    <label htmlFor="title" className="block text-responsive-sm font-medium text-gray-700">Program Title</label>
-                    <input
-                      type="text"
-                      id="title"
-                      value={programFormData.title}
-                      onChange={(e) => setProgramFormData({ ...programFormData, title: e.target.value })}
-                      className="input-responsive-sm mt-1 block w-full text-black"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="user_id" className="block text-responsive-sm font-medium text-gray-700">Select User</label>
-                    <select
-                      id="user_id"
-                      value={programFormData.user_id}
-                      onChange={(e) => setProgramFormData({ ...programFormData, user_id: e.target.value })}
-                      className="input-responsive-sm mt-1 block w-full text-black"
-                      required
-                    >
-                      <option value="">Select a user...</option>
-                      {users.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {formatUserName(user) || 'No name'} ({user.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="difficulty_level" className="block text-responsive-sm font-medium text-gray-700">Difficulty Level</label>
-                    <select
-                      id="difficulty_level"
-                      value={programFormData.difficulty_level}
-                      onChange={(e) => setProgramFormData({ ...programFormData, difficulty_level: e.target.value })}
-                      className="input-responsive-sm mt-1 block w-full text-black"
-                    >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="duration_weeks" className="block text-responsive-sm font-medium text-gray-700">Duration (weeks)</label>
-                    <input
-                      type="number"
-                      id="duration_weeks"
-                      value={programFormData.duration_weeks || ''}
-                      onChange={(e) => setProgramFormData({ ...programFormData, duration_weeks: parseInt(e.target.value) || 0 })}
-                      className="input-responsive-sm mt-1 block w-full text-black"
-                      min="1"
-                      max="52"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="description" className="block text-responsive-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    id="description"
-                    rows={3}
-                    value={programFormData.description}
-                    onChange={(e) => setProgramFormData({ ...programFormData, description: e.target.value })}
-                    className="input-responsive-sm mt-1 block w-full text-black"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="notes" className="block text-responsive-sm font-medium text-gray-700">Notes</label>
-                  <textarea
-                    id="notes"
-                    rows={3}
-                    value={programFormData.notes}
-                    onChange={(e) => setProgramFormData({ ...programFormData, notes: e.target.value })}
-                    className="input-responsive-sm mt-1 block w-full text-black"
-                  />
-                </div>
-
-                {/* Workouts Section */}
-                <div>
-                  <div className="flex justify-between items-center mb-2 sm:mb-3 md:mb-4">
-                    <h3 className="text-responsive-base font-medium text-gray-900">Workout Days</h3>
-                    <button
-                      type="button"
-                      onClick={addWorkoutDay}
-                      className="btn-tertiary-sm flex items-center gap-2"
-                    >
-                      <Plus size={16} />
-                      Add Workout Day
-                    </button>
-                  </div>
-
-                  {programFormData.workouts.map((workout, workoutIndex) => (
-                    <div key={workoutIndex} className="border border-gray-200 rounded-lg p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4">
-                      <div className="flex justify-between items-start mb-2 sm:mb-3 md:mb-4">
-                        <h4 className="text-responsive-sm font-medium text-gray-900">Day {workout.day_number}</h4>
-                        <button
-                          type="button"
-                          onClick={() => removeWorkout(workoutIndex)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 md:mb-4">
-                        <div>
-                          <label className="block text-responsive-sm font-medium text-gray-700">Workout Name</label>
-                          <input
-                            type="text"
-                            value={workout.workout_name}
-                            onChange={(e) => updateWorkout(workoutIndex, { ...workout, workout_name: e.target.value })}
-                            className="input-responsive-sm mt-1 block w-full text-black"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-responsive-sm font-medium text-gray-700">Week Number</label>
-                          <input
-                            type="number"
-                            value={workout.week_number}
-                            onChange={(e) => updateWorkout(workoutIndex, { ...workout, week_number: parseInt(e.target.value) })}
-                            className="input-responsive-sm mt-1 block w-full text-black"
-                            min="1"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-responsive-sm font-medium text-gray-700">Rest Time (seconds)</label>
-                          <input
-                            type="number"
-                            value={workout.rest_time_seconds}
-                            onChange={(e) => updateWorkout(workoutIndex, { ...workout, rest_time_seconds: parseInt(e.target.value) })}
-                            className="input-responsive-sm mt-1 block w-full text-black"
-                            min="0"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mb-2 sm:mb-3 md:mb-4">
-                        <label className="block text-responsive-sm font-medium text-gray-700">Description</label>
-                        <textarea
-                          value={workout.description}
-                          onChange={(e) => updateWorkout(workoutIndex, { ...workout, description: e.target.value })}
-                          className="input-responsive-sm mt-1 block w-full text-black"
-                          rows={2}
-                        />
-                      </div>
-
-                      {/* Exercises */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <h5 className="text-responsive-sm font-medium text-gray-800">Exercises</h5>
-                          <button
-                            type="button"
-                            onClick={() => addExercise(workoutIndex)}
-                            className="btn-fourth-sm flex items-center gap-1"
-                          >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                            Add Exercise
-                          </button>
-                        </div>
-
-                        {workout.exercises.map((exercise, exerciseIndex) => (
-                          <div key={exerciseIndex} className="border border-gray-100 rounded-md p-2 sm:p-3 mb-2">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="text-responsive-sm font-medium text-gray-700">Exercise {exerciseIndex + 1}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeExercise(workoutIndex, exerciseIndex)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                              </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-2">
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Exercise Name</label>
-                                <input
-                                  type="text"
-                                  value={exercise.exercise_name}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, exercise_name: e.target.value })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Sets</label>
-                                <input
-                                  type="number"
-                                  value={exercise.sets}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, sets: parseInt(e.target.value) })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                  min="1"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Reps</label>
-                                <input
-                                  type="text"
-                                  value={exercise.reps}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, reps: e.target.value })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                  placeholder="e.g., 8-12, 15, to failure"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Weight</label>
-                                <input
-                                  type="text"
-                                  value={exercise.weight}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, weight: e.target.value })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                  placeholder="e.g., 20kg, bodyweight"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Rest (seconds)</label>
-                                <input
-                                  type="number"
-                                  value={exercise.rest_time_seconds}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, rest_time_seconds: parseInt(e.target.value) })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                  min="0"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs sm:text-sm font-medium text-gray-600">Notes</label>
-                                <input
-                                  type="text"
-                                  value={exercise.notes}
-                                  onChange={(e) => updateExercise(workoutIndex, exerciseIndex, { ...exercise, notes: e.target.value })}
-                                  className="input-responsive-sm mt-1 block w-full text-black"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 md:pt-4 border-t mt-3 md:mt-4 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setProgramModalOpen(false)}
-                  className="btn-secondary-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-sm"
-                >
-                  {editingProgram ? 'Update Program' : 'Create Program'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ProgramModal
+        isOpen={isProgramModalOpen}
+        onClose={() => setProgramModalOpen(false)}
+        formData={programFormData as any}
+        setFormData={setProgramFormData as any}
+        users={users as any}
+        formatUserName={formatUserName as any}
+        onSubmit={editingProgram ? handleUpdateProgram : handleCreateProgram}
+        editingProgram={editingProgram}
+      />
 
       {/* Support Ticket Modal */}
       <SupportTicketModal

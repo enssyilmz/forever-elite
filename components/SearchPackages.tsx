@@ -81,7 +81,17 @@ export default function SearchPackages({ isOpen, onClose }: SearchPackagesProps)
                   onClick={(e) => handlePackageClick(e, program)}
                   className="flex items-center w-full p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer border-b border-gray-100 last:border-b-0"
                 >
-                  <div className="text-lg md:text-2xl mr-2 md:mr-3">{program.emoji}</div>
+                  <div className="w-8 h-8 md:w-10 md:h-10 mr-2 md:mr-3 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {program.image_url_1 ? (
+                      <img 
+                        src={program.image_url_1} 
+                        alt={program.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg md:text-2xl">📦</span>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base truncate">
                       {program.title}

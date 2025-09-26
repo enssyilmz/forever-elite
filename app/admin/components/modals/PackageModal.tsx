@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Upload, Image as ImageIcon } from 'lucide-react'
+import { uploadImage, validateImage, deleteImage } from '@/lib/supabaseStorage'
 
 interface PackageModalProps {
   isOpen: boolean
@@ -20,10 +21,68 @@ export default function PackageModal({
   setFormData, 
   isEditing 
 }: PackageModalProps) {
+  const [uploading, setUploading] = useState<{image1: boolean, image2: boolean}>({
+    image1: false,
+    image2: false
+  })
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState<{show: boolean, imageNumber: 1 | 2 | null}>({
+    show: false,
+    imageNumber: null
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await onSubmit(formData)
+  }
+
+  const handleImageUpload = async (file: File, imageNumber: 1 | 2) => {
+    // Validate image
+    const validation = validateImage(file)
+    if (!validation.valid) {
+      alert(validation.error)
+      return
+    }
+
+    setUploading(prev => ({ ...prev, [`image${imageNumber}`]: true }))
+
+    try {
+      const result = await uploadImage(file)
+      if (result.success && result.url) {
+        // Delete old image if exists
+        const oldUrl = imageNumber === 1 ? formData.image_url_1 : formData.image_url_2
+        if (oldUrl && oldUrl.includes('supabase')) {
+          await deleteImage(oldUrl)
+        }
+
+        // Update form data
+        const fieldName = `image_url_${imageNumber}`
+        setFormData({ ...formData, [fieldName]: result.url })
+      } else {
+        alert(result.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Upload failed')
+    } finally {
+      setUploading(prev => ({ ...prev, [`image${imageNumber}`]: false }))
+    }
+  }
+
+  const handleRemoveImage = (imageNumber: 1 | 2) => {
+    setShowRemoveConfirm({ show: true, imageNumber })
+  }
+
+  const confirmRemoveImage = () => {
+    if (showRemoveConfirm.imageNumber === 1) {
+      setFormData({ ...formData, image_url_1: '' })
+    } else if (showRemoveConfirm.imageNumber === 2) {
+      setFormData({ ...formData, image_url_2: '' })
+    }
+    setShowRemoveConfirm({ show: false, imageNumber: null })
+  }
+
+  const cancelRemoveImage = () => {
+    setShowRemoveConfirm({ show: false, imageNumber: null })
   }
 
 
@@ -78,29 +137,120 @@ export default function PackageModal({
               />
             </div>
 
+            {/* Image 1 Upload */}
             <div>
               <label className="block text-responsive-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                Emoji
+                Package Image 1
               </label>
-              <input
-                type="text"
-                value={formData.emoji}
-                onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
-                className="input-responsive-sm w-full text-black"
-                required
+              <div className="space-y-2">
+                {formData.image_url_1 && (
+                  <div className="relative">
+                    <img 
+                      src={formData.image_url_1} 
+                      alt="Package Image 1" 
+                      className="w-full h-32 object-cover rounded-lg border"
               />
             </div>
+                )}
+                <div className="space-y-2">
+                  {/* Upload & Remove Buttons */}
+                  <div className="flex items-center justify-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file, 1)
+                      }}
+                      className="hidden"
+                      id="image1-upload"
+                    />
+                    <label
+                      htmlFor="image1-upload"
+                      className="btn-tertiary-sm flex items-center gap-2 cursor-pointer"
+                    >
+                      {uploading.image1 ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          Upload Image 1
+                        </>
+                      )}
+                    </label>
+                     {formData.image_url_1 && (
+                       <button
+                         type="button"
+                         onClick={() => handleRemoveImage(1)}
+                         className="btn-danger-sm"
+                       >
+                         Remove
+                       </button>
+                     )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            {/* Image 2 Upload */}
             <div>
               <label className="block text-responsive-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                Image URL
+                Package Image 2
               </label>
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="input-responsive-sm w-full text-black"
-              />
+              <div className="space-y-2">
+                {formData.image_url_2 && (
+                  <div className="relative">
+                    <img 
+                      src={formData.image_url_2} 
+                      alt="Package Image 2" 
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {/* Upload & Remove Buttons */}
+                  <div className="flex items-center justify-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file, 2)
+                      }}
+                      className="hidden"
+                      id="image2-upload"
+                    />
+                    <label
+                      htmlFor="image2-upload"
+                      className="btn-tertiary-sm flex items-center gap-2 cursor-pointer"
+                    >
+                      {uploading.image2 ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          Upload Image 2
+                        </>
+                      )}
+                    </label>
+                     {formData.image_url_2 && (
+                       <button
+                         type="button"
+                         onClick={() => handleRemoveImage(2)}
+                         className="btn-danger-sm"
+                       >
+                         Remove
+                       </button>
+                     )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -310,6 +460,34 @@ export default function PackageModal({
           </div>
         </form>
       </div>
+
+      {/* Remove Confirmation Modal */}
+      {showRemoveConfirm.show && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Remove Image
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove Package Image {showRemoveConfirm.imageNumber}? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelRemoveImage}
+                className="btn-secondary-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveImage}
+                className="btn-danger-sm"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
