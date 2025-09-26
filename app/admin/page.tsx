@@ -85,6 +85,8 @@ export default function AdminPage() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [users, setUsers] = useState<AuthUserFromAdmin[]>([])
   const [programs, setPrograms] = useState<CustomProgram[]>([])
+  // Program filtering
+  const [programsFilterUserId, setProgramsFilterUserId] = useState<string>('') // '' = all users (admin only)
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
   const [packages, setPackages] = useState<any[]>([])
@@ -167,10 +169,13 @@ export default function AdminPage() {
     }
   }
 
-  const fetchPrograms = async () => {
+  const fetchPrograms = async (userIdForFilter?: string) => {
     try {
       setError(null)
-      const response = await withTimeout(fetch('/api/custom-programs'), 15000)
+      const paramUserId = userIdForFilter ?? programsFilterUserId
+      const base = '/api/custom-programs?scope=admin'
+      const url = paramUserId ? `${base}&user_id=${encodeURIComponent(paramUserId)}` : base
+      const response = await withTimeout(fetch(url), 15000)
       if (!response.ok) throw new Error('Failed to fetch programs')
       const data = await response.json()
       setPrograms(data.programs || [])
@@ -261,7 +266,7 @@ export default function AdminPage() {
       setLoading(false)
       
       // Data'ları background'da fetch et
-      Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()]).catch((e) => {
+  Promise.all([fetchUsers(), fetchPrograms(programsFilterUserId), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()]).catch((e) => {
         setError('Failed to load data: ' + e.message)
       })
     } catch (e: any) {
@@ -276,7 +281,7 @@ export default function AdminPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await Promise.all([fetchUsers(), fetchPrograms(), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()])
+  await Promise.all([fetchUsers(), fetchPrograms(programsFilterUserId), fetchPurchases(), fetchSupportTickets(), fetchMailLogs(), fetchPackages()])
     setRefreshing(false)
   }
 
@@ -368,18 +373,30 @@ export default function AdminPage() {
   const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Ensure numeric values are numbers, not strings
+    const formDataToSend = {
+      ...programFormData,
+      duration_weeks: parseInt(programFormData.duration_weeks.toString()) || 4
+    }
+
     try {
       const response = await withTimeout(fetch('/api/custom-programs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(programFormData),
+        body: JSON.stringify(formDataToSend),
       }), 15000)
 
-      if (!response.ok) throw new Error('Failed to create program')
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Error response:', errorData)
+        throw new Error(errorData.error || 'Failed to create program')
+      }
 
-      await fetchPrograms()
+      const responseData = await response.json()
+
+  await fetchPrograms(programsFilterUserId)
       setProgramModalOpen(false)
       resetProgramForm()
       setModalTitle('Program created')
@@ -408,7 +425,7 @@ export default function AdminPage() {
 
       if (!response.ok) throw new Error('Failed to update program')
 
-      await fetchPrograms()
+  await fetchPrograms(programsFilterUserId)
       setProgramModalOpen(false)
       setEditingProgram(null)
       resetProgramForm()
@@ -436,7 +453,7 @@ export default function AdminPage() {
 
       if (!response.ok) throw new Error('Failed to delete program')
 
-      await fetchPrograms()
+  await fetchPrograms(programsFilterUserId)
       setIsProgramDeleteModalOpen(false)
       setProgramToDelete(null)
       setModalTitle('Program deleted')
@@ -830,13 +847,34 @@ export default function AdminPage() {
               </button>
             )}
             {activeTab === 'programs' && (
-              <button
-                onClick={() => openProgramModal()}
-                className="btn-tertiary-sm flex items-center gap-2"
-              >
-                <Plus size={18} />
-                Create Custom Program
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-600 whitespace-nowrap">User:</label>
+                  <select
+                    value={programsFilterUserId}
+                    onChange={async (e) => {
+                      const val = e.target.value
+                      setProgramsFilterUserId(val)
+                      await fetchPrograms(val)
+                    }}
+                    className="border-gray-300 text-sm rounded-md p-1.5 text-black bg-white shadow-sm"
+                  >
+                    <option value="">All Users</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : (u.display_name || u.email)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => openProgramModal()}
+                  className="btn-tertiary-sm flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Create Custom Program
+                </button>
+              </div>
             )}
             {activeTab === 'packages' && (
               <button
@@ -1118,11 +1156,12 @@ export default function AdminPage() {
                     <input
                       type="number"
                       id="duration_weeks"
-                      value={programFormData.duration_weeks}
-                      onChange={(e) => setProgramFormData({ ...programFormData, duration_weeks: parseInt(e.target.value) })}
+                      value={programFormData.duration_weeks || ''}
+                      onChange={(e) => setProgramFormData({ ...programFormData, duration_weeks: parseInt(e.target.value) || 0 })}
                       className="mt-1 block w-full border-gray-300 text-black rounded-md shadow-sm p-2"
                       min="1"
                       max="52"
+                      required
                     />
                   </div>
                 </div>
@@ -1373,6 +1412,13 @@ export default function AdminPage() {
         title="Delete Program"
         message="Are you sure you want to delete this program? This action cannot be undone."
         itemName={programToDelete?.title}
+      />
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={modalTitle}
+        message={modalMessage}
       />
       
     </div>
