@@ -1,18 +1,65 @@
 'use client'
 
 import Link from 'next/link'
-import { Package, ChevronDown, ChevronUp } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, Diamond, Trophy, Target, Flame, Zap, Star, Rocket, ClipboardList, Utensils, BarChart3, MessageCircle } from 'lucide-react'
 import { programs } from '@/lib/packagesData'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/utils/supabaseClient'
 
 interface MyOrdersProps {
   purchases: any[]
   purchasesLoading: boolean
 }
 
+interface PackageDetail {
+  id: number
+  package_id: number
+  title: string
+  body_fat_range: string
+  description: string
+  long_description: string
+  features: string[]
+  specifications: string[]
+  recommendations: string[]
+  original_price: number
+  discounted_price: number
+  discount: number
+  icon_name: string
+  icon_color: string
+}
+
 export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps) {
   const allPrograms = programs
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
+  const [packageDetails, setPackageDetails] = useState<PackageDetail[]>([])
+  const [detailsLoading, setDetailsLoading] = useState(false)
+
+  useEffect(() => {
+    fetchPackageDetails()
+  }, [])
+
+  const fetchPackageDetails = async () => {
+    setDetailsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('package_details')
+        .select('*')
+        .order('package_id')
+      
+      if (error) {
+        console.error('Error fetching package details:', error)
+        // Fallback to hardcoded data if database fails
+        setPackageDetails([])
+      } else {
+        setPackageDetails(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching package details:', error)
+      setPackageDetails([])
+    } finally {
+      setDetailsLoading(false)
+    }
+  }
 
   const toggleExpanded = (purchaseId: string) => {
     const newExpanded = new Set(expandedOrders)
@@ -22,6 +69,37 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
       newExpanded.add(purchaseId)
     }
     setExpandedOrders(newExpanded)
+  }
+
+  const getPackageIcon = (packageTitle: string) => {
+    // First try to get from database
+    const dbPackage = packageDetails.find(p => p.title === packageTitle)
+    if (dbPackage) {
+      const colorClass = `text-${dbPackage.icon_color}-600`
+      switch (dbPackage.icon_name) {
+        case 'Diamond': return <Diamond className={`w-6 h-6 ${colorClass}`} />
+        case 'Trophy': return <Trophy className={`w-6 h-6 ${colorClass}`} />
+        case 'Target': return <Target className={`w-6 h-6 ${colorClass}`} />
+        case 'Flame': return <Flame className={`w-6 h-6 ${colorClass}`} />
+        case 'Zap': return <Zap className={`w-6 h-6 ${colorClass}`} />
+        case 'Star': return <Star className={`w-6 h-6 ${colorClass}`} />
+        case 'Rocket': return <Rocket className={`w-6 h-6 ${colorClass}`} />
+        default: return <Package className={`w-6 h-6 ${colorClass}`} />
+      }
+    }
+    
+    // Fallback to hardcoded mapping
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'Elite Athletes Package': <Diamond className="w-6 h-6 text-purple-600" />,
+      'Advanced Fitness Package': <Trophy className="w-6 h-6 text-yellow-600" />,
+      'Active Lifestyle Package': <Target className="w-6 h-6 text-blue-600" />,
+      'Transformation Package': <Flame className="w-6 h-6 text-red-600" />,
+      'Beginner Boost Package': <Zap className="w-6 h-6 text-green-600" />,
+      'Health Foundation Package': <Star className="w-6 h-6 text-orange-600" />,
+      'Wellness Journey Package': <Package className="w-6 h-6 text-pink-600" />,
+      'Personalized Package': <Rocket className="w-6 h-6 text-indigo-600" />
+    }
+    return iconMap[packageTitle] || <Package className="w-6 h-6 text-gray-600" />
   }
 
   return (
@@ -40,8 +118,9 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
       ) : (
         <div className="space-y-3 md:space-y-4">
           {purchases.map((purchase) => {
-            // Find the corresponding program details
-            const programDetails = allPrograms.find(p => p.title === purchase.package_name)
+            // Find the corresponding program details from database first, fallback to hardcoded
+            const dbPackage = packageDetails.find(p => p.title === purchase.package_name)
+            const programDetails = dbPackage || allPrograms.find(p => p.title === purchase.package_name)
             const isExpanded = expandedOrders.has(purchase.id)
             const formatAmount = (amount: number, currency: string) => {
               const formatted = (amount / 100).toFixed(2)
@@ -55,18 +134,18 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                 <div className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3 md:mb-4 gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 md:gap-3 mb-2">
-                        {programDetails && (
-                          <span className="text-xl md:text-2xl">{programDetails.emoji}</span>
-                        )}
-                        <div>
-                          <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">{purchase.package_name}</h3>
-                          <p className="text-responsive-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
-                        </div>
+                    <div className="flex items-center gap-2 md:gap-3 mb-2">
+                      {getPackageIcon(purchase.package_name)}
+                      <div>
+                        <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">{purchase.package_name}</h3>
+                        <p className="text-responsive-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
                       </div>
+                    </div>
                       
                       {programDetails && (
-                        <p className="text-gray-600 text-responsive-sm mb-2">{programDetails.bodyFatRange}</p>
+                        <p className="text-gray-600 text-responsive-sm mb-2">
+                          {dbPackage ? dbPackage.body_fat_range : (programDetails as any).bodyFatRange}
+                        </p>
                       )}
                       
                       <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-responsive-sm text-gray-600">
@@ -110,12 +189,14 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                       {/* Program Overview */}
                       <div>
                         <h4 className="font-semibold text-gray-800 mb-2">Program Overview</h4>
-                        <p className="text-gray-600 text-sm mb-3">{programDetails.longDescription}</p>
+                        <p className="text-gray-600 text-sm mb-3">
+                          {dbPackage ? dbPackage.long_description : (programDetails as any).longDescription}
+                        </p>
                         
                         <div className="mb-4">
                           <h5 className="font-medium text-gray-700 mb-2">Key Features:</h5>
                           <ul className="list-disc list-inside space-y-1">
-                            {programDetails.features.map((feature, index) => (
+                            {(dbPackage ? dbPackage.features : (programDetails as any).features).map((feature: string, index: number) => (
                               <li key={index} className="text-gray-600 text-sm">{feature}</li>
                             ))}
                           </ul>
@@ -126,7 +207,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                       <div>
                         <h4 className="font-semibold text-gray-800 mb-2">Program Specifications</h4>
                         <div className="space-y-2 mb-4">
-                          {programDetails.specifications.map((spec, index) => (
+                          {(dbPackage ? dbPackage.specifications : (programDetails as any).specifications).map((spec: string, index: number) => (
                             <div key={index} className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                               <span className="text-gray-600 text-sm">{spec}</span>
@@ -137,7 +218,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                         <div className="mb-4">
                           <h5 className="font-medium text-gray-700 mb-2">Recommendations:</h5>
                           <ul className="list-disc list-inside space-y-1">
-                            {programDetails.recommendations.map((rec, index) => (
+                            {(dbPackage ? dbPackage.recommendations : (programDetails as any).recommendations).map((rec: string, index: number) => (
                               <li key={index} className="text-gray-600 text-sm">{rec}</li>
                             ))}
                           </ul>
@@ -150,7 +231,10 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                       <h4 className="font-semibold text-gray-800 mb-3">What's Included in Your Package</h4>
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="bg-gray-50 p-3 rounded">
-                          <h5 className="font-medium text-gray-700 mb-2">📋 Workout Plans</h5>
+                          <div className="flex items-center gap-2 mb-2">
+                            <ClipboardList className="w-5 h-5 text-blue-600" />
+                            <h5 className="font-medium text-gray-700">Workout Plans</h5>
+                          </div>
                           <ul className="text-sm text-gray-600 space-y-1">
                             <li>• Detailed exercise instructions</li>
                             <li>• Progressive training schedules</li>
@@ -160,7 +244,10 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                         </div>
                         
                         <div className="bg-gray-50 p-3 rounded">
-                          <h5 className="font-medium text-gray-700 mb-2">🥗 Nutrition Guide</h5>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Utensils className="w-5 h-5 text-green-600" />
+                            <h5 className="font-medium text-gray-700">Nutrition Guide</h5>
+                          </div>
                           <ul className="text-sm text-gray-600 space-y-1">
                             <li>• Customized meal plans</li>
                             <li>• Macro calculations</li>
@@ -170,7 +257,10 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                         </div>
                         
                         <div className="bg-gray-50 p-3 rounded">
-                          <h5 className="font-medium text-gray-700 mb-2">📊 Progress Tracking</h5>
+                          <div className="flex items-center gap-2 mb-2">
+                            <BarChart3 className="w-5 h-5 text-purple-600" />
+                            <h5 className="font-medium text-gray-700">Progress Tracking</h5>
+                          </div>
                           <ul className="text-sm text-gray-600 space-y-1">
                             <li>• Body measurement charts</li>
                             <li>• Progress photo guides</li>
@@ -184,7 +274,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                     {/* Support Information */}
                     <div className="mt-4 p-3 bg-blue-50 rounded">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-blue-600">💬</span>
+                        <MessageCircle className="w-5 h-5 text-blue-600" />
                         <h5 className="font-medium text-blue-800">Support & Community</h5>
                       </div>
                       <p className="text-blue-700 text-sm">
