@@ -128,14 +128,11 @@ function DashboardContent() {
           let profileHeight: string | null = null
           let profileWeight: string | null = null
           try {
-            const { data: profile } = await withTimeout(
-              supabase
+            const { data: profile } = await supabase
                 .from('user_profiles')
                 .select('body_fat, height, weight')
                 .eq('user_id', user.id)
-                .maybeSingle(),
-              10000
-            )
+                .maybeSingle()
             if (profile) {
               profileBodyFat = profile.body_fat !== null ? profile.body_fat.toString() : null
               profileHeight = profile.height !== null ? profile.height.toString() : null
@@ -159,14 +156,11 @@ function DashboardContent() {
           })
 
           // Load communication preferences from user_communication_preferences table
-          const { data: commPrefs } = await withTimeout(
-            supabase
+          const { data: commPrefs } = await supabase
             .from('user_communication_preferences')
             .select('*')
             .eq('user_id', user.id)
-            .maybeSingle(),
-            15000
-          )
+            .maybeSingle()
             
           if (commPrefs) {
             setCommunicationPrefs({
@@ -186,13 +180,10 @@ function DashboardContent() {
           (async () => {
             try {
               setFavoritesLoading(true)
-              const { data: favorites, error: favoritesError } = await withTimeout(
-                supabase
+              const { data: favorites, error: favoritesError } = await supabase
                 .from('user_favorites')
                 .select('product_id')
-                .eq('user_id', user.id),
-                15000
-              )
+                .eq('user_id', user.id)
 
               if (favoritesError) {
                 console.error('Error fetching favorites:', favoritesError)
@@ -221,15 +212,12 @@ function DashboardContent() {
           (async () => {
             try {
               setPurchasesLoading(true)
-              const { data: userPurchases, error: purchasesError } = await withTimeout(
-                supabase
+              const { data: userPurchases, error: purchasesError } = await supabase
                 .from('purchases')
                 .select('*')
                 // Webhook'ta email'i lowercase kaydediyoruz; olası case farklarını engellemek için normalize
                 .eq('user_email', (user.email || '').toLowerCase())
-                .order('created_at', { ascending: false }),
-                15000
-              )
+                .order('created_at', { ascending: false })
 
               if (purchasesError) {
                 console.error('dashboard: Error fetching purchases:', purchasesError)
@@ -250,14 +238,11 @@ function DashboardContent() {
           (async () => {
             try {
               setSupportLoading(true)
-              const { data: tickets, error: ticketsError } = await withTimeout(
-                supabase
+              const { data: tickets, error: ticketsError } = await supabase
                 .from('support_tickets')
                 .select('*')
                 .eq('user_id', user.id)
-                .order('created_at', { ascending: false }),
-                15000
-              )
+                .order('created_at', { ascending: false })
 
               if (ticketsError) {
                 console.error('Error fetching support tickets:', ticketsError)
