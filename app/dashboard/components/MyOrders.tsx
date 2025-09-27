@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Package } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp } from 'lucide-react'
 import { programs } from '@/lib/packagesData'
+import { useState } from 'react'
 
 interface MyOrdersProps {
   purchases: any[]
@@ -11,6 +12,17 @@ interface MyOrdersProps {
 
 export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps) {
   const allPrograms = programs
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (purchaseId: string) => {
+    const newExpanded = new Set(expandedOrders)
+    if (newExpanded.has(purchaseId)) {
+      newExpanded.delete(purchaseId)
+    } else {
+      newExpanded.add(purchaseId)
+    }
+    setExpandedOrders(newExpanded)
+  }
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
@@ -30,6 +42,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
           {purchases.map((purchase) => {
             // Find the corresponding program details
             const programDetails = allPrograms.find(p => p.title === purchase.package_name)
+            const isExpanded = expandedOrders.has(purchase.id)
             const formatAmount = (amount: number, currency: string) => {
               const formatted = (amount / 100).toFixed(2)
               const symbol = currency.toUpperCase() === 'GBP' ? '£' : '$'
@@ -37,44 +50,150 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
             }
             
             return (
-              <div key={purchase.id} className="border rounded-lg p-4 md:p-6 bg-gray-50">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3 md:mb-4 gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 md:gap-3 mb-2">
+              <div key={purchase.id} className="border rounded-lg bg-gray-50 overflow-hidden">
+                {/* Header Section */}
+                <div className="p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3 md:mb-4 gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 md:gap-3 mb-2">
+                        {programDetails && (
+                          <span className="text-xl md:text-2xl">{programDetails.emoji}</span>
+                        )}
+                        <div>
+                          <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">{purchase.package_name}</h3>
+                          <p className="text-responsive-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
+                        </div>
+                      </div>
+                      
                       {programDetails && (
-                        <span className="text-xl md:text-2xl">{programDetails.emoji}</span>
+                        <p className="text-gray-600 text-responsive-sm mb-2">{programDetails.bodyFatRange}</p>
                       )}
-                      <div>
-                        <h3 className="text-responsive-sm md:text-responsive-base font-semibold text-gray-800">{purchase.package_name}</h3>
-                        <p className="text-responsive-sm text-gray-600">Order #{purchase.id.slice(0, 8)}</p>
+                      
+                      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-responsive-sm text-gray-600">
+                        <span><strong>Amount:</strong> {formatAmount(purchase.amount, purchase.currency)}</span>
+                        <span><strong>Status:</strong> {purchase.status}</span>
+                        <span><strong>Date:</strong> {new Date(purchase.created_at).toLocaleDateString('en-GB')}</span>
                       </div>
                     </div>
                     
-                    {programDetails && (
-                      <p className="text-gray-600 text-responsive-sm mb-2">{programDetails.bodyFatRange}</p>
-                    )}
-                    
-                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-responsive-sm text-gray-600">
-                      <span><strong>Amount:</strong> {formatAmount(purchase.amount, purchase.currency)}</span>
-                      <span><strong>Status:</strong> {purchase.status}</span>
-                      <span><strong>Date:</strong> {new Date(purchase.created_at).toLocaleDateString('en-GB')}</span>
+                    <div className="flex flex-col gap-2">
+                      <Link 
+                        href={`/packages/${programDetails?.id || ''}`}
+                        className="btn-primary-sm text-center"
+                      >
+                        View Package
+                      </Link>
+                      <button 
+                        onClick={() => toggleExpanded(purchase.id)}
+                        className="btn-secondary-sm flex items-center justify-center gap-2"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <span>Hide Details</span>
+                            <ChevronUp className="w-4 h-4" />
+                          </>
+                        ) : (
+                          <>
+                            <span>Show Details</span>
+                            <ChevronDown className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <Link 
-                      href={`/packages/${programDetails?.id || ''}`}
-                      className="btn-primary-sm text-center"
-                    >
-                      View Package
-                    </Link>
-                    {purchase.status === 'completed' && (
-                      <button className="btn-secondary-sm">
-                        Download
-                      </button>
-                    )}
-                  </div>
                 </div>
+
+                {/* Expandable Details Section */}
+                {isExpanded && programDetails && (
+                  <div className="border-t bg-white p-4 md:p-6">
+                    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                      {/* Program Overview */}
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Program Overview</h4>
+                        <p className="text-gray-600 text-sm mb-3">{programDetails.longDescription}</p>
+                        
+                        <div className="mb-4">
+                          <h5 className="font-medium text-gray-700 mb-2">Key Features:</h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {programDetails.features.map((feature, index) => (
+                              <li key={index} className="text-gray-600 text-sm">{feature}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Program Specifications */}
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Program Specifications</h4>
+                        <div className="space-y-2 mb-4">
+                          {programDetails.specifications.map((spec, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="text-gray-600 text-sm">{spec}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mb-4">
+                          <h5 className="font-medium text-gray-700 mb-2">Recommendations:</h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {programDetails.recommendations.map((rec, index) => (
+                              <li key={index} className="text-gray-600 text-sm">{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Package Content */}
+                    <div className="mt-6 pt-4 border-t">
+                      <h4 className="font-semibold text-gray-800 mb-3">What's Included in Your Package</h4>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="bg-gray-50 p-3 rounded">
+                          <h5 className="font-medium text-gray-700 mb-2">📋 Workout Plans</h5>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            <li>• Detailed exercise instructions</li>
+                            <li>• Progressive training schedules</li>
+                            <li>• Video demonstrations</li>
+                            <li>• Modification options</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded">
+                          <h5 className="font-medium text-gray-700 mb-2">🥗 Nutrition Guide</h5>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            <li>• Customized meal plans</li>
+                            <li>• Macro calculations</li>
+                            <li>• Recipe collections</li>
+                            <li>• Supplement guidance</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded">
+                          <h5 className="font-medium text-gray-700 mb-2">📊 Progress Tracking</h5>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            <li>• Body measurement charts</li>
+                            <li>• Progress photo guides</li>
+                            <li>• Performance metrics</li>
+                            <li>• Achievement milestones</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Support Information */}
+                    <div className="mt-4 p-3 bg-blue-50 rounded">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-blue-600">💬</span>
+                        <h5 className="font-medium text-blue-800">Support & Community</h5>
+                      </div>
+                      <p className="text-blue-700 text-sm">
+                        Access to our private community forum, weekly Q&A sessions, and direct support from certified trainers. 
+                        Your success is our priority!
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
