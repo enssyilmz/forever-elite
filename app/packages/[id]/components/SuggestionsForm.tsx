@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { supabase } from '@/utils/supabaseClient'
 import { useApp } from '@/contexts/AppContext'
 
 interface SuggestionsFormProps {
@@ -42,6 +43,25 @@ export default function SuggestionsForm({ packageId, packageTitle, onSuccess, on
     setIsSubmitting(true)
 
     try {
+      // Try direct client-side insert first (RLS allows public insert)
+      const { error: insertErr } = await supabase
+        .from('suggestions')
+        .insert({
+          package_id: packageId,
+          package_title: packageTitle,
+          suggestions: selectedSuggestions,
+          user_id: user?.id || null,
+          user_email: user?.email || null,
+          created_at: new Date().toISOString()
+        })
+
+      if (!insertErr) {
+        setSelectedSuggestions([])
+        onSuccess()
+        return
+      }
+
+      // Fallback to API route if client insert fails (e.g., RLS/env issues)
       const response = await fetch('/api/suggestions', {
         method: 'POST',
         headers: {
@@ -56,13 +76,14 @@ export default function SuggestionsForm({ packageId, packageTitle, onSuccess, on
         })
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({} as any))
 
       if (response.ok) {
         setSelectedSuggestions([])
         onSuccess()
       } else {
-        onError(data.error || 'Failed to submit suggestions. Please try again.')
+        console.error('suggestions api error:', data)
+        onError(data?.error || 'Failed to submit suggestions. Please try again.')
       }
     } catch (error) {
       console.error('Error submitting suggestions:', error)

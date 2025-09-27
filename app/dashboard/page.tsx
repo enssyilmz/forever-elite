@@ -22,7 +22,9 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  emoji: string;
+  image_url_1?: string | null;
+  image_url_2?: string | null;
+  emoji?: string;
 }
 
 interface SupportTicket {
@@ -190,15 +192,40 @@ function DashboardContent() {
                 setFavoriteProducts([])
               } else {
                 const favoriteProductIds = favorites.map((fav: any) => fav.product_id)
-                const favoriteProgramDetails = allPrograms
-                  .filter(p => favoriteProductIds.includes(p.id))
-                  .map(p => ({
-                    id: p.id,
-                    name: p.title,
-                    description: p.bodyFatRange,
-                    emoji: p.emoji || '⭐'
-                  }))
-                setFavoriteProducts(favoriteProgramDetails)
+                
+                // Fetch actual package data from database
+                if (favoriteProductIds.length > 0) {
+                  const { data: packages, error: packagesError } = await supabase
+                    .from('packages')
+                    .select('id, title, body_fat_range, description, image_url_1, image_url_2')
+                    .in('id', favoriteProductIds)
+                    .eq('is_active', true)
+                  
+                  if (packagesError) {
+                    console.error('Error fetching package details:', packagesError)
+                    // Fallback to hardcoded data
+                    const favoriteProgramDetails = allPrograms
+                      .filter(p => favoriteProductIds.includes(p.id))
+                      .map(p => ({
+                        id: p.id,
+                        name: p.title,
+                        description: p.bodyFatRange,
+                        image_url_1: null
+                      }))
+                    setFavoriteProducts(favoriteProgramDetails)
+                  } else {
+                    const favoriteProgramDetails = packages.map(p => ({
+                      id: p.id,
+                      name: p.title,
+                      description: p.body_fat_range,
+                      image_url_1: p.image_url_1,
+                      image_url_2: p.image_url_2
+                    }))
+                    setFavoriteProducts(favoriteProgramDetails)
+                  }
+                } else {
+                  setFavoriteProducts([])
+                }
               }
             } catch (error) {
               console.error('Error fetching favorites:', error)
