@@ -22,6 +22,8 @@ function ConfirmationContent() {
   const [error, setError] = useState('')
   const [reconcileStatus, setReconcileStatus] = useState<'idle' | 'running' | 'success' | 'exists' | 'error'>('idle')
   const [reconcileMessage, setReconcileMessage] = useState('')
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [emailMessage, setEmailMessage] = useState('')
 
   useEffect(() => {
     if (sessionId) {
@@ -39,11 +41,47 @@ function ConfirmationContent() {
       }
       const data = await response.json()
       setPaymentDetails(data)
+      
+      // Payment details yüklendikten sonra email gönder
+      if (data && data.customer_email) {
+        sendPackageEmail(data.customer_email)
+      }
     } catch (error) {
       console.error('Error fetching payment details:', error)
       setError('Unable to load payment details')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const sendPackageEmail = async (customerEmail: string) => {
+    if (!sessionId) return
+    
+    setEmailStatus('sending')
+    setEmailMessage('Sending package content via email...')
+    
+    try {
+      const response = await fetch('/api/send-package-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          sessionId, 
+          customerEmail 
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (response.ok) {
+        setEmailStatus('sent')
+        setEmailMessage(`Package content sent to ${customerEmail}!`)
+      } else {
+        setEmailStatus('error')
+        setEmailMessage('Error sending email: ' + (result.error || 'Unknown error'))
+      }
+    } catch (error: any) {
+      setEmailStatus('error')
+      setEmailMessage('Email sending error: ' + error.message)
     }
   }
 
@@ -55,7 +93,7 @@ function ConfirmationContent() {
       if (window.location.hostname !== 'localhost') return // sadece local
       try {
         setReconcileStatus('running')
-        setReconcileMessage('Local ortam algılandı, satın alım kaydı senkronize ediliyor...')
+        setReconcileMessage('Local environment detected, synchronizing purchase record...')
         const res = await fetch('/api/reconcile-purchase', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -64,18 +102,18 @@ function ConfirmationContent() {
         const json = await res.json()
         if (!res.ok) {
           setReconcileStatus('error')
-          setReconcileMessage('Reconcile hata: ' + (json.error || 'Bilinmeyen hata'))
+          setReconcileMessage('Reconcile error: ' + (json.error || 'Unknown error'))
           return
         }
         if (json.status === 'already_exists') {
           setReconcileStatus('exists')
-          setReconcileMessage('Satın alım zaten kayıtlı (purchase_id: ' + json.purchase_id + ')')
+          setReconcileMessage('Purchase already recorded (purchase_id: ' + json.purchase_id + ')')
         } else if (json.status === 'reconciled') {
           setReconcileStatus('success')
-          setReconcileMessage('Satın alım kaydedildi. (inserted: ' + json.inserted?.join(', ') + ')')
+          setReconcileMessage('Purchase recorded. (inserted: ' + json.inserted?.join(', ') + ')')
         } else {
           setReconcileStatus('success')
-          setReconcileMessage('Durum: ' + json.status)
+          setReconcileMessage('Status: ' + json.status)
         }
       } catch (e: any) {
         setReconcileStatus('error')
@@ -88,7 +126,7 @@ function ConfirmationContent() {
   const manualReconcile = async () => {
     if (!sessionId) return
     setReconcileStatus('running')
-    setReconcileMessage('Tekrar deneniyor...')
+    setReconcileMessage('Retrying...')
     try {
       const res = await fetch('/api/reconcile-purchase', {
         method: 'POST',
@@ -98,18 +136,18 @@ function ConfirmationContent() {
       const json = await res.json()
       if (!res.ok) {
         setReconcileStatus('error')
-        setReconcileMessage('Hata: ' + (json.error || 'Bilinmeyen'))
+        setReconcileMessage('Error: ' + (json.error || 'Unknown'))
         return
       }
       if (json.status === 'already_exists') {
         setReconcileStatus('exists')
-        setReconcileMessage('Zaten kayıtlı (purchase_id: ' + json.purchase_id + ')')
+        setReconcileMessage('Already recorded (purchase_id: ' + json.purchase_id + ')')
       } else if (json.status === 'reconciled') {
         setReconcileStatus('success')
-        setReconcileMessage('Kaydedildi (inserted: ' + json.inserted?.join(', ') + ')')
+        setReconcileMessage('Recorded (inserted: ' + json.inserted?.join(', ') + ')')
       } else {
         setReconcileStatus('success')
-        setReconcileMessage('Durum: ' + json.status)
+        setReconcileMessage('Status: ' + json.status)
       }
     } catch (e: any) {
       setReconcileStatus('error')
@@ -207,9 +245,9 @@ function ConfirmationContent() {
                 </div>
                 {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
                   <div className="mt-6 p-4 border rounded-lg bg-gray-50 space-y-3">
-                    <p className="text-xs text-gray-500 font-medium">Local ortam: Webhook çalışmadığı için otomatik senkron denemesi yapıldı.</p>
+                    <p className="text-xs text-gray-500 font-medium">Local environment: Automatic sync attempted as webhook is not working.</p>
                     <div className="text-xs">
-                      <span className="font-semibold">Reconcile Durumu:</span>{' '}
+                      <span className="font-semibold">Reconcile Status:</span>{' '}
                       <span className={
                         reconcileStatus === 'success' || reconcileStatus === 'exists' ? 'text-green-600' : 
                         reconcileStatus === 'error' ? 'text-red-600' : 'text-gray-700'
@@ -225,11 +263,43 @@ function ConfirmationContent() {
                       disabled={reconcileStatus === 'running'}
                       className="px-3 py-1.5 text-xs rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
                     >
-                      {reconcileStatus === 'running' ? 'Bekleyin...' : 'Tekrar Senkronize Et'}
+                      {reconcileStatus === 'running' ? 'Please wait...' : 'Resync'}
                     </button>
-                    <p className="text-[10px] text-gray-500">Production ortamında bu kutu görünmez; gerçek kayıt Stripe webhook üzerinden gelir.</p>
+                    <p className="text-[10px] text-gray-500">This box is not visible in production; actual record comes via Stripe webhook.</p>
                   </div>
                 )}
+
+                {/* Email Status */}
+                <div className="mt-6 p-4 border rounded-lg bg-blue-50 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-800">Package Content Email Status</p>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Status:</span>{' '}
+                    <span className={
+                      emailStatus === 'sent' ? 'text-green-600' : 
+                      emailStatus === 'error' ? 'text-red-600' : 
+                      emailStatus === 'sending' ? 'text-blue-600' : 'text-gray-700'
+                    }>
+                      {emailStatus === 'idle' ? 'Pending' :
+                       emailStatus === 'sending' ? 'Sending...' :
+                       emailStatus === 'sent' ? 'Sent ✓' :
+                       emailStatus === 'error' ? 'Error' : emailStatus}
+                    </span>
+                  </div>
+                  {emailMessage && (
+                    <div className="text-xs text-gray-700">{emailMessage}</div>
+                  )}
+                  {emailStatus === 'error' && (
+                    <button
+                      onClick={() => paymentDetails && sendPackageEmail(paymentDetails.customer_email)}
+                      className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      Resend
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="text-center">

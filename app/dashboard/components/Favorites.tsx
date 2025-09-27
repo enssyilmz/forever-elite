@@ -27,9 +27,24 @@ export default function Favorites({ favoriteProducts, favoritesLoading }: Favori
                       src={product.image_url_1} 
                       alt={product.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : product.image_url_2 ? (
+                    <img 
+                      src={product.image_url_2} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
-                    <span className="text-4xl md:text-7xl opacity-90">📦</span>
+                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-300 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                          <span className="text-gray-500 text-xl md:text-2xl">📷</span>
+                        </div>
+                        <p className="text-xs md:text-sm text-gray-500">No Image</p>
+                      </div>
+                    </div>
                   )}
                 </div>
                 <div className="p-3 md:p-4 flex-grow">
