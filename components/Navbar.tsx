@@ -181,7 +181,7 @@ export default function Navbar() {
               </div>
             </Link>
             {user && user.email === ADMIN_EMAIL && (
-              <Link href="/admin" className="text-xs font-semibold text-white bg-red-600 px-2 py-1 rounded-md hover:bg-red-700">
+              <Link href="/admin" className="text-xs font-semibold text-white bg-red-600 px-2 py-1 rounded-md hover:bg-red-700 transition-colors">
                 Admin
               </Link>
             )}
@@ -226,8 +226,8 @@ export default function Navbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex h-16 px-6 items-center">
-          {/* Sol taraf - Logo */}
-          <div className="flex items-center">
+          {/* Sol taraf - Logo + Admin Panel */}
+          <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="w-16 h-16 relative overflow-hidden rounded-full">
                 <Image
@@ -240,6 +240,12 @@ export default function Navbar() {
                 />
               </div>
             </Link>
+            
+            {user && user.email === ADMIN_EMAIL && (
+              <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors">
+                Admin Panel
+              </Link>
+            )}
           </div>
 
           {/* Orta - Navigation Linkleri (Gerçekten ortalanmış) */}
@@ -252,13 +258,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Sağ taraf - Admin Panel + İkonlar */}
+          {/* Sağ taraf - İkonlar */}
           <div className="flex items-center gap-4">
-            {user && user.email === ADMIN_EMAIL && (
-              <Link href="/admin" className="text-sm font-semibold text-white bg-red-600 px-3 py-1 rounded-md hover:bg-red-700">
-                Admin Panel
-              </Link>
-            )}
             
             <div className="relative" ref={searchRef}>
               <Search

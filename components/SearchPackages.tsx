@@ -3,8 +3,9 @@
 import { useState, useEffect, MouseEvent } from 'react'
 import { X } from 'lucide-react'
 import Link from 'next/link'
-import { programs } from '@/lib/packagesData'
 import { useRouter } from 'next/navigation'
+import { useApp } from '@/contexts/AppContext'
+import { Package } from '@/lib/database.types'
 
 interface SearchPackagesProps {
   isOpen: boolean
@@ -13,29 +14,28 @@ interface SearchPackagesProps {
 
 export default function SearchPackages({ isOpen, onClose }: SearchPackagesProps) {
   const router = useRouter()
+  const { packages } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-
-  const convertToGBP = (usd: number) => Math.round(usd * 0.8)
+  const [searchResults, setSearchResults] = useState<Package[]>([])
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setSearchResults(programs.slice(0, 3))
+      setSearchResults(packages.slice(0, 3))
       return
     }
     const q = searchQuery.toLowerCase()
-    const filtered = programs.filter(program =>
-      program.title.toLowerCase().includes(q) ||
-      program.bodyFatRange.toLowerCase().includes(q)
+    const filtered = packages.filter(pkg =>
+      pkg.title.toLowerCase().includes(q) ||
+      pkg.body_fat_range.toLowerCase().includes(q)
     )
     setSearchResults(filtered)
-  }, [searchQuery])
+  }, [searchQuery, packages])
 
-  const handlePackageClick = (e: MouseEvent, program: typeof programs[0]) => {
+  const handlePackageClick = (e: MouseEvent, pkg: Package) => {
     e.preventDefault()
     e.stopPropagation()
     onClose() // önce modalı kapat
-    router.push(`/packages/${program.id}`) // client-side navigate
+    router.push(`/packages/${pkg.id}`) // client-side navigate
   }
 
   if (!isOpen) return null
@@ -75,17 +75,17 @@ export default function SearchPackages({ isOpen, onClose }: SearchPackagesProps)
 
           <div className="mt-3 md:mt-4 max-h-48 md:max-h-64 overflow-y-auto">
             {searchResults.length > 0 ? (
-              searchResults.map((program) => (
+              searchResults.map((pkg) => (
                 <div
-                  key={program.id}
-                  onClick={(e) => handlePackageClick(e, program)}
+                  key={pkg.id}
+                  onClick={(e) => handlePackageClick(e, pkg)}
                   className="flex items-center w-full p-2 md:p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer border-b border-gray-100 last:border-b-0"
                 >
                   <div className="w-8 h-8 md:w-10 md:h-10 mr-2 md:mr-3 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {program.image_url_1 ? (
+                    {pkg.image_url_1 ? (
                       <img 
-                        src={program.image_url_1} 
-                        alt={program.title}
+                        src={pkg.image_url_1} 
+                        alt={pkg.title}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -94,13 +94,13 @@ export default function SearchPackages({ isOpen, onClose }: SearchPackagesProps)
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base truncate">
-                      {program.title}
+                      {pkg.title}
                     </h4>
-                    <p className="text-xs md:text-sm text-gray-600">{program.bodyFatRange}</p>
+                    <p className="text-xs md:text-sm text-gray-600">{pkg.body_fat_range}</p>
                   </div>
                   <div className="text-right ml-2">
-                    <div className="text-xs md:text-sm text-gray-400 line-through">£{convertToGBP(program.originalPrice)}</div>
-                    <div className="font-bold text-sky-600 text-responsive-sm md:text-responsive-base">£{convertToGBP(program.discountedPrice)}</div>
+                    <div className="text-xs md:text-sm text-gray-400 line-through">£{pkg.price_gbp}</div>
+                    <div className="font-bold text-sky-600 text-responsive-sm md:text-responsive-base">£{pkg.discounted_price_gbp}</div>
                   </div>
                 </div>
               ))

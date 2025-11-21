@@ -3,8 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
-import { programs } from '@/lib/packagesData' // Import from centralized file
-import { CustomProgram } from '@/lib/database.types'
+import { CustomProgram, Package } from '@/lib/database.types'
 import { supabase } from '@/utils/supabaseClient'
 
 interface CartItem {
@@ -38,6 +37,9 @@ interface Review {
 interface AppContextType {
   // User
   user: User | null
+
+  // Packages
+  packages: Package[]
 
   // Cart
   cartItems: CartItem[]
@@ -89,6 +91,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [customPrograms, setCustomPrograms] = useState<CustomProgram[]>([])
+  const [packages, setPackages] = useState<Package[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isNavbarOpen, setIsNavbarOpen] = useState(false)
   const [lastViewedSupportAt, setLastViewedSupportAt] = useState<number>(() => {
@@ -140,6 +143,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Get user, favorites, reviews, and custom programs on mount
   useEffect(() => {
+    // Fetch packages first (needed for cart and favorites)
+    const fetchPackages = async () => {
+      try {
+        const response = await fetch('/api/packages')
+        if (response.ok) {
+          const data = await response.json()
+          setPackages(data.packages || [])
+        }
+      } catch (error) {
+        console.error('Error fetching packages:', error)
+      }
+    }
+
+    fetchPackages()
+
     const fetchInitialData = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -163,9 +181,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     fetchInitialData()
 
-         const {
-       data: { subscription },
+    const {
+      data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+      console.log('Auth state changed:', event, session?.user?.email)
       setUser(session?.user ?? null)
       
       const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
@@ -175,14 +194,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           fetchReviews(),
           fetchCustomPrograms()
         ])
-      } else {
+      } else if (!session?.user) {
         setFavoriteItems([])
         setReviews([])
         setCustomPrograms([])
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Listen for storage events (cross-tab communication)
+    const handleStorageChange = (e: StorageEvent) => {
+      // Sync cart across tabs
+      if (e.key === 'ozcanfit.cart' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (Array.isArray(parsed)) {
+            setCartItems(parsed)
+          }
+        } catch (error) {
+          console.error('Failed to parse cart from storage event:', error)
+        }
+      }
+      
+      // Sync auth token changes
+      if (e.key === 'supabase.auth.token' && e.newValue !== e.oldValue) {
+        console.log('Auth token changed in another tab, refreshing session...')
+        supabase.auth.getSession().then(({ data }) => {
+          setUser(data.session?.user ?? null)
+        })
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+    }
+
+    return () => {
+      subscription.unsubscribe()
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange)
+      }
+    }
   }, [])
 
   // Hydrate cart from localStorage on mount (client-side only)
@@ -216,29 +267,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-             const { data: favorites } = await supabase
-         .from('user_favorites')
-         .select('product_id')
-         .eq('user_id', user.id)
+      const { data: favorites } = await supabase
+        .from('user_favorites')
+        .select('product_id')
+        .eq('user_id', user.id)
 
-       if (favorites) {
-         const favoritePrograms = favorites
-           .map((fav: any) => {
-             const program = programs.find(p => p.id === fav.product_id)
-             return program ? {
-               id: program.id,
-               title: program.title,
-               price: program.discountedPrice,
-               originalPrice: program.originalPrice,
-               discount: program.discount,
-               bodyFatRange: program.bodyFatRange,
-               image: program.image
-             } : null
-           })
-           .filter(Boolean) as FavoriteItem[]
+      if (favorites && packages.length > 0) {
+        const favoritePrograms = favorites
+          .map((fav: any) => {
+            const program = packages.find((p: Package) => p.id === fav.product_id)
+            return program ? {
+              id: program.id,
+              title: program.title,
+              price: program.discounted_price_gbp || program.price_gbp || 0,
+              originalPrice: program.price_gbp || 0,
+              discount: program.discount_percentage || 0,
+              bodyFatRange: program.body_fat_range,
+              image: program.image_url_1 || ''
+            } : null
+          })
+          .filter(Boolean) as FavoriteItem[]
 
-         setFavoriteItems(favoritePrograms)
-       }
+        setFavoriteItems(favoritePrograms)
+      }
     } catch (error) {
       console.error('Error fetching favorites:', error)
     }
@@ -281,7 +332,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addToCart = (programId: number, quantity: number) => {
-    const program = programs.find(p => p.id === programId)
+    const program = packages.find((p: Package) => p.id === programId)
     if (!program) return
 
     const existingItem = cartItems.find(item => item.id === programId)
@@ -295,9 +346,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCartItems([...cartItems, {
         id: program.id,
         title: program.title,
-        price: program.discountedPrice,
+        price: program.discounted_price_gbp || program.price_gbp || 0,
         quantity,
-        image: program.image
+        image: program.image_url_1 || ''
       }])
     }
   }
@@ -343,18 +394,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const program = programs.find(p => p.id === programId)
-             if (program) {
-         setFavoriteItems([...favoriteItems, {
-           id: program.id,
-           title: program.title,
-           price: program.discountedPrice,
-           originalPrice: program.originalPrice,
-           discount: program.discount,
-           bodyFatRange: program.bodyFatRange,
-           image: program.image
-         }])
-       }
+      const program = packages.find((p: Package) => p.id === programId)
+      if (program) {
+        setFavoriteItems([...favoriteItems, {
+          id: program.id,
+          title: program.title,
+          price: program.discounted_price_gbp || program.price_gbp || 0,
+          originalPrice: program.price_gbp || 0,
+          discount: program.discount_percentage || 0,
+          bodyFatRange: program.body_fat_range,
+          image: program.image_url_1 || ''
+        }])
+      }
     } catch (error) {
       console.error('Error adding to favorites:', error)
     }
@@ -464,6 +515,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       user,
+      packages,
       cartItems,
       addToCart,
       removeFromCart,
