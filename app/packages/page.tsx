@@ -90,7 +90,7 @@ export default function PackagesPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 md:py-16 px-4 md:px-6">
+    <div className="mt-4 py-4 px-2 md:py-6 md:px-4 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 md:mb-16">
