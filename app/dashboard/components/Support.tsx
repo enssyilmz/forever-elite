@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
-import { ChevronDown, Plus } from 'lucide-react'
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import dayjs from 'dayjs'
 
@@ -36,6 +36,7 @@ interface SupportProps {
   onRecaptchaChange: (value: string | null) => void
   onRecaptchaExpired: () => void
   onRecaptchaSkip: () => void
+  onDeleteTicket: (ticketId: number) => void
 }
 
 export default function Support({
@@ -50,7 +51,8 @@ export default function Support({
   onNewTicketSubmit,
   onRecaptchaChange,
   onRecaptchaExpired,
-  onRecaptchaSkip
+  onRecaptchaSkip,
+  onDeleteTicket
 }: SupportProps) {
   const recaptchaRef = useRef<ReCAPTCHA>(null)
 
@@ -73,7 +75,7 @@ export default function Support({
       
       <div className="space-y-3 md:space-y-4">
         {/* My Support Tickets Section */}
-        <div className="border rounded-lg">
+        <div className={`rounded-lg ${!supportSectionExpanded.myTickets ? 'border-b' : ''}`}>
           <button
             onClick={() => onSupportSectionToggle('myTickets')}
             className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50 transition-colors"
@@ -83,7 +85,7 @@ export default function Support({
           </button>
           
           {supportSectionExpanded.myTickets && (
-            <div className="border-t p-3 md:p-4">
+            <div className="p-3 md:p-4">
               {supportLoading ? (
                 <p className="text-responsive-sm text-gray-500">Loading tickets...</p>
               ) : supportTickets.length === 0 ? (
@@ -111,12 +113,21 @@ export default function Support({
                   </div>
                   
                   {supportTickets.map((ticket) => (
-                    <div key={ticket.id} className="border rounded-lg p-3 md:p-4 bg-gray-50">
+                    <div key={ticket.id} className="rounded-lg p-3 md:p-4 bg-gray-50 border border-gray-200">
                       <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-2 gap-2">
                         <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">{ticket.subject}</h4>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                          {ticket.status.replace('_', ' ').toUpperCase()}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
+                            {ticket.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                          <button
+                            onClick={() => onDeleteTicket(ticket.id)}
+                            className="text-red-500 hover:text-red-700 p-1.5 rounded-md hover:bg-red-50 transition-colors"
+                            title="Delete ticket"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-gray-600 text-responsive-sm mb-2 line-clamp-2">{ticket.content}</p>
                       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 md:gap-0 text-xs text-gray-500">
@@ -141,7 +152,7 @@ export default function Support({
         </div>
 
         {/* New Support Ticket Section */}
-        <div className="border rounded-lg">
+        <div className={`rounded-lg ${!supportSectionExpanded.newTicket ? 'border-b' : ''}`}>
           <button
             onClick={() => onSupportSectionToggle('newTicket')}
             className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-gray-50 transition-colors"
@@ -151,7 +162,7 @@ export default function Support({
           </button>
           
           {supportSectionExpanded.newTicket && (
-            <div className="border-t p-3 md:p-4">
+            <div className="p-3 md:p-4">
               <form onSubmit={onNewTicketSubmit} className="space-y-3 md:space-y-4">
                 <div>
                   <label className="block text-responsive-sm font-medium text-gray-700 mb-2">Subject</label>

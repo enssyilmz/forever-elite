@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit } from 'lucide-react'
+import { Edit, Trash2 } from 'lucide-react'
 
 interface SupportTicket {
   id: number
@@ -17,12 +17,13 @@ interface User {
   email: string
 }
 
-export default function TicketsTab({ tickets, users, getPriorityClass, getStatusClass, onOpen }: {
+export default function TicketsTab({ tickets, users, getPriorityClass, getStatusClass, onOpen, onDelete }: {
   tickets: SupportTicket[]
   users: User[]
   getPriorityClass: (p: string) => string
   getStatusClass: (s: string) => string
   onOpen: (ticket: SupportTicket) => void
+  onDelete: (ticket: SupportTicket) => void
 }) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -63,10 +64,15 @@ export default function TicketsTab({ tickets, users, getPriorityClass, getStatus
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityClass(ticket.priority)}`}>{ticket.priority}</span></td>
                   <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(ticket.status)}`}>{ticket.status}</span></td>
                   <td className="px-6 py-4">{new Date(ticket.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-center">
-                    <button onClick={() => onOpen(ticket)} className="text-blue-600 hover:text-blue-800" title="View and respond to ticket">
-                      <Edit size={16} />
-                    </button>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => onOpen(ticket)} className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="View and respond to ticket">
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => onDelete(ticket)} className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete ticket">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

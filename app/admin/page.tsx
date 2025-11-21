@@ -13,6 +13,7 @@ import SupportTicketModal from './components/modals/SupportTicketModal'
 import ProgramModal from './components/modals/ProgramModal'
 import PackageModal from './components/modals/PackageModal'
 import DeleteModal from './components/modals/DeleteModal'
+import DeleteTicketModal from './components/modals/DeleteTicketModal'
 import { CustomProgram } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
 import { useApp } from '@/contexts/AppContext'
@@ -78,6 +79,35 @@ interface Exercise {
 }
 
 const ADMIN_EMAIL = 'yozdzhansyonmez@gmail.com'
+
+// Generic fetch with retry and backoff (2 attempts, 2s delay by default)
+async function fetchJSONWithRetry(
+  url: string,
+  options: RequestInit = {},
+  attempts = 2,
+  delayMs = 2000
+) {
+  let lastError: any
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await withTimeout(fetch(url, options), 15000)
+      if (!response.ok) {
+        // Try to parse error body if available
+        let body: any = null
+        try { body = await response.json() } catch { /* ignore */ }
+        throw new Error(body?.error || `Request failed (${response.status})`)
+      }
+      return await response.json()
+    } catch (err: any) {
+      lastError = err
+      // Only retry on network / transient errors; for now always retry except last attempt
+      if (attempt < attempts) {
+        await new Promise(r => setTimeout(r, delayMs))
+      }
+    }
+  }
+  throw lastError
+}
 
 export default function AdminPage() {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -161,6 +191,9 @@ export default function AdminPage() {
   // Program delete modal states
   const [isProgramDeleteModalOpen, setIsProgramDeleteModalOpen] = useState(false)
   const [programToDelete, setProgramToDelete] = useState<CustomProgram | null>(null)
+  
+  // Ticket delete modal states
+  const [isDeleteTicketModalOpen, setIsDeleteTicketModalOpen] = useState(false)
 
   const router = useRouter()
 
@@ -174,12 +207,7 @@ export default function AdminPage() {
       startGlobalLoading()
       setUsersLoading(true)
       setError(null)
-      const response = await withTimeout(fetch('/api/admin/users'), 15000)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch users')
-      }
-      const data = await response.json()
+      const data = await fetchJSONWithRetry('/api/admin/users')
       setUsers(data.users || [])
       setLoadedTabs(prev => new Set([...prev, 'users']))
     } catch (e: any) {
@@ -199,9 +227,7 @@ export default function AdminPage() {
       const paramUserId = userIdForFilter ?? programsFilterUserId
       const base = '/api/custom-programs?scope=admin'
       const url = paramUserId ? `${base}&user_id=${encodeURIComponent(paramUserId)}` : base
-      const response = await withTimeout(fetch(url), 15000)
-      if (!response.ok) throw new Error('Failed to fetch programs')
-      const data = await response.json()
+      const data = await fetchJSONWithRetry(url)
       setPrograms(data.programs || [])
       setLoadedTabs(prev => new Set([...prev, 'programs']))
     } catch (e: any) {
@@ -218,12 +244,7 @@ export default function AdminPage() {
       startGlobalLoading()
       setPurchasesLoading(true)
       setError(null)
-      const response = await withTimeout(fetch('/api/admin/purchases'), 15000)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch purchases')
-      }
-      const data = await response.json()
+      const data = await fetchJSONWithRetry('/api/admin/purchases')
       setPurchases(data.purchases || [])
       setLoadedTabs(prev => new Set([...prev, 'purchases']))
     } catch (e: any) {
@@ -240,12 +261,7 @@ export default function AdminPage() {
       startGlobalLoading()
       setTicketsLoading(true)
       setError(null)
-      const response = await withTimeout(fetch('/api/admin/support-tickets'), 15000)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch support tickets')
-      }
-      const data = await response.json()
+      const data = await fetchJSONWithRetry('/api/admin/support-tickets')
       setSupportTickets(data.tickets || [])
       setLoadedTabs(prev => new Set([...prev, 'tickets']))
     } catch (e: any) {
@@ -263,12 +279,7 @@ export default function AdminPage() {
       startGlobalLoading()
       setMailLoading(true)
       setError(null)
-      const response = await withTimeout(fetch('/api/admin/mail-logs'), 15000)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch mail logs')
-      }
-      const data = await response.json()
+      const data = await fetchJSONWithRetry('/api/admin/mail-logs')
       setMailLogs(data.mailLogs || [])
       setLoadedTabs(prev => new Set([...prev, 'mail']))
     } catch (e: any) {
@@ -285,12 +296,7 @@ export default function AdminPage() {
       startGlobalLoading()
       setPackagesLoading(true)
       setError(null)
-      const response = await withTimeout(fetch('/api/packages'), 15000)
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch packages')
-      }
-      const data = await response.json()
+      const data = await fetchJSONWithRetry('/api/packages')
       setPackages(data.packages || [])
       setLoadedTabs(prev => new Set([...prev, 'packages']))
     } catch (e: any) {
@@ -302,8 +308,8 @@ export default function AdminPage() {
   }
 
   const checkUserAndFetchData = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
       // Prefer local session (instant) to avoid network-induced timeouts
       const { data: sessionData } = await supabase.auth.getSession()
       let authUser = sessionData.session?.user || null
@@ -319,6 +325,8 @@ export default function AdminPage() {
       }
 
       if (!authUser) {
+        // Ensure we always clear loading before navigation
+        setLoading(false)
         router.push('/')
         return
       }
@@ -326,6 +334,7 @@ export default function AdminPage() {
       setUser(authUser as AuthUser)
       
       if ((authUser as any).email !== ADMIN_EMAIL) {
+        setLoading(false)
         router.push('/')
         return
       }
@@ -340,6 +349,19 @@ export default function AdminPage() {
       setLoading(false)
     }
   }
+
+  // Safety timeout: never allow the loading spinner to persist forever
+  useEffect(() => {
+    if (!loading) return
+    const timeout = setTimeout(() => {
+      // If still loading after 10s, surface a timeout error and allow refresh
+      setLoading(false)
+      if (!user) {
+        setError('Authentication timed out. Please refresh or retry later.')
+      }
+    }, 5000)
+    return () => clearTimeout(timeout)
+  }, [loading, user])
 
   useEffect(() => {
     checkUserAndFetchData()
@@ -406,15 +428,14 @@ export default function AdminPage() {
     setIsSending(true)
     try {
       startGlobalLoading()
-      const response = await withTimeout(fetch('/api/admin/send-bulk-mail', {
+      const result = await fetchJSONWithRetry('/api/admin/send-bulk-mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject, html: body, recipients })
-      }), 15000)
-      const result = await response.json()
-      if (!response.ok || !result.ok) {
+      })
+      if (!result.ok) {
         const reason = result?.error || 'Please check your connection or configuration.'
-    setMailModalOpen(false)
+        setMailModalOpen(false)
         setModalTitle('Email sending failed')
         setModalMessage(`Emails could not be sent. Reason: ${reason}`)
         setShowSuccessModal(true)
@@ -441,10 +462,8 @@ export default function AdminPage() {
     setMailModalOpen(true)
     try {
       startGlobalLoading()
-      const response = await withTimeout(fetch('/api/admin/users'), 15000)
-      if (!response.ok) throw new Error('Failed to fetch users')
-      const data = await response.json()
-      setAllUserEmails(data.users.map((u: any) => u.email))
+      const data = await fetchJSONWithRetry('/api/admin/users')
+      setAllUserEmails((data.users || []).map((u: any) => u.email))
     } catch (e) {
       console.error('Error fetching user emails:', e)
       setAllUserEmails([])
@@ -458,6 +477,40 @@ export default function AdminPage() {
     setAdminResponse(ticket.admin_response || '')
     setIsResponding(false)
     setTicketModalOpen(true)
+  }
+
+  const openTicketDeleteModal = (ticket: SupportTicket) => {
+    setSelectedTicket(ticket)
+    setIsDeleteTicketModalOpen(true)
+  }
+
+  const handleDeleteTicket = async () => {
+    if (!selectedTicket) return
+
+    try {
+      startGlobalLoading()
+      const response = await fetch(`/api/admin/support-tickets?id=${selectedTicket.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete ticket')
+
+      // Refresh tickets list
+      await fetchSupportTickets()
+      
+      setIsDeleteTicketModalOpen(false)
+      setSelectedTicket(null)
+      setModalTitle('Ticket Deleted')
+      setModalMessage('Support ticket has been deleted successfully.')
+      setShowSuccessModal(true)
+    } catch (error) {
+      console.error('Error deleting ticket:', error)
+      setModalTitle('Error')
+      setModalMessage('Failed to delete ticket. Please try again.')
+      setShowSuccessModal(true)
+    } finally {
+      stopGlobalLoading()
+    }
   }
 
   const handleTicketResponse = async (ticketId: number, response: string, status: string) => {
@@ -1004,6 +1057,7 @@ export default function AdminPage() {
             openProgramModal,
             openProgramDeleteModal,
             openTicketModal,
+            openTicketDeleteModal,
             openPackageModal,
             openDeleteModal
           }}
@@ -1077,6 +1131,16 @@ export default function AdminPage() {
         title="Delete Program"
         message="Are you sure you want to delete this program? This action cannot be undone."
         itemName={programToDelete?.title}
+      />
+
+      <DeleteTicketModal
+        isOpen={isDeleteTicketModalOpen}
+        onClose={() => {
+          setIsDeleteTicketModalOpen(false)
+          setSelectedTicket(null)
+        }}
+        onConfirm={handleDeleteTicket}
+        ticketSubject={selectedTicket?.subject}
       />
 
       <SuccessModal

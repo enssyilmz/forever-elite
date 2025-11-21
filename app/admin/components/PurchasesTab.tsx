@@ -29,7 +29,6 @@ export default function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
               <th className="px-6 py-3">Currency</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Created At</th>
-              <th className="px-6 py-3">Stripe Session ID</th>
             </tr>
           </thead>
           <tbody>
@@ -55,7 +54,6 @@ export default function PurchasesTab({ purchases }: { purchases: Purchase[] }) {
                     </span>
                   </td>
                   <td className="px-6 py-4">{new Date(purchase.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4">{purchase.stripe_session_id}</td>
                 </tr>
               ))
             )}

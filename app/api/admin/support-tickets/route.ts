@@ -60,3 +60,35 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const authResult = await checkAdminAuth()
+    if (authResult.error) return authResult.error
+
+    const { searchParams } = new URL(request.url)
+    const ticketId = searchParams.get('id')
+
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
+
+    const supabase = await createSupabaseServerClient()
+
+    // Admin can delete any ticket
+    const { error } = await supabase
+      .from('support_tickets')
+      .delete()
+      .eq('id', ticketId)
+
+    if (error) {
+      console.error('Error deleting ticket:', error)
+      return NextResponse.json({ error: 'Failed to delete ticket' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error in DELETE /api/admin/support-tickets:', error)
+    return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 })
+  }
+}

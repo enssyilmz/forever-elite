@@ -16,6 +16,7 @@ import MyOrders from './components/MyOrders'
 import Favorites from './components/Favorites'
 import Support from './components/Support'
 import CustomPrograms from './components/CustomPrograms'
+import DeleteTicketModal from '../admin/components/modals/DeleteTicketModal'
 
 interface Product {
   id: number;
@@ -90,6 +91,11 @@ function DashboardContent() {
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false)
   const [recaptchaVerified, setRecaptchaVerified] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  
+  // Delete ticket modal states
+  const [isDeleteTicketModalOpen, setIsDeleteTicketModalOpen] = useState(false)
+  const [ticketToDelete, setTicketToDelete] = useState<SupportTicket | null>(null)
+  const [isDeletingTicket, setIsDeletingTicket] = useState(false)
 
 
   const hasUnreadSupport = supportTickets.some(
@@ -513,9 +519,47 @@ function DashboardContent() {
       
     } catch (error) {
       console.error('Error submitting ticket:', error)
-      showPopup('Error', 'Failed to submit ticket. Please try again.')
+      showPopup('Error', 'Failed to submit support ticket. Please try again.')
     } finally {
       setIsSubmittingTicket(false)
+    }
+  }
+
+  const handleDeleteTicket = (ticketId: number) => {
+    const ticket = supportTickets.find(t => t.id === ticketId)
+    if (ticket) {
+      setTicketToDelete(ticket)
+      setIsDeleteTicketModalOpen(true)
+    }
+  }
+
+  const confirmDeleteTicket = async () => {
+    if (!ticketToDelete) return
+
+    setIsDeletingTicket(true)
+    try {
+      const response = await withTimeout(
+        fetch(`/api/support-tickets?id=${ticketToDelete.id}`, {
+          method: 'DELETE'
+        }),
+        15000
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to delete ticket')
+      }
+
+      // Remove from local state
+      setSupportTickets(prev => prev.filter(t => t.id !== ticketToDelete.id))
+      
+      setIsDeleteTicketModalOpen(false)
+      setTicketToDelete(null)
+      showPopup('Success', 'Support ticket deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting ticket:', error)
+      showPopup('Error', 'Failed to delete ticket. Please try again.')
+    } finally {
+      setIsDeletingTicket(false)
     }
   }
 
@@ -628,6 +672,7 @@ function DashboardContent() {
             onRecaptchaChange={(value: string | null) => setRecaptchaVerified(!!value)}
             onRecaptchaExpired={() => setRecaptchaVerified(false)}
             onRecaptchaSkip={() => setRecaptchaVerified(true)}
+            onDeleteTicket={handleDeleteTicket}
           />
         )
       
@@ -793,6 +838,17 @@ function DashboardContent() {
         onClose={() => setShowSuccessModal(false)}
         title={modalTitle}
         message={modalMessage}
+      />
+
+      {/* Delete Ticket Modal */}
+      <DeleteTicketModal
+        isOpen={isDeleteTicketModalOpen}
+        onClose={() => {
+          setIsDeleteTicketModalOpen(false)
+          setTicketToDelete(null)
+        }}
+        onConfirm={confirmDeleteTicket}
+        ticketSubject={ticketToDelete?.subject}
       />
     </div>
   )
