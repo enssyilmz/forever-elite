@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
 import { uploadImage, validateImage, deleteImage } from '@/lib/supabaseStorage'
 
@@ -29,6 +29,32 @@ export default function PackageModal({
     show: false,
     imageNumber: null
   })
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const initialFormData = useRef<any>(null)
+
+  // Store initial form data when modal opens
+  useEffect(() => {
+    if (isOpen && !initialFormData.current) {
+      initialFormData.current = JSON.stringify(formData)
+      setHasUnsavedChanges(false)
+    }
+    if (!isOpen) {
+      // Reset all states when modal closes
+      initialFormData.current = null
+      setHasUnsavedChanges(false)
+      setShowCloseConfirm(false)
+      setShowRemoveConfirm({ show: false, imageNumber: null })
+    }
+  }, [isOpen, formData])
+
+  // Check for unsaved changes
+  useEffect(() => {
+    if (initialFormData.current) {
+      const currentData = JSON.stringify(formData)
+      setHasUnsavedChanges(currentData !== initialFormData.current)
+    }
+  }, [formData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,13 +111,40 @@ export default function PackageModal({
     setShowRemoveConfirm({ show: false, imageNumber: null })
   }
 
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges) {
+      setShowCloseConfirm(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const confirmClose = () => {
+    setShowCloseConfirm(false)
+    setHasUnsavedChanges(false)
+    initialFormData.current = null
+    onClose()
+  }
+
+  const cancelClose = () => {
+    setShowCloseConfirm(false)
+  }
+
+  const handleSubmitWrapper = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await onSubmit(formData)
+    // Reset unsaved changes after successful submit
+    setHasUnsavedChanges(false)
+    initialFormData.current = null
+  }
+
 
   if (!isOpen) return null
 
   return (
     <div 
       className="fixed inset-0 bg-black/10 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4"
-      onClick={onClose}
+      onClick={handleCloseAttempt}
     >
       <div 
         className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col"
@@ -102,14 +155,14 @@ export default function PackageModal({
             {isEditing ? 'Edit Package' : 'Create Package'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 overflow-y-auto">
+        <form onSubmit={handleSubmitWrapper} className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 overflow-y-auto">
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             <div>
               <label className="block text-responsive-sm font-medium text-gray-700 mb-1 sm:mb-2">
@@ -400,7 +453,7 @@ export default function PackageModal({
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t flex-shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="btn-secondary-sm"
             >
               Cancel
@@ -415,26 +468,60 @@ export default function PackageModal({
         </form>
       </div>
 
+      {/* Close Confirmation Modal */}
+      {showCloseConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+          onClick={cancelClose}
+        >
+          <div 
+            className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Unsaved Changes
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+              You have unsaved changes. Are you sure you want to close? All changes will be lost.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+              <button
+                onClick={cancelClose}
+                className="btn-secondary-sm order-2 sm:order-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmClose}
+                className="btn-danger-sm order-1 sm:order-2"
+              >
+                Yes, Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Remove Confirmation Modal */}
       {showRemoveConfirm.show && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
               Remove Image
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Are you sure you want to remove Package Image {showRemoveConfirm.imageNumber}? This action cannot be undone.
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               <button
                 onClick={cancelRemoveImage}
-                className="btn-secondary-sm"
+                className="btn-secondary-sm order-2 sm:order-1"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmRemoveImage}
-                className="btn-danger-sm"
+                className="btn-danger-sm order-1 sm:order-2"
               >
                 Remove
               </button>

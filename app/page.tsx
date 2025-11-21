@@ -4,77 +4,46 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { Package } from '@/lib/database.types'
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(4)
+  const [packages, setPackages] = useState<Package[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const programs = [
-    {
-      id: 1,
-      logo: '💎',
-      bodyFatRange: '6-10% Body Fat',
-      title: 'Elite Athletes Package',
-      description: 'Designed for professional athletes and bodybuilders. Extreme cutting and muscle definition workouts.'
-    },
-    {
-      id: 2,
-      logo: '🏆',
-      bodyFatRange: '10-14% Body Fat',
-      title: 'Advanced Fitness Package',
-      description: 'Perfect for experienced fitness enthusiasts. Focus on strength building and lean muscle maintenance.'
-    },
-    {
-      id: 3,
-      logo: '🎯',
-      bodyFatRange: '14-18% Body Fat',
-      title: 'Active Lifestyle Package',
-      description: 'Great for active individuals looking to improve their physique. Balanced cardio and strength training.'
-    },
-    {
-      id: 4,
-      logo: '🔥',
-      bodyFatRange: '18-22% Body Fat',
-      title: 'Transformation Package',
-      description: 'Ideal for those starting their fitness journey. Progressive workouts for sustainable weight loss.'
-    },
-    {
-      id: 5,
-      logo: '⚡',
-      bodyFatRange: '22-26% Body Fat',
-      title: 'Beginner Boost Package',
-      description: 'Perfect starting point for fitness beginners. Low-impact exercises with gradual intensity increase.'
-    },
-    {
-      id: 6,
-      logo: '🌟',
-      bodyFatRange: '26-30% Body Fat',
-      title: 'Health Foundation Package',
-      description: 'Focus on building healthy habits and basic fitness. Gentle movements and lifestyle changes.'
-    },
-    {
-      id: 7,
-      logo: '💪',
-      bodyFatRange: '30%+ Body Fat',
-      title: 'Wellness Journey Package',
-      description: 'Comprehensive approach to health improvement. Medical support and supervised progress tracking.'
-    },
-    {
-      id: 8,
-      logo: '🚀',
-      bodyFatRange: 'Custom Body Fat',
-      title: 'Personalized Package',
-      description: 'Tailored specifically to your body composition and goals. One-on-one coaching available.'
+  // Fetch packages from database
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await fetch('/api/packages')
+        if (response.ok) {
+          const data = await response.json()
+          // Filter only active packages and sort by sort_order
+          const activePackages = (data.packages || [])
+            .filter((pkg: Package) => pkg.is_active)
+            .sort((a: Package, b: Package) => a.sort_order - b.sort_order)
+          setPackages(activePackages)
+        } else {
+          console.error('Failed to fetch packages')
+        }
+      } catch (error) {
+        console.error('Error fetching packages:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchPackages()
+  }, [])
   
-  const numPages = Math.ceil(programs.length / itemsPerPage);
+  const numPages = Math.ceil(packages.length / itemsPerPage);
   const currentPage = Math.floor(currentIndex / itemsPerPage);
 
   const goToPage = (page: number) => {
     const newIndex = page * itemsPerPage;
     // Ensure the new index does not exceed the maximum possible start index
-    const maxIndex = programs.length - itemsPerPage;
+    const maxIndex = packages.length - itemsPerPage;
     setCurrentIndex(Math.min(newIndex, maxIndex));
   };
 
@@ -97,11 +66,11 @@ export default function Home() {
   }, [])
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1 >= programs.length - itemsPerPage + 1 ? 0 : prevIndex + 1));
-  }, [itemsPerPage, programs.length]);
+    setCurrentIndex((prevIndex) => (prevIndex + 1 >= packages.length - itemsPerPage + 1 ? 0 : prevIndex + 1));
+  }, [itemsPerPage, packages.length]);
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 < 0 ? programs.length - itemsPerPage : prevIndex - 1));
+    setCurrentIndex((prevIndex) => (prevIndex - 1 < 0 ? packages.length - itemsPerPage : prevIndex - 1));
   }
 
   // Auto-slide every 10 seconds
@@ -109,6 +78,45 @@ export default function Home() {
     const interval = setInterval(goToNext, 10000)
     return () => clearInterval(interval)
   }, [goToNext])
+
+  if (loading) {
+    return (
+      <main>
+        <div className="relative h-[70vh] md:h-[85vh] lg:h-screen w-full overflow-hidden -mt-16">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover z-[-1]"
+          >
+            <source src="/video/backgroundvideo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex flex-col items-center justify-center h-full bg-black/50">
+            <h1 className="text-responsive-2xl mb-6 text-center text-white">Discover your power!</h1>
+            <button 
+              onClick={() => {
+                const programsSection = document.getElementById('programs-section');
+                programsSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="bg-transparent text-white border rounded-xl hover:bg-gray-200 hover:text-black transition text-responsive-sm px-3 py-2 md:px-4 md:py-2.5 lg:px-6 lg:py-3"
+            >
+              CHECK OUT THE PACKAGES
+            </button>
+          </div>
+        </div>
+        <div id="programs-section" className="py-16 px-6">
+          <div className="max-w-7xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-600">Loading packages...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main>
@@ -157,38 +165,38 @@ export default function Home() {
               <div 
                 className="flex transition-transform duration-700 ease-in-out"
                 style={{ 
-                  width: `${(programs.length / itemsPerPage) * 100}%`,
-                  transform: `translateX(-${(currentIndex / programs.length) * 100}%)`
+                  width: `${(packages.length / itemsPerPage) * 100}%`,
+                  transform: `translateX(-${(currentIndex / packages.length) * 100}%)`
                 }}
               >
-                {programs.map((program) => (
+                {packages.map((pkg) => (
                   <div 
-                    key={program.id}
+                    key={pkg.id}
                     className="w-full flex-shrink-0 px-2 sm:px-3"
-                    style={{ width: `${100 / programs.length}%`}}
+                    style={{ width: `${100 / packages.length}%`}}
                   >
                     <div
                       className="h-[250px] sm:h-[280px] bg-white rounded-xl shadow-lg p-3 sm:p-4 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
                     >
                       <div className="text-center mb-2">
                         <span className="bg-sky-100 text-sky-800 text-xs font-semibold px-2 py-0.5 rounded-full border inline-block">
-                          {program.bodyFatRange}
+                          {pkg.body_fat_range}
                         </span>
                       </div>
 
                       <div className="flex-1 flex flex-col justify-center">
                         <h3 className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 mb-2 line-clamp-2 text-center">
-                          {program.title}
+                          {pkg.title}
                         </h3>
 
                         <p className="text-gray-600 text-[10px] sm:text-xs mb-3 line-clamp-3 text-center">
-                          {program.description}
+                          {pkg.description}
                         </p>
                       </div>
 
                       <div className="mt-auto">
                         <Link href="/packages">
-                          <button className="btn-primary w-full text-[10px] sm:text-xs md:text-sm py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 md:px-4">
+                          <button className="btn-primary w-full text-xs md:text-sm py-1 sm:py-2 md:py-2.5 px-2 sm:px-3 md:px-4">
                             View All Packages
                           </button>
                         </Link>

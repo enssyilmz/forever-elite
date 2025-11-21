@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Package, ChevronDown, ChevronUp, Diamond, Trophy, Target, Flame, Zap, Star, Rocket, ClipboardList, Utensils, BarChart3, MessageCircle } from 'lucide-react'
-import { programs } from '@/lib/packagesData'
+import { Package, ChevronDown, ChevronUp, ClipboardList, Utensils, BarChart3, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabaseClient'
 
@@ -29,7 +28,6 @@ interface PackageDetail {
 }
 
 export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps) {
-  const allPrograms = programs
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [packageDetails, setPackageDetails] = useState<PackageDetail[]>([])
   const [detailsLoading, setDetailsLoading] = useState(false)
@@ -48,7 +46,6 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
       
       if (error) {
         console.error('Error fetching package details:', error)
-        // Fallback to hardcoded data if database fails
         setPackageDetails([])
       } else {
         setPackageDetails(data || [])
@@ -71,38 +68,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
     setExpandedOrders(newExpanded)
   }
 
-  const getPackageIcon = (packageTitle: string) => {
-    // First try to get from database
-    const dbPackage = packageDetails.find(p => p.title === packageTitle)
-    if (dbPackage) {
-      const colorClass = `text-${dbPackage.icon_color}-600`
-      const iconClass = `w-5 h-5 md:w-6 md:h-6 ${colorClass}`
-      switch (dbPackage.icon_name) {
-        case 'Diamond': return <Diamond className={iconClass} />
-        case 'Trophy': return <Trophy className={iconClass} />
-        case 'Target': return <Target className={iconClass} />
-        case 'Flame': return <Flame className={iconClass} />
-        case 'Zap': return <Zap className={iconClass} />
-        case 'Star': return <Star className={iconClass} />
-        case 'Rocket': return <Rocket className={iconClass} />
-        default: return <Package className={iconClass} />
-      }
-    }
-    
-    // Fallback to hardcoded mapping
-    const iconClass = "w-5 h-5 md:w-6 md:h-6"
-    const iconMap: { [key: string]: React.ReactNode } = {
-      'Elite Athletes Package': <Diamond className={`${iconClass} text-purple-600`} />,
-      'Advanced Fitness Package': <Trophy className={`${iconClass} text-yellow-600`} />,
-      'Active Lifestyle Package': <Target className={`${iconClass} text-blue-600`} />,
-      'Transformation Package': <Flame className={`${iconClass} text-red-600`} />,
-      'Beginner Boost Package': <Zap className={`${iconClass} text-green-600`} />,
-      'Health Foundation Package': <Star className={`${iconClass} text-orange-600`} />,
-      'Wellness Journey Package': <Package className={`${iconClass} text-pink-600`} />,
-      'Personalized Package': <Rocket className={`${iconClass} text-indigo-600`} />
-    }
-    return iconMap[packageTitle] || <Package className={`${iconClass} text-gray-600`} />
-  }
+
 
   return (
     <div className="bg-white p-3 md:p-4 lg:p-6 rounded-lg shadow-md">
@@ -120,9 +86,8 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
       ) : (
         <div className="space-y-2 md:space-y-3 lg:space-y-4">
           {purchases.map((purchase) => {
-            // Find the corresponding program details from database first, fallback to hardcoded
+            // Find the corresponding package from database
             const dbPackage = packageDetails.find(p => p.title === purchase.package_name)
-            const programDetails = dbPackage || allPrograms.find(p => p.title === purchase.package_name)
             const isExpanded = expandedOrders.has(purchase.id)
             const formatAmount = (amount: number, currency: string) => {
               const formatted = (amount / 100).toFixed(2)
@@ -138,7 +103,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
                         <div className="flex-shrink-0">
-                          {getPackageIcon(purchase.package_name)}
+                          <Package className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-sm md:text-base lg:text-lg font-semibold text-gray-800 truncate">{purchase.package_name}</h3>
@@ -146,9 +111,9 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                         </div>
                       </div>
                       
-                      {programDetails && (
+                      {dbPackage && (
                         <p className="text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
-                          {dbPackage ? dbPackage.body_fat_range : (programDetails as any).bodyFatRange}
+                          {dbPackage.body_fat_range}
                         </p>
                       )}
                       
@@ -161,7 +126,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                     
                     <div className="flex flex-col gap-2">
                       <Link 
-                        href={`/packages/${programDetails?.id || ''}`}
+                        href={`/packages/${dbPackage?.package_id || ''}`}
                         className="btn-primary-sm text-center"
                       >
                         View Package
@@ -187,20 +152,20 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                 </div>
 
                 {/* Expandable Details Section */}
-                {isExpanded && programDetails && (
+                {isExpanded && dbPackage && (
                   <div className="border-t bg-white p-3 md:p-4 lg:p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
                       {/* Program Overview */}
                       <div>
                         <h4 className="text-sm md:text-base font-semibold text-gray-800 mb-2">Program Overview</h4>
                         <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3">
-                          {dbPackage ? dbPackage.long_description : (programDetails as any).longDescription}
+                          {dbPackage.long_description}
                         </p>
                         
                         <div className="mb-3 md:mb-4">
                           <h5 className="text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Key Features:</h5>
                           <ul className="list-disc list-inside space-y-0.5 md:space-y-1">
-                            {(dbPackage ? dbPackage.features : (programDetails as any).features).map((feature: string, index: number) => (
+                            {dbPackage.features.map((feature: string, index: number) => (
                               <li key={index} className="text-xs md:text-sm text-gray-600">{feature}</li>
                             ))}
                           </ul>
@@ -211,7 +176,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                       <div>
                         <h4 className="text-sm md:text-base font-semibold text-gray-800 mb-2">Program Specifications</h4>
                         <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
-                          {(dbPackage ? dbPackage.specifications : (programDetails as any).specifications).map((spec: string, index: number) => (
+                          {dbPackage.specifications.map((spec: string, index: number) => (
                             <div key={index} className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                               <span className="text-xs md:text-sm text-gray-600">{spec}</span>
@@ -222,7 +187,7 @@ export default function MyOrders({ purchases, purchasesLoading }: MyOrdersProps)
                         <div className="mb-3 md:mb-4">
                           <h5 className="text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">Recommendations:</h5>
                           <ul className="list-disc list-inside space-y-0.5 md:space-y-1">
-                            {(dbPackage ? dbPackage.recommendations : (programDetails as any).recommendations).map((rec: string, index: number) => (
+                            {dbPackage.recommendations.map((rec: string, index: number) => (
                               <li key={index} className="text-xs md:text-sm text-gray-600">{rec}</li>
                             ))}
                           </ul>

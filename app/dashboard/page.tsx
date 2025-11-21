@@ -6,7 +6,6 @@ import { User as UserIcon, Mail, Package, CreditCard, Star, Headset, LogOut, Men
 import { User } from '@supabase/supabase-js'
 import { useSearchParams } from 'next/navigation'
 import SuccessModal from '@/components/SuccessModal'
-import { programs as allPrograms } from '@/lib/packagesData'
 import { Purchase } from '@/lib/database.types'
 import Link from 'next/link'
 import dayjs from 'dayjs'
@@ -203,16 +202,7 @@ function DashboardContent() {
                   
                   if (packagesError) {
                     console.error('Error fetching package details:', packagesError)
-                    // Fallback to hardcoded data
-                    const favoriteProgramDetails = allPrograms
-                      .filter(p => favoriteProductIds.includes(p.id))
-                      .map(p => ({
-                        id: p.id,
-                        name: p.title,
-                        description: p.bodyFatRange,
-                        image_url_1: null
-                      }))
-                    setFavoriteProducts(favoriteProgramDetails)
+                    setFavoriteProducts([])
                   } else {
                     const favoriteProgramDetails = packages.map(p => ({
                       id: p.id,

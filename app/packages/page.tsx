@@ -8,7 +8,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Package } from '@/lib/database.types'
 import SuccessModal from '@/components/SuccessModal'
 import PackageSortDropdown, { SortOption } from './components/PackageSortDropdown'
-import PackageRenderer from './components/packages/PackageRenderer'
+import PackageCard from './components/packages/PackageCard'
 
 export default function PackagesPage() {
   const router = useRouter()
@@ -121,7 +121,7 @@ export default function PackagesPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
             {sortedPackages.map((pkg) => (
-              <PackageRenderer 
+              <PackageCard 
                 key={pkg.id} 
                 package={pkg} 
               />

@@ -3,9 +3,8 @@
 import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { CreditCard, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react'
+import { CreditCard, Plus, Minus, Trash2, ShoppingBag, Package } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/packagesData'
 import SuccessModal from './SuccessModal'
 
 interface ShoppingCartProps {
@@ -120,16 +119,17 @@ export default function ShoppingCart({ isCartOpen, setIsCartOpen }: ShoppingCart
               /* Cart Items - Mobile Responsive */
               <div className="p-3 md:p-4 space-y-3 md:space-y-4">
                 {cartItems.map((item) => {
-                  const program = programs.find(p => p.id === item.id)
                   return (
                     <div key={item.id} className="bg-gray-50 rounded-lg p-3 md:p-4">
                       <div className="flex items-start gap-2 md:gap-3 mb-3">
-                        {/* Program Image/Emoji - Mobile Responsive */}
-                        {program && (
-                          <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <span className="text-lg md:text-xl text-white">{program.emoji}</span>
-                          </div>
-                        )}
+                        {/* Package Icon - Mobile Responsive */}
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {item.image ? (
+                            <img src={item.image} alt={item.title} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <Package className="text-white w-5 h-5 md:w-6 md:h-6" />
+                          )}
+                        </div>
                         
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-gray-800 mb-1 text-sm md:text-base truncate">{item.title}</h4>

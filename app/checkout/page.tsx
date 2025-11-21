@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
-import { programs } from '@/lib/packagesData'
 import { Trash2, Plus, Minus, Tag, Truck, Receipt, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import SuccessModal from '@/components/SuccessModal'
@@ -15,7 +14,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice, user } = useApp()
+  const { cartItems, updateCartQuantity, removeFromCart, getTotalPrice, user, packages } = useApp()
   const [discountCode, setDiscountCode] = useState('')
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, percentage: number} | null>(null)
   const [discountError, setDiscountError] = useState('')
@@ -32,11 +31,6 @@ export default function CheckoutPage() {
     { code: 'SUMMER25', percentage: 25 }
   ]
 
-  const convertToGBP = (usdPrice: number) => {
-    // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
-    return Math.round(usdPrice * 0.79)
-  }
-
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
     setModalMessage(message)
@@ -52,8 +46,7 @@ export default function CheckoutPage() {
   }
 
   const subtotal = cartItems.reduce((total, item) => {
-    const program = programs.find(p => p.id === item.id)
-    return total + (program ? convertToGBP(program.discountedPrice) * item.quantity : 0)
+    return total + (item.price * item.quantity)
   }, 0)
 
   const discountAmount = appliedDiscount ? Math.round(subtotal * (appliedDiscount.percentage / 100)) : 0
@@ -84,19 +77,19 @@ export default function CheckoutPage() {
     try {
       // Prepare items for Stripe
       const stripeItems = cartItems.map(item => {
-        const program = programs.find(p => p.id === item.id)
-        if (!program) return null
+        const pkg = packages.find(p => p.id === item.id)
+        if (!pkg) return null
         
         const finalPrice = appliedDiscount 
-          ? convertToGBP(program.discountedPrice) * (1 - appliedDiscount.percentage / 100)
-          : convertToGBP(program.discountedPrice)
+          ? item.price * (1 - appliedDiscount.percentage / 100)
+          : item.price
 
         return {
-          name: program.title,
-          description: program.bodyFatRange,
+          name: item.title,
+          description: pkg.body_fat_range || '',
           price: finalPrice,
           quantity: item.quantity,
-          images: [] // Add program images if available
+          images: item.image ? [item.image] : []
         }
       }).filter(Boolean)
 
@@ -177,22 +170,25 @@ export default function CheckoutPage() {
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-3 md:space-y-4">
               {cartItems.map((item) => {
-                const program = programs.find(p => p.id === item.id)
-                if (!program) return null
+                const pkg = packages.find(p => p.id === item.id)
 
                 return (
                   <div key={item.id} className="bg-white rounded-lg shadow-sm p-3 md:p-6">
                     <div className="flex items-start gap-3 md:gap-4">
-                      {/* Program Image/Emoji */}
-                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg md:text-2xl text-white">{program.emoji}</span>
+                      {/* Program Image */}
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {item.image ? (
+                          <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-lg md:text-2xl text-white">📦</span>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">{program.title}</h3>
-                            <p className="text-xs md:text-sm text-gray-500">{program.bodyFatRange}</p>
+                            <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">{item.title}</h3>
+                            <p className="text-xs md:text-sm text-gray-500">{pkg?.body_fat_range || ''}</p>
                           </div>
                           <button
                             onClick={() => removeFromCart(item.id)}
@@ -228,7 +224,7 @@ export default function CheckoutPage() {
                           
                           <div className="text-right">
                             <p className="text-xs md:text-sm text-gray-600">Total</p>
-                            <p className="font-bold text-sm md:text-base text-gray-800">£{(convertToGBP(program.discountedPrice) * item.quantity).toFixed(2)}</p>
+                            <p className="font-bold text-sm md:text-base text-gray-800">£{(item.price * item.quantity).toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
