@@ -275,7 +275,7 @@ export default function BodyFatCalculator() {
 
   return (
     <>
-        <div className="min-h-screen py-4 px-2">
+        <div className="mt-4 py-4 px-2 md:py-6 md:px-4 lg:px-8">
           <div className="max-w-8xl mx-auto">
             <h2 className="text-responsive-2xl font-bold mb-4 md:mb-6 text-center text-gray-800">Body Fat Calculator</h2>
 

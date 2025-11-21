@@ -83,11 +83,11 @@ export default function Home() {
   useEffect(() => {
     const updateItemsPerPage = () => {
       if (window.innerWidth < 640) { // sm
-        setItemsPerPage(1)
+        setItemsPerPage(2) // Mobilde 2 kart
       } else if (window.innerWidth < 1024) { // lg
-        setItemsPerPage(2)
+        setItemsPerPage(3) // Tablet'te 3 kart
       } else {
-        setItemsPerPage(4)
+        setItemsPerPage(4) // Desktop'ta 4 kart
       }
     }
 
@@ -151,72 +151,54 @@ export default function Home() {
           </p>
           
           {/* Programs Carousel */}
-          <div className="flex items-center justify-center gap-4 w-full px-4">
-  {/* Sol Buton */}
-  <button 
-    onClick={goToPrevious}
-    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-    </svg>
-  </button>
+          <div className="w-full">
+            {/* Slider Container */}
+            <div className="overflow-hidden w-full">
+              <div 
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{ 
+                  width: `${(programs.length / itemsPerPage) * 100}%`,
+                  transform: `translateX(-${(currentIndex / programs.length) * 100}%)`
+                }}
+              >
+                {programs.map((program) => (
+                  <div 
+                    key={program.id}
+                    className="w-full flex-shrink-0 px-2 sm:px-3"
+                    style={{ width: `${100 / programs.length}%`}}
+                  >
+                    <div
+                      className="h-[250px] sm:h-[280px] bg-white rounded-xl shadow-lg p-3 sm:p-4 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
+                    >
+                      <div className="text-center mb-2">
+                        <span className="bg-sky-100 text-sky-800 text-xs font-semibold px-2 py-0.5 rounded-full border inline-block">
+                          {program.bodyFatRange}
+                        </span>
+                      </div>
 
-  {/* Slider Container */}
-  <div className="overflow-hidden flex-1 w-full">
-    <div 
-      className="flex transition-transform duration-700 ease-in-out"
-      style={{ 
-        width: `${(programs.length / itemsPerPage) * 100}%`,
-        transform: `translateX(-${(currentIndex / programs.length) * 100}%)`
-      }}
-    >
-      {programs.map((program) => (
-        <div 
-          key={program.id}
-          className="w-full flex-shrink-0 p-3"
-          style={{ width: `${100 / programs.length}%`}}
-        >
-          <div
-            className="h-[410px] bg-white rounded-xl shadow-lg p-6 flex flex-col border hover:border-sky-300 transition hover:shadow-xl"
-          >
-            <div className="text-responsive-xl w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
-              {program.logo}
-            </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <h3 className="text-xs sm:text-sm lg:text-base font-bold text-gray-800 mb-2 line-clamp-2 text-center">
+                          {program.title}
+                        </h3>
 
-            <div className="text-right mb-3">
-              <span className="bg-sky-100 text-sky-800 text-sm font-semibold px-3 py-1 rounded-full border">
-                {program.bodyFatRange}
-              </span>
-            </div>
+                        <p className="text-gray-600 text-[10px] sm:text-xs mb-3 line-clamp-3 text-center">
+                          {program.description}
+                        </p>
+                      </div>
 
-            <h3 className="text-responsive-lg font-bold text-gray-800 mb-3">{program.title}</h3>
-
-            <p className="text-gray-600 text-responsive-sm flex-1 mb-4">{program.description}</p>
-
-            <div className="mt-auto">
-              <Link href="/packages">
-                <button className="btn-primary w-full">
-                  View All Packages
-                </button>
-              </Link>
+                      <div className="mt-auto">
+                        <Link href="/packages">
+                          <button className="btn-primary w-full text-[10px] sm:text-xs md:text-sm py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 md:px-4">
+                            View All Packages
+                          </button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  {/* Sağ Buton */}
-  <button 
-    onClick={goToNext}
-    className="bg-sky-500 hover:bg-sky-600 text-white p-3 rounded-full shadow-lg transition flex-shrink-0 z-10"
-  >
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  </button>
-</div>
           
           {/* Carousel Indicators */}
           <div className="flex justify-center items-center mt-8 space-x-3 w-full">
