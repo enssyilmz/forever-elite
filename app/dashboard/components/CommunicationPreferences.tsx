@@ -21,7 +21,7 @@ export default function CommunicationPreferences({
 }: CommunicationPreferencesProps) {
   return (
     <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-black">
-      <h3 className="text-responsive-lg font-bold mb-4 md:mb-6">Communication Preferences</h3>
+      <h3 className="border-b text-responsive-lg font-bold pb-4 md:pb-6">Communication Preferences</h3>
       
       {message && !message.includes('successfully') && (
         <div className={`mb-4 p-3 rounded bg-red-100 text-red-700`}>
@@ -33,7 +33,7 @@ export default function CommunicationPreferences({
         <div className="border-b pb-3 md:pb-4">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h4 className="font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">Phone Notifications</h4>
+              <h4 className="pt-4 md:pt-6 font-semibold text-gray-800 text-responsive-sm md:text-responsive-base">Phone Notifications</h4>
               <p className="text-responsive-sm text-gray-600">Receive calls and voice messages on your phone number</p>
             </div>
             <label className="flex items-center cursor-pointer">

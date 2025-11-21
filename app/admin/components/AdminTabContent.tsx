@@ -34,8 +34,9 @@ interface AdminTabContentProps {
     openProgramModal: (program?: CustomProgram) => void
     openProgramDeleteModal: (program: CustomProgram) => void
     openTicketModal: (ticket: any) => void
-    openPackageModal: (pkg?: any) => void
     openDeleteModal: (pkg: any) => void
+    openPackageModal: (pkg?: any) => void
+    openTicketDeleteModal: (ticket: any) => void
   }
 }
 
@@ -103,6 +104,7 @@ export default function AdminTabContent({
           getPriorityClass={(p) => p === 'urgent' ? 'bg-red-100 text-red-800' : p === 'high' ? 'bg-orange-100 text-orange-800' : p === 'normal' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}
           getStatusClass={(s) => s === 'open' ? 'bg-red-100 text-red-800' : s === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : s === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
           onOpen={handlers.openTicketModal}
+          onDelete={handlers.openTicketDeleteModal}
         />
       )
 

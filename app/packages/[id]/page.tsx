@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useApp } from '@/contexts/AppContext'
 import SuccessModal from '@/components/SuccessModal'
-import ReviewSection from '@/components/ReviewSection'
 import { Package } from '@/lib/database.types'
 import SuggestionsForm from './components/SuggestionsForm'
 import ReviewModal from './components/ReviewModal'
@@ -53,11 +52,6 @@ export default function PackageDetailPage() {
 
     fetchPackage()
   }, [programId])
-
-  const convertToGBP = (usdPrice: number) => {
-    // Convert USD to GBP (approximate exchange rate: 1 USD = 0.79 GBP)
-    return Math.round(usdPrice * 0.79)
-  }
 
   const showPopup = (title: string, message: string) => {
     setModalTitle(title)
